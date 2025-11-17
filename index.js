@@ -20,7 +20,7 @@ const supabase = createClient(
 
 // Test endpoint
 app.get('/', (req, res) => {
-  res.send('ChefSystem API v1.0 - connected to database!');
+  res.send('ChefSystent API v1.0 - connected to database!');
 });
 
 // GET wszystkie surowce
