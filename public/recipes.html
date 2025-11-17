@@ -295,7 +295,7 @@
                 <span class="close" onclick="closeFormModal()">&times;</span>
             </div>
             
-            <form onsubmit="saveRecipe(event)">
+            <form id="recipeForm" onsubmit="saveRecipe(event)">
                 <input type="hidden" id="editId">
                 
                 <div style="margin-bottom: 15px;">
@@ -467,16 +467,16 @@
         }
         
         function openAddModal() {
-            document.getElementById('formTitle').textContent = 'Nowa receptura';
-            document.getElementById('recipeForm').reset();
-            document.getElementById('editId').value = '';
-            currentSteps = [];
-            document.getElementById('ingredientsList').innerHTML = '';
-            document.getElementById('stepsList').innerHTML = '';
-            addIngredientRow();
-            addStepRow();
-            document.getElementById('formModal').style.display = 'block';
-        }
+    document.getElementById('formTitle').textContent = 'Nowa receptura';
+    document.getElementById('recipeForm').reset();
+    document.getElementById('editId').value = '';
+    currentSteps = [];
+    document.getElementById('ingredientsList').innerHTML = '';
+    document.getElementById('stepsList').innerHTML = '';
+    addIngredientRow();
+    addStepRow();
+    document.getElementById('formModal').style.display = 'block';
+}
         
         async function editRecipe(id) {
             try {
