@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChefSystem - Receptury</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .nav {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+        .nav a:hover { background: rgba(255,255,255,0.3); }
+        
+        .content { padding: 30px; }
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #f5576c;
+            color: white;
+        }
+        .btn-primary:hover { background: #e0475b; transform: translateY(-2px); }
+        
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .recipe-card {
+            background: white;
+            border: 2px solid #f0f0f0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .recipe-card:hover {
+            border-color: #f5576c;
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.2);
+            transform: translateY(-3px);
+        }
+        .recipe-card h3 {
+            color: #f5576c;
+            margin-bottom: 10px;
+        }
+        .recipe-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-type { background: #e3f2fd; color: #1976d2; }
+        .badge-yield { background: #f3e5f5; color: #7b1fa2; }
+        .badge-vegan { background: #e8f5e9; color: #388e3c; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        .modal-content {
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+        }
+        .close:hover { color: #333; }
+        
+        .ingredients-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .ingredient-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .ingredient-item:last-child { border-bottom: none; }
+        
+        .ingredient-builder, .steps-builder {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .ingredient-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        /* Nowe style dla kroków */
+        .step-item {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: start;
+        }
+        .step-number {
+            background: #f5576c;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .step-content {
+            flex: 1;
+        }
+        .step-text {
+            width: 100%;
+            min-height: 60px;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+        }
+        .steps-list {
+            margin-bottom: 15px;
+        }
+        .steps-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .step-display-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .step-display-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        select, input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #f5576c;
+        }
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 13px;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover { background: #c82333; }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover { background: #218838; }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📖 ChefSystem - Receptury</h1>
+            <div class="nav">
+                <a href="index.html">← Surowce</a>
+                <a href="recipes.html">Receptury</a>
+            </div>
+        </header>
+        
+        <div class="content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Lista receptur</h2>
+                <button class="btn btn-primary" onclick="openAddModal()">➕ Dodaj recepturę</button>
+            </div>
+            
+            <div class="recipe-grid" id="recipeGrid">
+                <div class="loading">Ładowanie receptur...</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal szczegółów -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="detailTitle"></h2>
+                <span class="close" onclick="closeDetailModal()">&times;</span>
+            </div>
+            <div id="detailContent"></div>
+        </div>
+    </div>
+    
+    <!-- Modal formularza -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="formTitle">Nowa receptura</h2>
+                <span class="close" onclick="closeFormModal()">&times;</span>
+            </div>
+            
+            <form onsubmit="saveRecipe(event)">
+                <input type="hidden" id="editId">
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Nazwa receptury</label>
+                    <input type="text" id="nazwa" required>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label>Typ</label>
+                        <select id="typ" required>
+                            <option value="danie główne">Danie główne</option>
+                            <option value="przekąska">Przekąska</option>
+                            <option value="deser">Deser</option>
+                            <option value="napój">Napój</option>
+                            <option value="sos">Sos</option>
+                            <option value="zupa">Zupa</option>
+                        </select>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label>Wydajność</label>
+                            <input type="number" step="0.001" id="wydajnosc_ilosc" placeholder="np. 10">
+                        </div>
+                        <div>
+                            <label>JM</label>
+                            <select id="wydajnosc_jm">
+                                <option value="porcja">porcja</option>
+                                <option value="kg">kg</option>
+                                <option value="l">l</option>
+                                <option value="szt">szt</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Opis</label>
+                    <textarea id="opis" rows="3"></textarea>
+                </div>
+                
+                <div style="margin-bottom: 15px; display: flex; gap: 20px;">
+                    <label style="display: flex; align-items: center;">
+                        <input type="checkbox" id="wegetarianski" style="width: auto; margin-right: 5px;">
+                        Wegetariański
+                    </label>
+                    <label style="display: flex; align-items: center;">
+                        <input type="checkbox" id="weganski" style="width: auto; margin-right: 5px;">
+                        Wegański
+                    </label>
+                </div>
+                
+                <h3 style="margin: 20px 0 10px;">Składniki</h3>
+                <div class="ingredient-builder">
+                    <div id="ingredientsList"></div>
+                    <button type="button" class="btn btn-small btn-primary" onclick="addIngredientRow()">+ Dodaj składnik</button>
+                </div>
+                
+                <h3 style="margin: 20px 0 10px;">Instrukcja przygotowania</h3>
+                <div class="steps-builder">
+                    <div id="stepsList" class="steps-list"></div>
+                    <button type="button" class="btn btn-small btn-primary" onclick="addStepRow()">+ Dodaj krok</button>
+                </div>
+                
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn" onclick="closeFormModal()">Anuluj</button>
+                    <button type="submit" class="btn btn-success">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'https://chefsystem.vercel.app';
+        let allRecipes = [];
+        let allIngredients = [];
+        let currentSteps = [];
+        
+        async function loadData() {
+            try {
+                const [recipesRes, ingredientsRes] = await Promise.all([
+                    fetch(`${API_URL}/api/recipes`),
+                    fetch(`${API_URL}/api/ingredients`)
+                ]);
+                
+                allRecipes = await recipesRes.json();
+                allIngredients = await ingredientsRes.json();
+                
+                renderRecipes();
+            } catch (err) {
+                document.getElementById('recipeGrid').innerHTML = 
+                    '<div class="loading">Błąd ładowania danych</div>';
+            }
+        }
+        
+        function renderRecipes() {
+            const grid = document.getElementById('recipeGrid');
+            
+            if (allRecipes.length === 0) {
+                grid.innerHTML = '<div class="loading">Brak receptur. Dodaj pierwszą!</div>';
+                return;
+            }
+            
+            grid.innerHTML = allRecipes.map(r => `
+                <div class="recipe-card" onclick="showRecipeDetails(${r.id})">
+                    <h3>${r.nazwa}</h3>
+                    <p style="color: #666; margin: 10px 0;">${r.opis || 'Brak opisu'}</p>
+                    <div class="recipe-meta">
+                        <span class="badge badge-type">${r.typ}</span>
+                        ${r.wydajnosc_ilosc ? `<span class="badge badge-yield">${r.wydajnosc_ilosc} ${r.wydajnosc_jm}</span>` : ''}
+                        ${r.weganski ? '<span class="badge badge-vegan">Vegan</span>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function showRecipeDetails(id) {
+            try {
+                const res = await fetch(`${API_URL}/api/recipes/${id}`);
+                const recipe = await res.json();
+                
+                // Wyświetlanie instrukcji krok po kroku
+                let stepsHtml = '';
+                if (recipe.instrukcja && recipe.instrukcja.length > 0) {
+                    stepsHtml = `
+                        <h3 style="margin-top: 20px;">Instrukcja przygotowania:</h3>
+                        <div class="steps-display">
+                            ${recipe.instrukcja.map((step, idx) => `
+                                <div class="step-display-item">
+                                    <div class="step-number">${idx + 1}</div>
+                                    <div style="flex: 1;">
+                                        <p>${step}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                const content = `
+                    <p><strong>Typ:</strong> ${recipe.typ}</p>
+                    <p><strong>Wydajność:</strong> ${recipe.wydajnosc_ilosc || '-'} ${recipe.wydajnosc_jm || ''}</p>
+                    <p><strong>Opis:</strong> ${recipe.opis || '-'}</p>
+                    
+                    <h3 style="margin-top: 20px;">Składniki:</h3>
+                    <div class="ingredients-list">
+                        ${(recipe.skladniki || []).map(s => `
+                            <div class="ingredient-item">
+                                <span>${s.ingredients.nazwa}</span>
+                                <span><strong>${s.ilosc} ${s.jm}</strong></span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    ${stepsHtml}
+                    
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="editRecipe(${id})">Edytuj</button>
+                        <button class="btn btn-danger" onclick="deleteRecipe(${id})">Usuń</button>
+                    </div>
+                `;
+                
+                document.getElementById('detailTitle').textContent = recipe.nazwa;
+                document.getElementById('detailContent').innerHTML = content;
+                document.getElementById('detailModal').style.display = 'block';
+            } catch (err) {
+                alert('Błąd ładowania szczegółów');
+            }
+        }
+        
+        function openAddModal() {
+            document.getElementById('formTitle').textContent = 'Nowa receptura';
+            document.getElementById('recipeForm').reset();
+            document.getElementById('editId').value = '';
+            currentSteps = [];
+            document.getElementById('ingredientsList').innerHTML = '';
+            document.getElementById('stepsList').innerHTML = '';
+            addIngredientRow();
+            addStepRow();
+            document.getElementById('formModal').style.display = 'block';
+        }
+        
+        async function editRecipe(id) {
+            try {
+                const res = await fetch(`${API_URL}/api/recipes/${id}`);
+                const recipe = await res.json();
+                
+                document.getElementById('formTitle').textContent = 'Edytuj recepturę';
+                document.getElementById('editId').value = id;
+                document.getElementById('nazwa').value = recipe.nazwa;
+                document.getElementById('typ').value = recipe.typ;
+                document.getElementById('wydajnosc_ilosc').value = recipe.wydajnosc_ilosc || '';
+                document.getElementById('wydajnosc_jm').value = recipe.wydajnosc_jm || 'porcja';
+                document.getElementById('opis').value = recipe.opis || '';
+                document.getElementById('wegetarianski').checked = recipe.wegetarianski;
+                document.getElementById('weganski').checked = recipe.weganski;
+                
+                // Załaduj składniki
+                document.getElementById('ingredientsList').innerHTML = '';
+                if (recipe.skladniki && recipe.skladniki.length > 0) {
+                    recipe.skladniki.forEach(s => {
+                        const row = addIngredientRow();
+                        row.querySelector('.ing-select').value = s.ingredients.id;
+                        row.querySelector('.ing-amount').value = s.ilosc;
+                        row.querySelector('.ing-unit').value = s.jm;
+                    });
+                } else {
+                    addIngredientRow();
+                }
+                
+                // Załaduj kroki
+                document.getElementById('stepsList').innerHTML = '';
+                if (recipe.instrukcja && recipe.instrukcja.length > 0) {
+                    recipe.instrukcja.forEach(step => {
+                        const row = addStepRow();
+                        row.querySelector('.step-text').value = step;
+                    });
+                } else {
+                    addStepRow();
+                }
+                
+                closeDetailModal();
+                document.getElementById('formModal').style.display = 'block';
+            } catch (err) {
+                alert('Błąd ładowania receptury do edycji');
+            }
+        }
+        
+        function addIngredientRow() {
+            const row = document.createElement('div');
+            row.className = 'ingredient-row';
+            row.innerHTML = `
+                <select class="ing-select">
+                    <option value="">Wybierz surowiec</option>
+                    ${allIngredients.map(i => `<option value="${i.id}">${i.nazwa}</option>`).join('')}
+                </select>
+                <input type="number" step="0.001" placeholder="Ilość" class="ing-amount">
+                <select class="ing-unit">
+                    <option value="kg">kg</option>
+                    <option value="g">g</option>
+                    <option value="l">l</option>
+                    <option value="ml">ml</option>
+                    <option value="szt">szt</option>
+                </select>
+                <button type="button" class="btn btn-small btn-danger" onclick="this.parentElement.remove()">✕</button>
+            `;
+            document.getElementById('ingredientsList').appendChild(row);
+            return row;
+        }
+        
+        // Nowa funkcja dodawania kroku
+        function addStepRow() {
+            const stepsList = document.getElementById('stepsList');
+            const stepNumber = stepsList.children.length + 1;
+            
+            const stepItem = document.createElement('div');
+            stepItem.className = 'step-item';
+            stepItem.innerHTML = `
+                <div class="step-number">${stepNumber}</div>
+                <div class="step-content">
+                    <textarea class="step-text" placeholder="Opisz krok ${stepNumber}..."></textarea>
+                </div>
+                <button type="button" class="btn btn-small btn-danger" onclick="removeStep(this)">✕</button>
+            `;
+            
+            stepsList.appendChild(stepItem);
+            return stepItem;
+        }
+        
+        // Usuwanie kroku z przenumerowaniem
+        function removeStep(btn) {
+            btn.closest('.step-item').remove();
+            renumberSteps();
+        }
+        
+        // Przenumerowanie kroków po usunięciu
+        function renumberSteps() {
+            const steps = document.querySelectorAll('#stepsList .step-item');
+            steps.forEach((step, idx) => {
+                const num = idx + 1;
+                step.querySelector('.step-number').textContent = num;
+                step.querySelector('.step-text').placeholder = `Opisz krok ${num}...`;
+            });
+        }
+        
+        async function saveRecipe(e) {
+            e.preventDefault();
+            
+            // Zbierz składniki
+            const ingredients = [];
+            document.querySelectorAll('.ingredient-row').forEach(row => {
+                const ingId = row.querySelector('.ing-select').value;
+                const amount = row.querySelector('.ing-amount').value;
+                const unit = row.querySelector('.ing-unit').value;
+                
+                if (ingId && amount) {
+                    ingredients.push({
+                        ingredient_id: parseInt(ingId),
+                        ilosc: parseFloat(amount),
+                        jm: unit
+                    });
+                }
+            });
+            
+            // Zbierz kroki instrukcji
+            const steps = [];
+            document.querySelectorAll('.step-text').forEach(textarea => {
+                const text = textarea.value.trim();
+                if (text) {
+                    steps.push(text);
+                }
+            });
+            
+            const data = {
+                nazwa: document.getElementById('nazwa').value,
+                typ: document.getElementById('typ').value,
+                wydajnosc_ilosc: parseFloat(document.getElementById('wydajnosc_ilosc').value) || null,
+                wydajnosc_jm: document.getElementById('wydajnosc_jm').value,
+                opis: document.getElementById('opis').value || null,
+                wegetarianski: document.getElementById('wegetarianski').checked,
+                weganski: document.getElementById('weganski').checked,
+                alergeny: [],
+                skladniki: ingredients,
+                instrukcja: steps
+            };
+            
+            const id = document.getElementById('editId').value;
+            const url = id ? `${API_URL}/api/recipes/${id}` : `${API_URL}/api/recipes`;
+            const method = id ? 'PUT' : 'POST';
+            
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    alert(id ? 'Receptura zaktualizowana!' : 'Receptura dodana!');
+                    closeFormModal();
+                    loadData();
+                } else {
+                    alert('Błąd zapisu');
+                }
+            } catch (err) {
+                alert('Błąd: ' + err.message);
+            }
+        }
+        
+        async function deleteRecipe(id) {
+            if (!confirm('Czy na pewno usunąć tę recepturę?')) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/api/recipes/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    alert('Receptura usunięta!');
+                    closeDetailModal();
+                    loadData();
+                }
+            } catch (err) {
+                alert('Błąd usuwania');
+            }
+        }
+        
+        function closeDetailModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+        
+        function closeFormModal() {
+            document.getElementById('formModal').style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
+        }
+        
+        loadData();
+    </script>
+</body>
+</html>

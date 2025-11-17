@@ -71,7 +71,7 @@ app.put('/api/ingredients/:id', async (req, res) => {
   res.json(data);
 });
 
-// DELETE usunięcie surowca
+// DELETE usuniÄ™cie surowca
 app.delete('/api/ingredients/:id', async (req, res) => {
   const { error } = await supabase
     .from('ingredients')
@@ -79,7 +79,7 @@ app.delete('/api/ingredients/:id', async (req, res) => {
     .eq('id', req.params.id);
   
   if (error) return res.status(400).json({ error: error.message });
-  res.json({ message: 'Surowiec usunięty' });
+  res.json({ message: 'Surowiec usuniÄ™ty' });
 });
 
 // ========================================
@@ -97,9 +97,9 @@ app.get('/api/recipes', async (req, res) => {
   res.json(data);
 });
 
-// GET receptura po ID (ze składnikami)
+// GET receptura po ID (ze skÅ‚adnikami)
 app.get('/api/recipes/:id', async (req, res) => {
-  // Pobierz recepturę
+  // Pobierz recepturÄ™
   const { data: recipe, error: recipeError } = await supabase
     .from('recipes')
     .select('*')
@@ -108,7 +108,7 @@ app.get('/api/recipes/:id', async (req, res) => {
   
   if (recipeError) return res.status(404).json({ error: 'Nie znaleziono receptury' });
   
-  // Pobierz składniki
+  // Pobierz skÅ‚adniki
   const { data: ingredients, error: ingError } = await supabase
     .from('recipe_ingredients')
     .select(`
@@ -133,9 +133,14 @@ app.get('/api/recipes/:id', async (req, res) => {
 
 // POST nowa receptura
 app.post('/api/recipes', async (req, res) => {
-  const { skladniki, ...recipeData } = req.body;
+  const { skladniki, instrukcja, ...recipeData } = req.body;
   
-  // Dodaj recepturę
+  // Dodaj instrukcję do danych receptury
+  if (instrukcja) {
+    recipeData.instrukcja = instrukcja;
+  }
+  
+  // Dodaj recepturÄ™
   const { data: recipe, error: recipeError } = await supabase
     .from('recipes')
     .insert([recipeData])
@@ -144,7 +149,7 @@ app.post('/api/recipes', async (req, res) => {
   
   if (recipeError) return res.status(400).json({ error: recipeError.message });
   
-  // Dodaj składniki jeśli są
+  // Dodaj skÅ‚adniki jeÅ›li sÄ…
   if (skladniki && skladniki.length > 0) {
     const ingredientsData = skladniki.map((s, idx) => ({
       recipe_id: recipe.id,
@@ -166,9 +171,14 @@ app.post('/api/recipes', async (req, res) => {
 
 // PUT edycja receptury
 app.put('/api/recipes/:id', async (req, res) => {
-  const { skladniki, ...recipeData } = req.body;
+  const { skladniki, instrukcja, ...recipeData } = req.body;
   
-  // Aktualizuj recepturę
+  // Dodaj instrukcję do danych receptury
+  if (instrukcja !== undefined) {
+    recipeData.instrukcja = instrukcja;
+  }
+  
+  // Aktualizuj recepturÄ™
   const { data: recipe, error: recipeError } = await supabase
     .from('recipes')
     .update(recipeData)
@@ -178,7 +188,7 @@ app.put('/api/recipes/:id', async (req, res) => {
   
   if (recipeError) return res.status(400).json({ error: recipeError.message });
   
-  // Jeśli są nowe składniki, usuń stare i dodaj nowe
+  // JeÅ›li sÄ… nowe skÅ‚adniki, usuÅ„ stare i dodaj nowe
   if (skladniki) {
     await supabase
       .from('recipe_ingredients')
@@ -211,7 +221,7 @@ app.delete('/api/recipes/:id', async (req, res) => {
     .eq('id', req.params.id);
   
   if (error) return res.status(400).json({ error: error.message });
-  res.json({ message: 'Receptura usunięta' });
+  res.json({ message: 'Receptura usuniÄ™ta' });
 });
 
-app.listen(3000, () => console.log('Serwer działa na http://localhost:3000'));
+app.listen(3000, () => console.log('Serwer dziaÅ‚a na http://localhost:3000'));
