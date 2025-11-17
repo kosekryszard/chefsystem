@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test API ChefSystem</title>
+    <style>
+        body { 
+            font-family: Arial; 
+            padding: 20px; 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            background: #f5f5f5;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        h2 { color: #666; border-bottom: 2px solid #4CAF50; padding-bottom: 10px; }
+        textarea { 
+            width: 100%; 
+            height: 150px; 
+            font-family: monospace; 
+            font-size: 13px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        button { 
+            padding: 10px 20px; 
+            margin: 10px 5px 0 0; 
+            cursor: pointer; 
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button:hover { background: #45a049; }
+        button.delete { background: #f44336; }
+        button.delete:hover { background: #da190b; }
+        button.update { background: #2196F3; }
+        button.update:hover { background: #0b7dda; }
+        pre { 
+            background: #f5f5f5; 
+            padding: 15px; 
+            border-radius: 5px; 
+            overflow-x: auto;
+            border-left: 4px solid #4CAF50;
+        }
+        .success { color: #4CAF50; font-weight: bold; }
+        .error { color: #f44336; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🔧 ChefSystem API Tester</h1>
+    
+    <div class="section">
+        <h2>1️⃣ POST - Dodaj nowy surowiec</h2>
+        <textarea id="postData">{
+  "nazwa": "papryka żółta",
+  "jm_podstawowa": "kg",
+  "typ": "warzywo",
+  "grupa": "warzywa świeże",
+  "dzial": "kuchnia",
+  "wegetarianski": true,
+  "weganski": true,
+  "alergeny": []
+}</textarea>
+        <button onclick="testPost()">Wyślij POST</button>
+        <h3>Odpowiedź:</h3>
+        <pre id="postResponse">Kliknij przycisk aby dodać surowiec</pre>
+    </div>
+
+    <div class="section">
+        <h2>2️⃣ GET - Pobierz surowiec po ID</h2>
+        <input type="number" id="getId" placeholder="Wpisz ID (np. 1)" value="1">
+        <button onclick="testGet()">Pobierz</button>
+        <h3>Odpowiedź:</h3>
+        <pre id="getResponse">Kliknij przycisk aby pobrać surowiec</pre>
+    </div>
+
+    <div class="section">
+        <h2>3️⃣ PUT - Edytuj surowiec</h2>
+        <input type="number" id="putId" placeholder="ID surowca do edycji" value="51">
+        <textarea id="putData">{
+  "nazwa": "papryka zielona BIO",
+  "typ": "warzywo",
+  "grupa": "warzywa świeże BIO"
+}</textarea>
+        <button class="update" onclick="testPut()">Wyślij PUT</button>
+        <h3>Odpowiedź:</h3>
+        <pre id="putResponse">Kliknij przycisk aby edytować surowiec</pre>
+    </div>
+
+    <div class="section">
+        <h2>4️⃣ DELETE - Usuń surowiec</h2>
+        <input type="number" id="deleteId" placeholder="ID surowca do usunięcia" value="51">
+        <button class="delete" onclick="testDelete()">Usuń surowiec</button>
+        <h3>Odpowiedź:</h3>
+        <pre id="deleteResponse">Kliknij przycisk aby usunąć surowiec</pre>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+
+        async function testPost() {
+            const data = JSON.parse(document.getElementById('postData').value);
+            try {
+                const res = await fetch(`${API_URL}/api/ingredients`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const json = await res.json();
+                document.getElementById('postResponse').innerHTML = 
+                    `<span class="success">✓ Sukces!</span>\n${JSON.stringify(json, null, 2)}`;
+            } catch (err) {
+                document.getElementById('postResponse').innerHTML = 
+                    `<span class="error">✗ Błąd:</span> ${err.message}`;
+            }
+        }
+
+        async function testGet() {
+            const id = document.getElementById('getId').value;
+            try {
+                const res = await fetch(`${API_URL}/api/ingredients/${id}`);
+                const json = await res.json();
+                document.getElementById('getResponse').innerHTML = 
+                    `<span class="success">✓ Znaleziono!</span>\n${JSON.stringify(json, null, 2)}`;
+            } catch (err) {
+                document.getElementById('getResponse').innerHTML = 
+                    `<span class="error">✗ Błąd:</span> ${err.message}`;
+            }
+        }
+
+        async function testPut() {
+            const id = document.getElementById('putId').value;
+            const data = JSON.parse(document.getElementById('putData').value);
+            try {
+                const res = await fetch(`${API_URL}/api/ingredients/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const json = await res.json();
+                document.getElementById('putResponse').innerHTML = 
+                    `<span class="success">✓ Zaktualizowano!</span>\n${JSON.stringify(json, null, 2)}`;
+            } catch (err) {
+                document.getElementById('putResponse').innerHTML = 
+                    `<span class="error">✗ Błąd:</span> ${err.message}`;
+            }
+        }
+
+        async function testDelete() {
+            const id = document.getElementById('deleteId').value;
+            if (!confirm(`Czy na pewno chcesz usunąć surowiec o ID ${id}?`)) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/api/ingredients/${id}`, {
+                    method: 'DELETE'
+                });
+                const json = await res.json();
+                document.getElementById('deleteResponse').innerHTML = 
+                    `<span class="success">✓ ${json.message}</span>\n${JSON.stringify(json, null, 2)}`;
+            } catch (err) {
+                document.getElementById('deleteResponse').innerHTML = 
+                    `<span class="error">✗ Błąd:</span> ${err.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
