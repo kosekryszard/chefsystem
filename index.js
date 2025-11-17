@@ -224,4 +224,91 @@ app.delete('/api/recipes/:id', async (req, res) => {
   res.json({ message: 'Receptura usuniÄ™ta' });
 });
 
+// ========================================
+// KONWERSJE JEDNOSTEK
+// ========================================
+
+// GET wszystkie konwersje dla surowca
+app.get('/api/ingredients/:id/conversions', async (req, res) => {
+  const { data, error } = await supabase
+    .from('ingredient_conversions')
+    .select('*')
+    .eq('ingredient_id', req.params.id);
+  
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// POST nowa konwersja
+app.post('/api/conversions', async (req, res) => {
+  const { data, error } = await supabase
+    .from('ingredient_conversions')
+    .insert([req.body])
+    .select()
+    .single();
+  
+  if (error) return res.status(400).json({ error: error.message });
+  res.status(201).json(data);
+});
+
+// DELETE konwersja
+app.delete('/api/conversions/:id', async (req, res) => {
+  const { error } = await supabase
+    .from('ingredient_conversions')
+    .delete()
+    .eq('id', req.params.id);
+  
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ message: 'Konwersja usunięta' });
+});
+
+// ========================================
+// ZAMIENNIKI
+// ========================================
+
+// GET wszystkie zamienniki dla surowca
+app.get('/api/ingredients/:id/substitutes', async (req, res) => {
+  const { data, error } = await supabase
+    .from('ingredient_substitutes')
+    .select(`
+      id,
+      ratio,
+      from_unit,
+      to_unit,
+      notes,
+      substitute:substitute_id (
+        id,
+        nazwa,
+        jm_podstawowa
+      )
+    `)
+    .eq('ingredient_id', req.params.id);
+  
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// POST nowy zamiennik
+app.post('/api/substitutes', async (req, res) => {
+  const { data, error } = await supabase
+    .from('ingredient_substitutes')
+    .insert([req.body])
+    .select()
+    .single();
+  
+  if (error) return res.status(400).json({ error: error.message });
+  res.status(201).json(data);
+});
+
+// DELETE zamiennik
+app.delete('/api/substitutes/:id', async (req, res) => {
+  const { error } = await supabase
+    .from('ingredient_substitutes')
+    .delete()
+    .eq('id', req.params.id);
+  
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ message: 'Zamiennik usunięty' });
+});
+
 app.listen(3000, () => console.log('Serwer dziaÅ‚a na http://localhost:3000'));
