@@ -472,35 +472,36 @@
         }
         
         // Renderowanie tabeli
-        function renderTable(data) {
-            const tbody = document.getElementById('tableBody');
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><div>Brak surowców do wyświetlenia</div></td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = data.map(ing => `
-                <tr>
-                    <td>${ing.id}</td>
-                    <td><strong>${ing.nazwa}</strong></td>
-                    <td>${ing.jm_podstawowa}</td>
-                    <td>${ing.typ || '-'}</td>
-                    <td>${ing.grupa || '-'}</td>
-                    <td>${ing.dzial || '-'}</td>
-                    <td>
-                        ${ing.weganski ? '<span class="badge badge-vegan">Vegan</span>' : ''}
-                        ${ing.wegetarianski && !ing.weganski ? '<span class="badge badge-vegetarian">Vege</span>' : ''}
-                    </td>
-                    <td>
-                        ${(ing.alergeny || []).map(a => `<span class="allergen-tag">${a}:${ALLERGENS[a]}</span>`).join('')}
-                    </td>
-                    <td>
-                        <button class="btn btn-primary btn-small" onclick="editIngredient(${ing.id})">✏️</button>
-                        <button class="btn btn-danger btn-small" onclick="deleteIngredient(${ing.id})">🗑️</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
+function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><div>Brak surowców do wyświetlenia</div></td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = data.map(ing => `
+        <tr>
+            <td>${ing.id}</td>
+            <td><strong>${ing.nazwa}</strong></td>
+            <td>${ing.jm_podstawowa}</td>
+            <td>${ing.typ || '-'}</td>
+            <td>${ing.grupa || '-'}</td>
+            <td>${ing.dzial || '-'}</td>
+            <td>
+                ${ing.weganski ? '<span class="badge badge-vegan">Vegan</span>' : ''}
+                ${ing.wegetarianski && !ing.weganski ? '<span class="badge badge-vegetarian">Vege</span>' : ''}
+            </td>
+            <td>
+                ${(ing.alergeny || []).map(a => `<span class="allergen-tag">${a}:${ALLERGENS[a]}</span>`).join('')}
+            </td>
+            <td>
+                <button class="btn btn-primary btn-small" onclick="showIngredientDetails(${ing.id})">👁️</button>
+                <button class="btn btn-primary btn-small" onclick="editIngredient(${ing.id})">✏️</button>
+                <button class="btn btn-danger btn-small" onclick="deleteIngredient(${ing.id})">🗑️</button>
+            </td>
+        </tr>
+    `).join('');
+}
         
         // Filtrowanie
         function filterIngredients() {
@@ -626,7 +627,277 @@
         }
         
         // Start
+// Funkcje szczegółów surowca
+async function showIngredientDetails(id) {
+    try {
+        const [ingRes, convRes, subRes] = await Promise.all([
+            fetch(`${API_URL}/api/ingredients/${id}`),
+            fetch(`${API_URL}/api/ingredients/${id}/conversions`),
+            fetch(`${API_URL}/api/ingredients/${id}/substitutes`)
+        ]);
+        
+        const ingredient = await ingRes.json();
+        const conversions = await convRes.json();
+        const substitutes = await subRes.json();
+        
+        let conversionsHtml = '';
+        if (conversions.length > 0) {
+            conversionsHtml = `
+                <h3 style="margin-top: 20px;">Konwersje jednostek:</h3>
+                <div class="ingredients-list">
+                    ${conversions.map(c => `
+                        <div class="ingredient-item">
+                            <span>${c.from_amount} ${c.from_unit} = ${c.to_amount} ${c.to_unit}</span>
+                            <button class="btn btn-small btn-danger" onclick="deleteConversion(${c.id})">Usuń</button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        let substitutesHtml = '';
+        if (substitutes.length > 0) {
+            substitutesHtml = `
+                <h3 style="margin-top: 20px;">Zamienniki:</h3>
+                <div class="ingredients-list">
+                    ${substitutes.map(s => `
+                        <div class="ingredient-item">
+                            <span>${s.substitute.nazwa} (${s.ratio} ${s.to_unit} za 1 ${s.from_unit})</span>
+                            <button class="btn btn-small btn-danger" onclick="deleteSubstitute(${s.id})">Usuń</button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        const content = `
+            <p><strong>Typ:</strong> ${ingredient.typ}</p>
+            <p><strong>Jednostka:</strong> ${ingredient.jm_podstawowa}</p>
+            ${ingredient.cena_zakupu ? `<p><strong>Cena:</strong> ${ingredient.cena_zakupu} zł</p>` : ''}
+            
+            ${conversionsHtml}
+            <button class="btn btn-small btn-primary" onclick="openConversionModal(${id})" style="margin-top: 10px;">+ Dodaj konwersję</button>
+            
+            ${substitutesHtml}
+            <button class="btn btn-small btn-primary" onclick="openSubstituteModal(${id})" style="margin-top: 10px;">+ Dodaj zamiennik</button>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="editIngredient(${id})">Edytuj</button>
+                <button class="btn btn-danger" onclick="deleteIngredient(${id})">Usuń</button>
+            </div>
+        `;
+        
+        document.getElementById('detailTitle').textContent = ingredient.nazwa;
+        document.getElementById('detailContent').innerHTML = content;
+        document.getElementById('detailModal').style.display = 'block';
+    } catch (err) {
+        alert('Błąd ładowania szczegółów');
+    }
+}
+
+function closeDetailModal() {
+    document.getElementById('detailModal').style.display = 'none';
+}
+
+// Funkcje konwersji
+function openConversionModal(ingredientId) {
+    document.getElementById('convIngredientId').value = ingredientId;
+    document.getElementById('conversionModal').style.display = 'block';
+}
+
+function closeConversionModal() {
+    document.getElementById('conversionModal').style.display = 'none';
+}
+
+async function saveConversion(e) {
+    e.preventDefault();
+    
+    const data = {
+        ingredient_id: parseInt(document.getElementById('convIngredientId').value),
+        from_amount: parseFloat(document.getElementById('convFromAmount').value),
+        from_unit: document.getElementById('convFromUnit').value,
+        to_amount: parseFloat(document.getElementById('convToAmount').value),
+        to_unit: document.getElementById('convToUnit').value
+    };
+    
+    try {
+        const res = await fetch(`${API_URL}/api/conversions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (res.ok) {
+            alert('Konwersja dodana!');
+            closeConversionModal();
+            showIngredientDetails(data.ingredient_id);
+        } else {
+            alert('Błąd dodawania konwersji');
+        }
+    } catch (err) {
+        alert('Błąd: ' + err.message);
+    }
+}
+
+async function deleteConversion(id) {
+    if (!confirm('Usunąć konwersję?')) return;
+    
+    try {
+        const res = await fetch(`${API_URL}/api/conversions/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            alert('Konwersja usunięta!');
+            location.reload();
+        }
+    } catch (err) {
+        alert('Błąd usuwania');
+    }
+}
+
+// Funkcje zamienników
+function openSubstituteModal(ingredientId) {
+    document.getElementById('subIngredientId').value = ingredientId;
+    
+    const select = document.getElementById('subSubstituteId');
+    select.innerHTML = '<option value="">Wybierz surowiec</option>' +
+        allIngredients.filter(i => i.id !== ingredientId)
+            .map(i => `<option value="${i.id}">${i.nazwa}</option>`).join('');
+    
+    document.getElementById('substituteModal').style.display = 'block';
+}
+
+function closeSubstituteModal() {
+    document.getElementById('substituteModal').style.display = 'none';
+}
+
+async function saveSubstitute(e) {
+    e.preventDefault();
+    
+    const data = {
+        ingredient_id: parseInt(document.getElementById('subIngredientId').value),
+        substitute_id: parseInt(document.getElementById('subSubstituteId').value),
+        ratio: parseFloat(document.getElementById('subRatio').value),
+        from_unit: document.getElementById('subFromUnit').value,
+        to_unit: document.getElementById('subToUnit').value,
+        notes: document.getElementById('subNotes').value || null
+    };
+    
+    try {
+        const res = await fetch(`${API_URL}/api/substitutes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (res.ok) {
+            alert('Zamiennik dodany!');
+            closeSubstituteModal();
+            showIngredientDetails(data.ingredient_id);
+        } else {
+            alert('Błąd dodawania zamiennika');
+        }
+    } catch (err) {
+        alert('Błąd: ' + err.message);
+    }
+}
+
+async function deleteSubstitute(id) {
+    if (!confirm('Usunąć zamiennik?')) return;
+    
+    try {
+        const res = await fetch(`${API_URL}/api/substitutes/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            alert('Zamiennik usunięty!');
+            location.reload();
+        }
+    } catch (err) {
+        alert('Błąd usuwania');
+    }
+}
         loadIngredients();
     </script>
+<!-- Modal szczegółów surowca -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="detailTitle"></h2>
+                <span class="close" onclick="closeDetailModal()">&times;</span>
+            </div>
+            <div id="detailContent"></div>
+        </div>
+    </div>
+
+    <!-- Modal dodawania konwersji -->
+    <div id="conversionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Dodaj konwersję jednostek</h2>
+                <span class="close" onclick="closeConversionModal()">&times;</span>
+            </div>
+            <form onsubmit="saveConversion(event)">
+                <input type="hidden" id="convIngredientId">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label>Z jednostki (np. 1 l)</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <input type="number" step="0.001" id="convFromAmount" required>
+                            <input type="text" id="convFromUnit" placeholder="l" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Na jednostkę (np. 900 g)</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <input type="number" step="0.001" id="convToAmount" required>
+                            <input type="text" id="convToUnit" placeholder="g" required>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn" onclick="closeConversionModal()">Anuluj</button>
+                    <button type="submit" class="btn btn-success">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal dodawania zamiennika -->
+    <div id="substituteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Dodaj zamiennik</h2>
+                <span class="close" onclick="closeSubstituteModal()">&times;</span>
+            </div>
+            <form onsubmit="saveSubstitute(event)">
+                <input type="hidden" id="subIngredientId">
+                <div style="margin-bottom: 15px;">
+                    <label>Zamiennik</label>
+                    <select id="subSubstituteId" required>
+                        <option value="">Wybierz surowiec</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label>Stosunek (ile)</label>
+                        <input type="number" step="0.001" id="subRatio" required>
+                    </div>
+                    <div>
+                        <label>Z jednostki</label>
+                        <input type="text" id="subFromUnit" placeholder="szt" required>
+                    </div>
+                    <div>
+                        <label>Na jednostkę</label>
+                        <input type="text" id="subToUnit" placeholder="g" required>
+                    </div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label>Notatki (opcjonalnie)</label>
+                    <textarea id="subNotes" rows="2"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn" onclick="closeSubstituteModal()">Anuluj</button>
+                    <button type="submit" class="btn btn-success">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>
