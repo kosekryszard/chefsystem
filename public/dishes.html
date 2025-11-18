@@ -386,32 +386,38 @@
         }
         
         function addComponentRow() {
-            const row = document.createElement('div');
-            row.className = 'component-row';
-            row.innerHTML = `
-                <select class="comp-recipe">
-                    <option value="">Wybierz recepturę</option>
-                    ${allRecipes.map(r => `<option value="${r.id}">${r.nazwa}</option>`).join('')}
-                </select>
-                <input type="number" step="0.001" placeholder="Ilość" class="comp-amount">
-                <select class="comp-unit">
-                    <option value="porcja">porcja</option>
-                    <option value="kg">kg</option>
-                    <option value="g">g</option>
-                    <option value="l">l</option>
-                    <option value="ml">ml</option>
-                </select>
-                <select class="comp-category">
-                    <option value="glowne">Główne</option>
-                    <option value="dodatek">Dodatek</option>
-                    <option value="surowka">Surówka</option>
-                    <option value="sos">Sos</option>
-                    <option value="dekoracja">Dekoracja</option>
-                </select>
-                <button type="button" class="btn btn-small btn-danger" onclick="this.parentElement.remove()">✕</button>
-            `;
-            document.getElementById('componentsList').appendChild(row);
-        }
+    const row = document.createElement('div');
+    row.className = 'component-row';
+    row.innerHTML = `
+        <select class="comp-recipe" onchange="updateUnitForRecipe(this)">
+            <option value="">Wybierz recepturę</option>
+            ${allRecipes.map(r => `<option value="${r.id}" data-unit="${r.wydajnosc_jm || 'porcja'}">${r.nazwa}</option>`).join('')}
+        </select>
+        <input type="number" step="0.001" placeholder="Ilość" class="comp-amount">
+        <input type="text" class="comp-unit" readonly style="background: #f0f0f0;" placeholder="JM">
+        <select class="comp-category">
+            <option value="glowne">Składnik główny</option>
+            <option value="dodatek_skrobiowy">Dodatek skrobiowy</option>
+            <option value="dodatek_witaminowy">Dodatek witaminowy</option>
+            <option value="dressing">Dressing</option>
+            <option value="sos">Sos</option>
+            <option value="crunch">Crunch</option>
+            <option value="garnish">Garnish</option>
+        </select>
+        <button type="button" class="btn btn-small btn-danger" onclick="this.parentElement.remove()">✕</button>
+    `;
+    document.getElementById('componentsList').appendChild(row);
+    return row;
+}
+
+// Nowa funkcja - automatyczne uzupełnianie jednostki
+function updateUnitForRecipe(selectElement) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const unit = selectedOption.getAttribute('data-unit');
+    const row = selectElement.closest('.component-row');
+    const unitInput = row.querySelector('.comp-unit');
+    unitInput.value = unit || 'porcja';
+}
         
         async function saveDish(e) {
             e.preventDefault();
@@ -468,70 +474,72 @@
         }
         
         async function editDish(id) {
-            try {
-                const res = await fetch(`${API_URL}/api/dishes/${id}`);
-                const dish = await res.json();
-                
-                document.getElementById('formTitle').textContent = 'Edytuj danie';
-                document.getElementById('editId').value = id;
-                document.getElementById('nazwa').value = dish.nazwa;
-                document.getElementById('nazwa_karta').value = dish.nazwa_karta || '';
-                document.getElementById('typ').value = dish.typ;
-                document.getElementById('cena_sugerowana').value = dish.cena_sugerowana || '';
-                document.getElementById('opis_karta').value = dish.opis_karta || '';
-                document.getElementById('wegetarianski').checked = dish.wegetarianski;
-                document.getElementById('weganski').checked = dish.weganski;
-                
-                document.getElementById('componentsList').innerHTML = '';
-                if (dish.komponenty && dish.komponenty.length > 0) {
-                    dish.komponenty.forEach(k => {
-                        const row = addComponentRow();
-                        row.querySelector('.comp-recipe').value = k.recipes.id;
-                        row.querySelector('.comp-amount').value = k.ilosc;
-                        row.querySelector('.comp-unit').value = k.jm;
-                        row.querySelector('.comp-category').value = k.kategoria;
-                    });
-                } else {
-                    addComponentRow();
-                }
-                
-                closeDetailModal();
-                document.getElementById('formModal').style.display = 'block';
-            } catch (err) {
-                alert('Błąd ładowania dania do edycji');
-            }
+    try {
+        const res = await fetch(`${API_URL}/api/dishes/${id}`);
+        const dish = await res.json();
+        
+        document.getElementById('formTitle').textContent = 'Edytuj danie';
+        document.getElementById('editId').value = id;
+        document.getElementById('nazwa').value = dish.nazwa;
+        document.getElementById('nazwa_karta').value = dish.nazwa_karta || '';
+        document.getElementById('typ').value = dish.typ;
+        document.getElementById('cena_sugerowana').value = dish.cena_sugerowana || '';
+        document.getElementById('opis_karta').value = dish.opis_karta || '';
+        document.getElementById('wegetarianski').checked = dish.wegetarianski;
+        document.getElementById('weganski').checked = dish.weganski;
+        
+        document.getElementById('componentsList').innerHTML = '';
+        if (dish.komponenty && dish.komponenty.length > 0) {
+            dish.komponenty.forEach(k => {
+                const row = addComponentRow();
+                row.querySelector('.comp-recipe').value = k.recipes.id;
+                row.querySelector('.comp-amount').value = k.ilosc;
+                row.querySelector('.comp-unit').value = k.jm;
+                row.querySelector('.comp-category').value = k.kategoria;
+            });
+        } else {
+            addComponentRow();
         }
         
-        async function deleteDish(id) {
-            if (!confirm('Czy na pewno usunąć to danie?')) return;
-            
-            try {
-                const res = await fetch(`${API_URL}/api/dishes/${id}`, { method: 'DELETE' });
-                if (res.ok) {
-                    alert('Danie usunięte!');
-                    closeDetailModal();
-                    loadData();
-                }
-            } catch (err) {
-                alert('Błąd usuwania');
-            }
+        closeDetailModal();
+        document.getElementById('formModal').style.display = 'block';
+    } catch (err) {
+        alert('Błąd ładowania dania do edycji');
+    }
+}
+
+async function deleteDish(id) {
+    if (!confirm('Czy na pewno usunąć to danie?')) return;
+    
+    try {
+        const res = await fetch(`${API_URL}/api/dishes/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            alert('Danie usunięte!');
+            closeDetailModal();
+            loadData();
         }
-        
-        function closeDetailModal() {
-            document.getElementById('detailModal').style.display = 'none';
-        }
-        
-        function closeFormModal() {
-            document.getElementById('formModal').style.display = 'none';
-        }
-        
-        window.onclick = function(event) {
-            if (event.target.className === 'modal') {
-                event.target.style.display = 'none';
-            }
-        }
-        
-        loadData();
+    } catch (err) {
+        alert('Błąd usuwania');
+    }
+}
+
+function closeDetailModal() {
+    document.getElementById('detailModal').style.display = 'none';
+}
+
+function closeFormModal() {
+    const hasData = document.getElementById('nazwa').value.trim() !== '' ||
+                    document.getElementById('nazwa_karta').value.trim() !== '' ||
+                    document.getElementById('opis_karta').value.trim() !== '' ||
+                    document.getElementById('componentsList').children.length > 1;
+    
+    if (hasData && !confirm('Dane nie zostały zapisane. Czy na pewno zamknąć?')) {
+        return;
+    }
+    document.getElementById('formModal').style.display = 'none';
+}
+
+loadData();
     </script>
 </body>
 </html>

@@ -480,202 +480,204 @@
 }
         
         async function editRecipe(id) {
-            try {
-                const res = await fetch(`${API_URL}/api/recipes/${id}`);
-                const recipe = await res.json();
-                
-                document.getElementById('formTitle').textContent = 'Edytuj recepturę';
-                document.getElementById('editId').value = id;
-                document.getElementById('nazwa').value = recipe.nazwa;
-                document.getElementById('typ').value = recipe.typ;
-                document.getElementById('wydajnosc_ilosc').value = recipe.wydajnosc_ilosc || '';
-                document.getElementById('wydajnosc_jm').value = recipe.wydajnosc_jm || 'porcja';
-                document.getElementById('opis').value = recipe.opis || '';
-                document.getElementById('wegetarianski').checked = recipe.wegetarianski;
-                document.getElementById('weganski').checked = recipe.weganski;
-                
-                // Załaduj składniki
-                document.getElementById('ingredientsList').innerHTML = '';
-                if (recipe.skladniki && recipe.skladniki.length > 0) {
-                    recipe.skladniki.forEach(s => {
-                        const row = addIngredientRow();
-                        row.querySelector('.ing-select').value = s.ingredients.id;
-                        row.querySelector('.ing-amount').value = s.ilosc;
-                        row.querySelector('.ing-unit').value = s.jm;
-                    });
-                } else {
-                    addIngredientRow();
-                }
-                
-                // Załaduj kroki
-                document.getElementById('stepsList').innerHTML = '';
-                if (recipe.instrukcja && recipe.instrukcja.length > 0) {
-                    recipe.instrukcja.forEach(step => {
-                        const row = addStepRow();
-                        row.querySelector('.step-text').value = step;
-                    });
-                } else {
-                    addStepRow();
-                }
-                
-                closeDetailModal();
-                document.getElementById('formModal').style.display = 'block';
-            } catch (err) {
-                alert('Błąd ładowania receptury do edycji');
-            }
+    try {
+        const res = await fetch(`${API_URL}/api/recipes/${id}`);
+        const recipe = await res.json();
+        
+        document.getElementById('formTitle').textContent = 'Edytuj recepturę';
+        document.getElementById('editId').value = id;
+        document.getElementById('nazwa').value = recipe.nazwa;
+        document.getElementById('typ').value = recipe.typ;
+        document.getElementById('wydajnosc_ilosc').value = recipe.wydajnosc_ilosc || '';
+        document.getElementById('wydajnosc_jm').value = recipe.wydajnosc_jm || 'porcja';
+        document.getElementById('opis').value = recipe.opis || '';
+        document.getElementById('wegetarianski').checked = recipe.wegetarianski;
+        document.getElementById('weganski').checked = recipe.weganski;
+        
+        // Załaduj składniki
+        document.getElementById('ingredientsList').innerHTML = '';
+        if (recipe.skladniki && recipe.skladniki.length > 0) {
+            recipe.skladniki.forEach(s => {
+                const row = addIngredientRow();
+                row.querySelector('.ing-select').value = s.ingredients.id;
+                row.querySelector('.ing-amount').value = s.ilosc;
+                row.querySelector('.ing-unit').value = s.jm;
+            });
+        } else {
+            addIngredientRow();
         }
         
-        function addIngredientRow() {
-            const row = document.createElement('div');
-            row.className = 'ingredient-row';
-            row.innerHTML = `
-                <select class="ing-select">
-                    <option value="">Wybierz surowiec</option>
-                    ${allIngredients.map(i => `<option value="${i.id}">${i.nazwa}</option>`).join('')}
-                </select>
-                <input type="number" step="0.001" placeholder="Ilość" class="ing-amount">
-                <select class="ing-unit">
-                    <option value="kg">kg</option>
-                    <option value="g">g</option>
-                    <option value="l">l</option>
-                    <option value="ml">ml</option>
-                    <option value="szt">szt</option>
-                </select>
-                <button type="button" class="btn btn-small btn-danger" onclick="this.parentElement.remove()">✕</button>
-            `;
-            document.getElementById('ingredientsList').appendChild(row);
-            return row;
+        // Załaduj kroki
+        document.getElementById('stepsList').innerHTML = '';
+        if (recipe.instrukcja && recipe.instrukcja.length > 0) {
+            recipe.instrukcja.forEach(step => {
+                const row = addStepRow();
+                row.querySelector('.step-text').value = step;
+            });
+        } else {
+            addStepRow();
         }
         
-        // Nowa funkcja dodawania kroku
-        function addStepRow() {
-            const stepsList = document.getElementById('stepsList');
-            const stepNumber = stepsList.children.length + 1;
-            
-            const stepItem = document.createElement('div');
-            stepItem.className = 'step-item';
-            stepItem.innerHTML = `
-                <div class="step-number">${stepNumber}</div>
-                <div class="step-content">
-                    <textarea class="step-text" placeholder="Opisz krok ${stepNumber}..."></textarea>
-                </div>
-                <button type="button" class="btn btn-small btn-danger" onclick="removeStep(this)">✕</button>
-            `;
-            
-            stepsList.appendChild(stepItem);
-            return stepItem;
-        }
+        closeDetailModal();
+        document.getElementById('formModal').style.display = 'block';
+    } catch (err) {
+        alert('Błąd ładowania receptury do edycji');
+    }
+}
+
+function addIngredientRow() {
+    const row = document.createElement('div');
+    row.className = 'ingredient-row';
+    row.innerHTML = `
+        <select class="ing-select">
+            <option value="">Wybierz surowiec</option>
+            ${allIngredients.map(i => `<option value="${i.id}">${i.nazwa}</option>`).join('')}
+        </select>
+        <input type="number" step="0.001" placeholder="Ilość" class="ing-amount">
+        <select class="ing-unit">
+            <option value="kg">kg</option>
+            <option value="g">g</option>
+            <option value="l">l</option>
+            <option value="ml">ml</option>
+            <option value="szt">szt</option>
+        </select>
+        <button type="button" class="btn btn-small btn-danger" onclick="this.parentElement.remove()">✕</button>
+    `;
+    document.getElementById('ingredientsList').appendChild(row);
+    return row;
+}
+
+// Nowa funkcja dodawania kroku
+function addStepRow() {
+    const stepsList = document.getElementById('stepsList');
+    const stepNumber = stepsList.children.length + 1;
+    
+    const stepItem = document.createElement('div');
+    stepItem.className = 'step-item';
+    stepItem.innerHTML = `
+        <div class="step-number">${stepNumber}</div>
+        <div class="step-content">
+            <textarea class="step-text" placeholder="Opisz krok ${stepNumber}..."></textarea>
+        </div>
+        <button type="button" class="btn btn-small btn-danger" onclick="removeStep(this)">✕</button>
+    `;
+    
+    stepsList.appendChild(stepItem);
+    return stepItem;
+}
+
+// Usuwanie kroku z przenumerowaniem
+function removeStep(btn) {
+    btn.closest('.step-item').remove();
+    renumberSteps();
+}
+
+// Przenumerowanie kroków po usunięciu
+function renumberSteps() {
+    const steps = document.querySelectorAll('#stepsList .step-item');
+    steps.forEach((step, idx) => {
+        const num = idx + 1;
+        step.querySelector('.step-number').textContent = num;
+        step.querySelector('.step-text').placeholder = `Opisz krok ${num}...`;
+    });
+}
+
+async function saveRecipe(e) {
+    e.preventDefault();
+    
+    // Zbierz składniki
+    const ingredients = [];
+    document.querySelectorAll('.ingredient-row').forEach(row => {
+        const ingId = row.querySelector('.ing-select').value;
+        const amount = row.querySelector('.ing-amount').value;
+        const unit = row.querySelector('.ing-unit').value;
         
-        // Usuwanie kroku z przenumerowaniem
-        function removeStep(btn) {
-            btn.closest('.step-item').remove();
-            renumberSteps();
-        }
-        
-        // Przenumerowanie kroków po usunięciu
-        function renumberSteps() {
-            const steps = document.querySelectorAll('#stepsList .step-item');
-            steps.forEach((step, idx) => {
-                const num = idx + 1;
-                step.querySelector('.step-number').textContent = num;
-                step.querySelector('.step-text').placeholder = `Opisz krok ${num}...`;
+        if (ingId && amount) {
+            ingredients.push({
+                ingredient_id: parseInt(ingId),
+                ilosc: parseFloat(amount),
+                jm: unit
             });
         }
-        
-        async function saveRecipe(e) {
-            e.preventDefault();
-            
-            // Zbierz składniki
-            const ingredients = [];
-            document.querySelectorAll('.ingredient-row').forEach(row => {
-                const ingId = row.querySelector('.ing-select').value;
-                const amount = row.querySelector('.ing-amount').value;
-                const unit = row.querySelector('.ing-unit').value;
-                
-                if (ingId && amount) {
-                    ingredients.push({
-                        ingredient_id: parseInt(ingId),
-                        ilosc: parseFloat(amount),
-                        jm: unit
-                    });
-                }
-            });
-            
-            // Zbierz kroki instrukcji
-            const steps = [];
-            document.querySelectorAll('.step-text').forEach(textarea => {
-                const text = textarea.value.trim();
-                if (text) {
-                    steps.push(text);
-                }
-            });
-            
-            const data = {
-                nazwa: document.getElementById('nazwa').value,
-                typ: document.getElementById('typ').value,
-                wydajnosc_ilosc: parseFloat(document.getElementById('wydajnosc_ilosc').value) || null,
-                wydajnosc_jm: document.getElementById('wydajnosc_jm').value,
-                opis: document.getElementById('opis').value || null,
-                wegetarianski: document.getElementById('wegetarianski').checked,
-                weganski: document.getElementById('weganski').checked,
-                alergeny: [],
-                skladniki: ingredients,
-                instrukcja: steps
-            };
-            
-            const id = document.getElementById('editId').value;
-            const url = id ? `${API_URL}/api/recipes/${id}` : `${API_URL}/api/recipes`;
-            const method = id ? 'PUT' : 'POST';
-            
-            try {
-                const res = await fetch(url, {
-                    method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                if (res.ok) {
-                    alert(id ? 'Receptura zaktualizowana!' : 'Receptura dodana!');
-                    closeFormModal();
-                    loadData();
-                } else {
-                    alert('Błąd zapisu');
-                }
-            } catch (err) {
-                alert('Błąd: ' + err.message);
-            }
+    });
+    
+    // Zbierz kroki instrukcji
+    const steps = [];
+    document.querySelectorAll('.step-text').forEach(textarea => {
+        const text = textarea.value.trim();
+        if (text) {
+            steps.push(text);
         }
+    });
+    
+    const data = {
+        nazwa: document.getElementById('nazwa').value,
+        typ: document.getElementById('typ').value,
+        wydajnosc_ilosc: parseFloat(document.getElementById('wydajnosc_ilosc').value) || null,
+        wydajnosc_jm: document.getElementById('wydajnosc_jm').value,
+        opis: document.getElementById('opis').value || null,
+        wegetarianski: document.getElementById('wegetarianski').checked,
+        weganski: document.getElementById('weganski').checked,
+        alergeny: [],
+        skladniki: ingredients,
+        instrukcja: steps
+    };
+    
+    const id = document.getElementById('editId').value;
+    const url = id ? `${API_URL}/api/recipes/${id}` : `${API_URL}/api/recipes`;
+    const method = id ? 'PUT' : 'POST';
+    
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
         
-        async function deleteRecipe(id) {
-            if (!confirm('Czy na pewno usunąć tę recepturę?')) return;
-            
-            try {
-                const res = await fetch(`${API_URL}/api/recipes/${id}`, { method: 'DELETE' });
-                if (res.ok) {
-                    alert('Receptura usunięta!');
-                    closeDetailModal();
-                    loadData();
-                }
-            } catch (err) {
-                alert('Błąd usuwania');
-            }
+        if (res.ok) {
+            alert(id ? 'Receptura zaktualizowana!' : 'Receptura dodana!');
+            closeFormModal();
+            loadData();
+        } else {
+            alert('Błąd zapisu');
         }
-        
-        function closeDetailModal() {
-            document.getElementById('detailModal').style.display = 'none';
+    } catch (err) {
+        alert('Błąd: ' + err.message);
+    }
+}
+
+async function deleteRecipe(id) {
+    if (!confirm('Czy na pewno usunąć tę recepturę?')) return;
+    
+    try {
+        const res = await fetch(`${API_URL}/api/recipes/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            alert('Receptura usunięta!');
+            closeDetailModal();
+            loadData();
         }
-        
-        function closeFormModal() {
-            document.getElementById('formModal').style.display = 'none';
-        }
-        
-        window.onclick = function(event) {
-            if (event.target.className === 'modal') {
-                event.target.style.display = 'none';
-            }
-        }
-        
-        loadData();
+    } catch (err) {
+        alert('Błąd usuwania');
+    }
+}
+
+function closeDetailModal() {
+    document.getElementById('detailModal').style.display = 'none';
+}
+
+function closeFormModal() {
+    const hasData = document.getElementById('nazwa').value.trim() !== '' ||
+                    document.getElementById('opis').value.trim() !== '' ||
+                    document.getElementById('ingredientsList').children.length > 0 ||
+                    document.getElementById('stepsList').children.length > 0;
+    
+    if (hasData && !confirm('Dane nie zostały zapisane. Czy na pewno zamknąć?')) {
+        return;
+    }
+    document.getElementById('formModal').style.display = 'none';
+}
+
+loadData();
     </script>
 </body>
 </html>
