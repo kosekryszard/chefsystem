@@ -336,6 +336,7 @@
                     <option value="vegan">Wegańskie</option>
                     <option value="vegetarian">Wegetariańskie</option>
                 </select>
+<button class="btn btn-primary" onclick="exportIngredients()">📥 Eksport CSV</button>
                 <button class="btn btn-primary" onclick="openAddModal()">➕ Dodaj surowiec</button>
             </div>
             
@@ -823,6 +824,25 @@ async function deleteSubstitute(id) {
         alert('Błąd usuwania');
     }
 }
+
+// Eksport do CSV
+async function exportIngredients() {
+    try {
+        const response = await fetch(`${API_URL}/api/ingredients/export/csv`);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'surowce_export.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    } catch (err) {
+        alert('Błąd eksportu: ' + err.message);
+    }
+}
+
         loadIngredients();
     </script>
 <!-- Modal szczegółów surowca -->

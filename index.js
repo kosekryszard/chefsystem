@@ -447,4 +447,34 @@ app.delete('/api/dishes/:id', async (req, res) => {
   res.json({ message: 'Danie usunięte' });
 });
 
+// ========================================
+// IMPORT/EXPORT
+// ========================================
+
+// Eksport surowców do CSV
+app.get('/api/ingredients/export/csv', async (req, res) => {
+  const { data, error } = await supabase
+    .from('ingredients')
+    .select('*')
+    .order('nazwa');
+  
+  if (error) return res.status(500).json({ error: error.message });
+  
+  // Generuj CSV
+  const headers = ['id', 'nazwa', 'typ', 'grupa', 'dzial', 'jm_podstawowa', 'wegetarianski', 'weganski', 'alergeny'];
+  let csv = headers.join(',') + '\n';
+  
+  data.forEach(row => {
+    const values = headers.map(h => {
+      if (h === 'alergeny') return JSON.stringify(row[h] || []);
+      return row[h] || '';
+    });
+    csv += values.join(',') + '\n';
+  });
+  
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename=surowce_export.csv');
+  res.send(csv);
+});
+
 app.listen(3000, () => console.log('Serwer dziaÅ‚a na http://localhost:3000'));
