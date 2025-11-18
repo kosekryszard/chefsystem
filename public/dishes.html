@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chefsystent - Dania</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .nav {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+        .nav a:hover { background: rgba(255,255,255,0.3); }
+        
+        .content { padding: 30px; }
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover { background: #5568d3; transform: translateY(-2px); }
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 13px;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover { background: #c82333; }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover { background: #218838; }
+        
+        .dish-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .dish-card {
+            background: white;
+            border: 2px solid #f0f0f0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .dish-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+            transform: translateY(-3px);
+        }
+        .dish-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .dish-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-type { background: #e3f2fd; color: #1976d2; }
+        .badge-price { background: #fff3e0; color: #e65100; }
+        .badge-vegan { background: #e8f5e9; color: #388e3c; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        .modal-content {
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+        }
+        .close:hover { color: #333; }
+        
+        .components-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .component-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .component-item:last-child { border-bottom: none; }
+        
+        .component-builder {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .component-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        select, input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🍽️ Chefsystent - Dania</h1>
+            <div class="nav">
+                <a href="index.html">Surowce</a>
+                <a href="recipes.html">Receptury</a>
+                <a href="dishes.html">Dania</a>
+            </div>
+        </header>
+        
+        <div class="content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Lista dań</h2>
+                <button class="btn btn-primary" onclick="openAddModal()">➕ Dodaj danie</button>
+            </div>
+            
+            <div class="dish-grid" id="dishGrid">
+                <div class="loading">Ładowanie dań...</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal szczegółów -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="detailTitle"></h2>
+                <span class="close" onclick="closeDetailModal()">&times;</span>
+            </div>
+            <div id="detailContent"></div>
+        </div>
+    </div>
+    
+    <!-- Modal formularza -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="formTitle">Nowe danie</h2>
+                <span class="close" onclick="closeFormModal()">&times;</span>
+            </div>
+            
+            <form id="dishForm" onsubmit="saveDish(event)">
+                <input type="hidden" id="editId">
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Nazwa dania (wewnętrzna)</label>
+                    <input type="text" id="nazwa" required>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Nazwa w karcie (dla klienta)</label>
+                    <input type="text" id="nazwa_karta">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label>Typ</label>
+                        <select id="typ" required>
+                            <option value="danie główne">Danie główne</option>
+                            <option value="zupa">Zupa</option>
+                            <option value="przystawka">Przystawka</option>
+                            <option value="deser">Deser</option>
+                            <option value="napój">Napój</option>
+                            <option value="zestaw">Zestaw</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Cena sugerowana (zł)</label>
+                        <input type="number" step="0.01" id="cena_sugerowana">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Opis dla karty</label>
+                    <textarea id="opis_karta" rows="3"></textarea>
+                </div>
+                
+                <div style="margin-bottom: 15px; display: flex; gap: 20px;">
+                    <label style="display: flex; align-items: center;">
+                        <input type="checkbox" id="wegetarianski" style="width: auto; margin-right: 5px;">
+                        Wegetariański
+                    </label>
+                    <label style="display: flex; align-items: center;">
+                        <input type="checkbox" id="weganski" style="width: auto; margin-right: 5px;">
+                        Wegański
+                    </label>
+                </div>
+                
+                <h3 style="margin: 20px 0 10px;">Receptury w daniu</h3>
+                <div class="component-builder">
+                    <div id="componentsList"></div>
+                    <button type="button" class="btn btn-small btn-primary" onclick="addComponentRow()">+ Dodaj recepturę</button>
+                </div>
+                
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn" onclick="closeFormModal()">Anuluj</button>
+                    <button type="submit" class="btn btn-success">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'https://chefsystem.vercel.app';
+        let allDishes = [];
+        let allRecipes = [];
+        
+        async function loadData() {
+            try {
+                const [dishesRes, recipesRes] = await Promise.all([
+                    fetch(`${API_URL}/api/dishes`),
+                    fetch(`${API_URL}/api/recipes`)
+                ]);
+                
+                allDishes = await dishesRes.json();
+                allRecipes = await recipesRes.json();
+                
+                renderDishes();
+            } catch (err) {
+                document.getElementById('dishGrid').innerHTML = 
+                    '<div class="loading">Błąd ładowania danych</div>';
+            }
+        }
+        
+        function renderDishes() {
+            const grid = document.getElementById('dishGrid');
+            
+            if (allDishes.length === 0) {
+                grid.innerHTML = '<div class="loading">Brak dań. Dodaj pierwsze!</div>';
+                return;
+            }
+            
+            grid.innerHTML = allDishes.map(d => `
+                <div class="dish-card" onclick="showDishDetails(${d.id})">
+                    <h3>${d.nazwa}</h3>
+                    <p style="color: #666; margin: 10px 0;">${d.opis_karta || 'Brak opisu'}</p>
+                    <div class="dish-meta">
+                        <span class="badge badge-type">${d.typ}</span>
+                        ${d.cena_sugerowana ? `<span class="badge badge-price">${d.cena_sugerowana} zł</span>` : ''}
+                        ${d.weganski ? '<span class="badge badge-vegan">Vegan</span>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function showDishDetails(id) {
+            try {
+                const res = await fetch(`${API_URL}/api/dishes/${id}`);
+                const dish = await res.json();
+                
+                const content = `
+                    <p><strong>Typ:</strong> ${dish.typ}</p>
+                    <p><strong>Nazwa w karcie:</strong> ${dish.nazwa_karta || '-'}</p>
+                    <p><strong>Cena sugerowana:</strong> ${dish.cena_sugerowana ? dish.cena_sugerowana + ' zł' : '-'}</p>
+                    <p><strong>Opis:</strong> ${dish.opis_karta || '-'}</p>
+                    
+                    <h3 style="margin-top: 20px;">Receptury:</h3>
+                    <div class="components-list">
+                        ${(dish.komponenty || []).map(k => `
+                            <div class="component-item">
+                                <span>${k.recipes.nazwa} (${k.kategoria})</span>
+                                <span><strong>${k.ilosc} ${k.jm}</strong></span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="editDish(${id})">Edytuj</button>
+                        <button class="btn btn-danger" onclick="deleteDish(${id})">Usuń</button>
+                    </div>
+                `;
+                
+                document.getElementById('detailTitle').textContent = dish.nazwa;
+                document.getElementById('detailContent').innerHTML = content;
+                document.getElementById('detailModal').style.display = 'block';
+            } catch (err) {
+                alert('Błąd ładowania szczegółów');
+            }
+        }
+        
+        function openAddModal() {
+            document.getElementById('formTitle').textContent = 'Nowe danie';
+            document.getElementById('dishForm').reset();
+            document.getElementById('editId').value = '';
+            document.getElementById('componentsList').innerHTML = '';
+            addComponentRow();
+            document.getElementById('formModal').style.display = 'block';
+        }
+        
+        function addComponentRow() {
+            const row = document.createElement('div');
+            row.className = 'component-row';
+            row.innerHTML = `
+                <select class="comp-recipe">
+                    <option value="">Wybierz recepturę</option>
+                    ${allRecipes.map(r => `<option value="${r.id}">${r.nazwa}</option>`).join('')}
+                </select>
+                <input type="number" step="0.001" placeholder="Ilość" class="comp-amount">
+                <select class="comp-unit">
+                    <option value="porcja">porcja</option>
+                    <option value="kg">kg</option>
+                    <option value="g">g</option>
+                    <option value="l">l</option>
+                    <option value="ml">ml</option>
+                </select>
+                <select class="comp-category">
+                    <option value="glowne">Główne</option>
+                    <option value="dodatek">Dodatek</option>
+                    <option value="surowka">Surówka</option>
+                    <option value="sos">Sos</option>
+                    <option value="dekoracja">Dekoracja</option>
+                </select>
+                <button type="button" class="btn btn-small btn-danger" onclick="this.parentElement.remove()">✕</button>
+            `;
+            document.getElementById('componentsList').appendChild(row);
+        }
+        
+        async function saveDish(e) {
+            e.preventDefault();
+            
+            const components = [];
+            document.querySelectorAll('.component-row').forEach(row => {
+                const recipeId = row.querySelector('.comp-recipe').value;
+                const amount = row.querySelector('.comp-amount').value;
+                const unit = row.querySelector('.comp-unit').value;
+                const category = row.querySelector('.comp-category').value;
+                
+                if (recipeId && amount) {
+                    components.push({
+                        recipe_id: parseInt(recipeId),
+                        ilosc: parseFloat(amount),
+                        jm: unit,
+                        kategoria: category
+                    });
+                }
+            });
+            
+            const data = {
+                nazwa: document.getElementById('nazwa').value,
+                nazwa_karta: document.getElementById('nazwa_karta').value || null,
+                typ: document.getElementById('typ').value,
+                cena_sugerowana: parseFloat(document.getElementById('cena_sugerowana').value) || null,
+                opis_karta: document.getElementById('opis_karta').value || null,
+                wegetarianski: document.getElementById('wegetarianski').checked,
+                weganski: document.getElementById('weganski').checked,
+                komponenty: components
+            };
+            
+            const id = document.getElementById('editId').value;
+            const url = id ? `${API_URL}/api/dishes/${id}` : `${API_URL}/api/dishes`;
+            const method = id ? 'PUT' : 'POST';
+            
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    alert(id ? 'Danie zaktualizowane!' : 'Danie dodane!');
+                    closeFormModal();
+                    loadData();
+                } else {
+                    alert('Błąd zapisu');
+                }
+            } catch (err) {
+                alert('Błąd: ' + err.message);
+            }
+        }
+        
+        async function editDish(id) {
+            try {
+                const res = await fetch(`${API_URL}/api/dishes/${id}`);
+                const dish = await res.json();
+                
+                document.getElementById('formTitle').textContent = 'Edytuj danie';
+                document.getElementById('editId').value = id;
+                document.getElementById('nazwa').value = dish.nazwa;
+                document.getElementById('nazwa_karta').value = dish.nazwa_karta || '';
+                document.getElementById('typ').value = dish.typ;
+                document.getElementById('cena_sugerowana').value = dish.cena_sugerowana || '';
+                document.getElementById('opis_karta').value = dish.opis_karta || '';
+                document.getElementById('wegetarianski').checked = dish.wegetarianski;
+                document.getElementById('weganski').checked = dish.weganski;
+                
+                document.getElementById('componentsList').innerHTML = '';
+                if (dish.komponenty && dish.komponenty.length > 0) {
+                    dish.komponenty.forEach(k => {
+                        const row = addComponentRow();
+                        row.querySelector('.comp-recipe').value = k.recipes.id;
+                        row.querySelector('.comp-amount').value = k.ilosc;
+                        row.querySelector('.comp-unit').value = k.jm;
+                        row.querySelector('.comp-category').value = k.kategoria;
+                    });
+                } else {
+                    addComponentRow();
+                }
+                
+                closeDetailModal();
+                document.getElementById('formModal').style.display = 'block';
+            } catch (err) {
+                alert('Błąd ładowania dania do edycji');
+            }
+        }
+        
+        async function deleteDish(id) {
+            if (!confirm('Czy na pewno usunąć to danie?')) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/api/dishes/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    alert('Danie usunięte!');
+                    closeDetailModal();
+                    loadData();
+                }
+            } catch (err) {
+                alert('Błąd usuwania');
+            }
+        }
+        
+        function closeDetailModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+        
+        function closeFormModal() {
+            document.getElementById('formModal').style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
+        }
+        
+        loadData();
+    </script>
+</body>
+</html>

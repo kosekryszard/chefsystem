@@ -311,4 +311,140 @@ app.delete('/api/substitutes/:id', async (req, res) => {
   res.json({ message: 'Zamiennik usunięty' });
 });
 
+// ========================================
+// DANIA ZŁOŻONE (DISHES)
+// ========================================
+
+// GET wszystkie dania
+app.get('/api/dishes', async (req, res) => {
+  const { data, error } = await supabase
+    .from('dishes')
+    .select('*')
+    .order('nazwa');
+  
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// GET jedno danie po ID (z recepturami)
+app.get('/api/dishes/:id', async (req, res) => {
+  // Pobierz danie
+  const { data: dish, error: dishError } = await supabase
+    .from('dishes')
+    .select('*')
+    .eq('id', req.params.id)
+    .single();
+  
+  if (dishError) return res.status(404).json({ error: 'Nie znaleziono dania' });
+  
+  // Pobierz komponenty (receptury)
+  const { data: components, error: compError } = await supabase
+    .from('dish_components')
+    .select(`
+      id,
+      ilosc,
+      jm,
+      kategoria,
+      kolejnosc,
+      recipes (
+        id,
+        nazwa,
+        typ,
+        wydajnosc_ilosc,
+        wydajnosc_jm
+      )
+    `)
+    .eq('dish_id', req.params.id)
+    .order('kolejnosc');
+  
+  if (compError) return res.status(500).json({ error: compError.message });
+  
+  res.json({ ...dish, komponenty: components });
+});
+
+// POST nowe danie
+app.post('/api/dishes', async (req, res) => {
+  const { komponenty, ...dishData } = req.body;
+  
+  // Dodaj danie
+  const { data: dish, error: dishError } = await supabase
+    .from('dishes')
+    .insert([dishData])
+    .select()
+    .single();
+  
+  if (dishError) return res.status(400).json({ error: dishError.message });
+  
+  // Dodaj komponenty jeśli są
+  if (komponenty && komponenty.length > 0) {
+    const componentsData = komponenty.map((k, idx) => ({
+      dish_id: dish.id,
+      recipe_id: k.recipe_id,
+      ilosc: k.ilosc,
+      jm: k.jm,
+      kategoria: k.kategoria || 'glowne',
+      kolejnosc: idx + 1
+    }));
+    
+    const { error: compError } = await supabase
+      .from('dish_components')
+      .insert(componentsData);
+    
+    if (compError) return res.status(400).json({ error: compError.message });
+  }
+  
+  res.status(201).json(dish);
+});
+
+// PUT edycja dania
+app.put('/api/dishes/:id', async (req, res) => {
+  const { komponenty, ...dishData } = req.body;
+  
+  // Aktualizuj danie
+  const { data: dish, error: dishError } = await supabase
+    .from('dishes')
+    .update(dishData)
+    .eq('id', req.params.id)
+    .select()
+    .single();
+  
+  if (dishError) return res.status(400).json({ error: dishError.message });
+  
+  // Jeśli są nowe komponenty, usuń stare i dodaj nowe
+  if (komponenty) {
+    await supabase
+      .from('dish_components')
+      .delete()
+      .eq('dish_id', req.params.id);
+    
+    if (komponenty.length > 0) {
+      const componentsData = komponenty.map((k, idx) => ({
+        dish_id: dish.id,
+        recipe_id: k.recipe_id,
+        ilosc: k.ilosc,
+        jm: k.jm,
+        kategoria: k.kategoria || 'glowne',
+        kolejnosc: idx + 1
+      }));
+      
+      await supabase
+        .from('dish_components')
+        .insert(componentsData);
+    }
+  }
+  
+  res.json(dish);
+});
+
+// DELETE danie
+app.delete('/api/dishes/:id', async (req, res) => {
+  const { error } = await supabase
+    .from('dishes')
+    .delete()
+    .eq('id', req.params.id);
+  
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ message: 'Danie usunięte' });
+});
+
 app.listen(3000, () => console.log('Serwer dziaÅ‚a na http://localhost:3000'));
