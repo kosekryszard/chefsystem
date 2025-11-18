@@ -472,9 +472,9 @@ app.get('/api/ingredients/export/csv', async (req, res) => {
     csv += values.join(',') + '\n';
   });
   
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', 'attachment; filename=surowce_export.csv');
-  res.send(csv);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+res.setHeader('Content-Disposition', 'attachment; filename=surowce_export.csv');
+res.send('\uFEFF' + csv);
 });
 
 app.listen(3000, () => console.log('Serwer dziaÅ‚a na http://localhost:3000'));
