@@ -22,13 +22,11 @@ async function exportDishesToCSV(req, res) {
   .select(`
     *,
     dish_components (
-      typ,
       recipe_id,
       ilosc,
       jm,
       kategoria,
-      kolejnosc,
-      recipes (nazwa)
+      kolejnosc
     )
   `)
   .order('id');
@@ -56,15 +54,13 @@ async function exportDishesToCSV(req, res) {
     // Dane
     for (const dish of dishes) {
       // Komponenty jako JSON
- const komponenty = dish.dish_components.map(dc => ({
-  typ: dc.typ,
+ const komponenty = dish.dish_components?.map(dc => ({
   recipe_id: dc.recipe_id,
-  recipe_nazwa: dc.recipes?.nazwa || '',
   ilosc: dc.ilosc,
   jm: dc.jm,
   kategoria: dc.kategoria,
   kolejnosc: dc.kolejnosc
-}));
+})) || [];
       
       csvRows.push([
         dish.id,
