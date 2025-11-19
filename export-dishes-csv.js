@@ -18,22 +18,20 @@ async function exportDishesToCSV(req, res) {
   try {
     // Pobierz wszystkie dania z komponentami
     const { data: dishes, error } = await supabase
-      .from('dishes')
-      .select(`
-        *,
-        dish_components (
-          typ,
-          recipe_id,
-          ingredient_id,
-          ilosc,
-          jm,
-          kategoria,
-          kolejnosc,
-          recipes (nazwa),
-          ingredients (nazwa)
-        )
-      `)
-      .order('id');
+  .from('dishes')
+  .select(`
+    *,
+    dish_components (
+      typ,
+      recipe_id,
+      ilosc,
+      jm,
+      kategoria,
+      kolejnosc,
+      recipes (nazwa)
+    )
+  `)
+  .order('id');
     
     if (error) throw error;
     
@@ -58,17 +56,15 @@ async function exportDishesToCSV(req, res) {
     // Dane
     for (const dish of dishes) {
       // Komponenty jako JSON
-      const komponenty = dish.dish_components.map(dc => ({
-        typ: dc.typ,
-        recipe_id: dc.recipe_id,
-        recipe_nazwa: dc.recipes?.nazwa || '',
-        ingredient_id: dc.ingredient_id,
-        ingredient_nazwa: dc.ingredients?.nazwa || '',
-        ilosc: dc.ilosc,
-        jm: dc.jm,
-        kategoria: dc.kategoria,
-        kolejnosc: dc.kolejnosc
-      }));
+ const komponenty = dish.dish_components.map(dc => ({
+  typ: dc.typ,
+  recipe_id: dc.recipe_id,
+  recipe_nazwa: dc.recipes?.nazwa || '',
+  ilosc: dc.ilosc,
+  jm: dc.jm,
+  kategoria: dc.kategoria,
+  kolejnosc: dc.kolejnosc
+}));
       
       csvRows.push([
         dish.id,
