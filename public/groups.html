@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chefsystent - Grupy i Jadłospisy</title>
+    <link rel="stylesheet" href="chefsystent-brand.css">
+    <link rel="icon" type="image/png" href="piktogram.png">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .content { padding: 30px; }
+        
+        /* Karty grup */
+        .groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .group-card {
+            background: white;
+            border: 2px solid #f0f0f0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .group-card:hover {
+            border-color: #D4AF37;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+            transform: translateY(-3px);
+        }
+        .group-card h3 {
+            color: #0A1F44;
+            margin-bottom: 10px;
+        }
+        .group-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .group-info-row {
+            display: flex;
+            gap: 10px;
+        }
+        .group-info-row strong {
+            min-width: 120px;
+            color: #0A1F44;
+        }
+        .group-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .status-draft { background: #f0f0f0; color: #666; }
+        .status-active { background: #e8f5e9; color: #388e3c; }
+        .status-completed { background: #e3f2fd; color: #1976d2; }
+        .status-archived { background: #fff3e0; color: #e65100; }
+        
+        /* Formularz */
+        .form-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .form-section h3 {
+            color: #0A1F44;
+            margin-bottom: 15px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #0A1F44;
+            font-size: 14px;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #D4AF37;
+        }
+        
+        /* Przyciski akcji */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .btn-edit {
+            background: #17A2B8;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-edit:hover { background: #138496; }
+        
+        /* Filtry */
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 8px 20px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        .filter-btn.active {
+            background: #D4AF37;
+            color: #0A1F44;
+            border-color: #D4AF37;
+        }
+        .filter-btn:hover:not(.active) {
+            border-color: #D4AF37;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-logo">
+                <img src="LOGO_chefsystent.png" alt="Chefsystent Logo">
+            </div>
+            <p>System Zarządzania Kuchnią - Grupy i Jadłospisy</p>
+            
+            <nav>
+                <a href="index.html">← Surowce</a>
+                <a href="recipes.html">Receptury</a>
+                <a href="dishes.html">Dania</a>
+                <a href="groups.html" class="active">Grupy</a>
+            </nav>
+        </header>
+
+        <div class="content">
+            <!-- Nagłówek z przyciskiem -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Lista grup</h2>
+                <button class="btn btn-primary" onclick="openAddModal()">➕ Dodaj grupę</button>
+            </div>
+
+            <!-- Filtry -->
+            <div class="filters">
+                <button class="filter-btn active" onclick="filterGroups('all')">Wszystkie</button>
+                <button class="filter-btn" onclick="filterGroups('draft')">Robocze</button>
+                <button class="filter-btn" onclick="filterGroups('active')">Aktywne</button>
+                <button class="filter-btn" onclick="filterGroups('completed')">Zakończone</button>
+                <button class="filter-btn" onclick="filterGroups('archived')">Archiwalne</button>
+            </div>
+
+            <!-- Grid grup -->
+            <div class="groups-grid" id="groupsGrid">
+                <div class="loading">Ładowanie grup...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Dodaj/Edytuj grupę -->
+    <div id="groupModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nowa grupa</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+
+            <form id="groupForm">
+                <input type="hidden" id="groupId">
+
+                <!-- Sekcja 1: Podstawowe -->
+                <div class="form-section">
+                    <h3>📋 Podstawowe informacje</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nazwa grupy *</label>
+                            <input type="text" id="nazwa" required 
+                                   placeholder="np. BTA Kompas - Lipiec 2025">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Organizator</label>
+                            <input type="text" id="organizator_nazwa" 
+                                   placeholder="np. Szkoła Podstawowa nr 5">
+                        </div>
+                        <div class="form-group">
+                            <label>Kontakt</label>
+                            <input type="text" id="organizator_kontakt" 
+                                   placeholder="email lub telefon">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sekcja 2: Liczby osób -->
+                <div class="form-section">
+                    <h3>👥 Liczby osób</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Uczestnicy *</label>
+                            <input type="number" id="liczba_uczestnikow" 
+                                   value="0" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Opiekunowie</label>
+                            <input type="number" id="liczba_opiekunow" 
+                                   value="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Piloci</label>
+                            <input type="number" id="liczba_pilotow" 
+                                   value="0" min="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Kierowcy</label>
+                            <input type="number" id="liczba_kierowcow" 
+                                   value="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Kadra programowa</label>
+                            <input type="number" id="liczba_kadry" 
+                                   value="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Wiek grupy *</label>
+                            <select id="wiek_grupy" required>
+                                <option value="">Wybierz...</option>
+                                <option value="6-10">6-10 lat</option>
+                                <option value="11-14">11-14 lat</option>
+                                <option value="15-18">15-18 lat</option>
+                                <option value="18+">18+ lat</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 8px;">
+                        <strong>Łącznie osób:</strong> <span id="totalPeople">0</span>
+                    </div>
+                </div>
+
+                <!-- Sekcja 3: Daty i posiłki -->
+                <div class="form-section">
+                    <h3>📅 Daty i posiłki</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Data pierwszego posiłku *</label>
+                            <input type="date" id="data_pierwszy_posilek" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Pierwszy posiłek - typ *</label>
+                            <select id="pierwszy_posilek_typ" required>
+                                <option value="sniadanie">Śniadanie</option>
+                                <option value="obiadokolacja">Obiadokolacja</option>
+                                <option value="kolacja">Kolacja</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Data ostatniego posiłku *</label>
+                            <input type="date" id="data_ostatni_posilek" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Ostatni posiłek - typ *</label>
+                            <select id="ostatni_posilek_typ" required>
+                                <option value="sniadanie">Śniadanie</option>
+                                <option value="obiad">Obiad</option>
+                                <option value="obiadokolacja">Obiadokolacja</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sekcja 4: Szablon (opcjonalnie) -->
+                <div class="form-section">
+                    <h3>📝 Szablon schematów (opcjonalnie)</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Wybierz szablon</label>
+                            <select id="schemat_id">
+                                <option value="">Bez szablonu (pusty jadłospis)</option>
+                            </select>
+                            <small style="color: #666;">Szablon określa strukturę posiłków dla każdego dnia</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Przyciski -->
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" class="btn" onclick="closeModal()" 
+                            style="background: #6c757d; color: white;">
+                        Anuluj
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        💾 Zapisz grupę
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentFilter = 'all';
+        let allGroups = [];
+        let templates = [];
+
+        // Inicjalizacja
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTemplates();
+            loadGroups();
+            setupFormCalculations();
+        });
+
+        // Ładowanie szablonów
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/meal-templates');
+                templates = await response.json();
+                
+                const select = document.getElementById('schemat_id');
+                templates.forEach(t => {
+                    const option = document.createElement('option');
+                    option.value = t.id;
+                    option.textContent = t.nazwa;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Błąd ładowania szablonów:', error);
+            }
+        }
+
+        // Ładowanie grup
+        async function loadGroups() {
+            try {
+                const response = await fetch('/api/groups');
+                allGroups = await response.json();
+                renderGroups();
+            } catch (error) {
+                console.error('Błąd ładowania grup:', error);
+                document.getElementById('groupsGrid').innerHTML = 
+                    '<div class="loading">Błąd ładowania danych</div>';
+            }
+        }
+
+        // Renderowanie grup
+        function renderGroups() {
+            const grid = document.getElementById('groupsGrid');
+            
+            let filtered = allGroups;
+            if (currentFilter !== 'all') {
+                filtered = allGroups.filter(g => g.status === currentFilter);
+            }
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="loading">Brak grup do wyświetlenia</div>';
+                return;
+            }
+            
+            grid.innerHTML = filtered.map(group => {
+                const totalPeople = (group.liczba_uczestnikow || 0) + 
+                                   (group.liczba_opiekunow || 0) + 
+                                   (group.liczba_pilotow || 0) + 
+                                   (group.liczba_kierowcow || 0) + 
+                                   (group.liczba_kadry || 0);
+                
+                return `
+                    <div class="group-card" onclick="editGroup(${group.id})">
+                        <h3>${group.nazwa}</h3>
+                        <div class="group-info">
+                            <div class="group-info-row">
+                                <strong>Organizator:</strong>
+                                <span>${group.organizator_nazwa || '—'}</span>
+                            </div>
+                            <div class="group-info-row">
+                                <strong>Liczba osób:</strong>
+                                <span>${totalPeople} (${group.liczba_uczestnikow} uczestników)</span>
+                            </div>
+                            <div class="group-info-row">
+                                <strong>Wiek grupy:</strong>
+                                <span>${group.wiek_grupy || '—'}</span>
+                            </div>
+                            <div class="group-info-row">
+                                <strong>Daty:</strong>
+                                <span>${formatDate(group.data_pierwszy_posilek)} – ${formatDate(group.data_ostatni_posilek)}</span>
+                            </div>
+                        </div>
+                        <span class="group-status status-${group.status}">
+                            ${getStatusLabel(group.status)}
+                        </span>
+                        <div class="action-buttons" onclick="event.stopPropagation()">
+                            <button class="btn-edit" onclick="editGroup(${group.id})">
+                                ✏️ Edytuj
+                            </button>
+                            <button class="btn-edit" onclick="openGroupPlanning(${group.id})" 
+                                    style="background: #28a745;">
+                                📅 Planuj posiłki
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Filtrowanie
+        function filterGroups(status) {
+            currentFilter = status;
+            
+            // Aktualizuj przyciski
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            renderGroups();
+        }
+
+        // Obliczanie sumy osób
+        function setupFormCalculations() {
+            const inputs = ['liczba_uczestnikow', 'liczba_opiekunow', 'liczba_pilotow', 
+                           'liczba_kierowcow', 'liczba_kadry'];
+            
+            inputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', calculateTotal);
+            });
+        }
+
+        function calculateTotal() {
+            const total = 
+                (parseInt(document.getElementById('liczba_uczestnikow').value) || 0) +
+                (parseInt(document.getElementById('liczba_opiekunow').value) || 0) +
+                (parseInt(document.getElementById('liczba_pilotow').value) || 0) +
+                (parseInt(document.getElementById('liczba_kierowcow').value) || 0) +
+                (parseInt(document.getElementById('liczba_kadry').value) || 0);
+            
+            document.getElementById('totalPeople').textContent = total;
+        }
+
+        // Otwórz modal dodawania
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Nowa grupa';
+            document.getElementById('groupForm').reset();
+            document.getElementById('groupId').value = '';
+            calculateTotal();
+            document.getElementById('groupModal').style.display = 'flex';
+        }
+
+        // Edycja grupy
+        async function editGroup(id) {
+            try {
+                const response = await fetch(`/api/groups/${id}`);
+                const group = await response.json();
+                
+                document.getElementById('modalTitle').textContent = 'Edytuj grupę';
+                document.getElementById('groupId').value = group.id;
+                document.getElementById('nazwa').value = group.nazwa;
+                document.getElementById('organizator_nazwa').value = group.organizator_nazwa || '';
+                document.getElementById('organizator_kontakt').value = group.organizator_kontakt || '';
+                document.getElementById('liczba_uczestnikow').value = group.liczba_uczestnikow || 0;
+                document.getElementById('liczba_opiekunow').value = group.liczba_opiekunow || 0;
+                document.getElementById('liczba_pilotow').value = group.liczba_pilotow || 0;
+                document.getElementById('liczba_kierowcow').value = group.liczba_kierowcow || 0;
+                document.getElementById('liczba_kadry').value = group.liczba_kadry || 0;
+                document.getElementById('wiek_grupy').value = group.wiek_grupy || '';
+                document.getElementById('data_pierwszy_posilek').value = group.data_pierwszy_posilek;
+                document.getElementById('data_ostatni_posilek').value = group.data_ostatni_posilek;
+                document.getElementById('pierwszy_posilek_typ').value = group.pierwszy_posilek_typ;
+                document.getElementById('ostatni_posilek_typ').value = group.ostatni_posilek_typ;
+                document.getElementById('schemat_id').value = group.schemat_id || '';
+                
+                calculateTotal();
+                document.getElementById('groupModal').style.display = 'flex';
+            } catch (error) {
+                alert('Błąd wczytywania grupy: ' + error.message);
+            }
+        }
+
+        // Zamknij modal
+        function closeModal() {
+            document.getElementById('groupModal').style.display = 'none';
+        }
+
+        // Zapisz grupę
+        document.getElementById('groupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const groupId = document.getElementById('groupId').value;
+            const data = {
+                nazwa: document.getElementById('nazwa').value,
+                organizator_nazwa: document.getElementById('organizator_nazwa').value,
+                organizator_kontakt: document.getElementById('organizator_kontakt').value,
+                liczba_uczestnikow: parseInt(document.getElementById('liczba_uczestnikow').value) || 0,
+                liczba_opiekunow: parseInt(document.getElementById('liczba_opiekunow').value) || 0,
+                liczba_pilotow: parseInt(document.getElementById('liczba_pilotow').value) || 0,
+                liczba_kierowcow: parseInt(document.getElementById('liczba_kierowcow').value) || 0,
+                liczba_kadry: parseInt(document.getElementById('liczba_kadry').value) || 0,
+                wiek_grupy: document.getElementById('wiek_grupy').value,
+                data_pierwszy_posilek: document.getElementById('data_pierwszy_posilek').value,
+                data_ostatni_posilek: document.getElementById('data_ostatni_posilek').value,
+                pierwszy_posilek_typ: document.getElementById('pierwszy_posilek_typ').value,
+                ostatni_posilek_typ: document.getElementById('ostatni_posilek_typ').value,
+                schemat_id: document.getElementById('schemat_id').value || null,
+                status: groupId ? undefined : 'draft' // przy nowej grupie ustaw draft
+            };
+            
+            try {
+                const url = groupId ? `/api/groups/${groupId}` : '/api/groups';
+                const method = groupId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Błąd zapisu');
+                
+                closeModal();
+                loadGroups();
+                alert(groupId ? 'Grupa zaktualizowana!' : 'Grupa dodana!');
+            } catch (error) {
+                alert('Błąd zapisu: ' + error.message);
+            }
+        });
+
+        // Otwórz planowanie posiłków
+        function openGroupPlanning(id) {
+            // TODO: Następna faza - strona planowania
+            alert(`Planowanie posiłków dla grupy ${id} - będzie w następnej fazie!`);
+        }
+
+        // Helper functions
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('pl-PL');
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                draft: 'Roboczy',
+                active: 'Aktywny',
+                completed: 'Zakończony',
+                archived: 'Archiwalny'
+            };
+            return labels[status] || status;
+        }
+
+        // Zamknij modal kliknięciem poza nim
+        window.onclick = (event) => {
+            const modal = document.getElementById('groupModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+    </script>
+</body>
+</html>
