@@ -506,4 +506,454 @@ app.post('/api/recipes/import/csv', upload.single('file'), importRecipesFromCSV)
 // Import dań z CSV
 app.post('/api/dishes/import/csv', upload.single('file'), importDishesFromCSV);
 
+// ========================================
+// MODUŁ JADŁOSPISÓW - Backend API
+// Dodaj te endpointy do index.js
+// ========================================
+
+// ========== SZABLONY SCHEMATÓW ==========
+
+// GET - pobierz wszystkie szablony
+app.get('/api/meal-templates', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('meal_templates')
+      .select('*')
+      .order('nazwa');
+    
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET - pobierz jeden szablon po ID
+app.get('/api/meal-templates/:id', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('meal_templates')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+    
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST - utwórz nowy szablon
+app.post('/api/meal-templates', async (req, res) => {
+  try {
+    const { nazwa, klient, opis, struktura } = req.body;
+    
+    const { data, error } = await supabase
+      .from('meal_templates')
+      .insert([{ nazwa, klient, opis, struktura }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    res.status(201).json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT - aktualizuj szablon
+app.put('/api/meal-templates/:id', async (req, res) => {
+  try {
+    const { nazwa, klient, opis, struktura } = req.body;
+    
+    const { data, error } = await supabase
+      .from('meal_templates')
+      .update({ nazwa, klient, opis, struktura })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE - usuń szablon
+app.delete('/api/meal-templates/:id', async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('meal_templates')
+      .delete()
+      .eq('id', req.params.id);
+    
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========== GRUPY ==========
+
+// GET - pobierz wszystkie grupy
+app.get('/api/groups', async (req, res) => {
+  try {
+    const { status } = req.query; // opcjonalny filtr po statusie
+    
+    let query = supabase
+      .from('groups')
+      .select('*, meal_templates(nazwa)')
+      .order('data_pierwszy_posilek', { ascending: false });
+    
+    if (status) {
+      query = query.eq('status', status);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET - pobierz jedną grupę po ID (z pełnymi danymi)
+app.get('/api/groups/:id', async (req, res) => {
+  try {
+    const { data: group, error: groupError } = await supabase
+      .from('groups')
+      .select('*, meal_templates(nazwa, struktura)')
+      .eq('id', req.params.id)
+      .single();
+    
+    if (groupError) throw groupError;
+    
+    // Pobierz posiłki dla tej grupy
+    const { data: meals, error: mealsError } = await supabase
+      .from('group_meals')
+      .select('*, dishes(id, nazwa, typ)')
+      .eq('group_id', req.params.id)
+      .order('dzien_numer')
+      .order('typ_posilku');
+    
+    if (mealsError) throw mealsError;
+    
+    // Dodaj posiłki do grupy
+    group.meals = meals;
+    
+    res.json(group);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST - utwórz nową grupę
+app.post('/api/groups', async (req, res) => {
+  try {
+    const {
+      nazwa,
+      organizator_nazwa,
+      organizator_kontakt,
+      liczba_uczestnikow,
+      liczba_opiekunow,
+      liczba_pilotow,
+      liczba_kierowcow,
+      liczba_kadry,
+      wiek_grupy,
+      data_pierwszy_posilek,
+      data_ostatni_posilek,
+      pierwszy_posilek_typ,
+      ostatni_posilek_typ,
+      schemat_id,
+      status
+    } = req.body;
+    
+    const { data, error } = await supabase
+      .from('groups')
+      .insert([{
+        nazwa,
+        organizator_nazwa,
+        organizator_kontakt,
+        liczba_uczestnikow,
+        liczba_opiekunow,
+        liczba_pilotow,
+        liczba_kierowcow,
+        liczba_kadry,
+        wiek_grupy,
+        data_pierwszy_posilek,
+        data_ostatni_posilek,
+        pierwszy_posilek_typ,
+        ostatni_posilek_typ,
+        schemat_id,
+        status: status || 'draft'
+      }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    res.status(201).json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT - aktualizuj grupę
+app.put('/api/groups/:id', async (req, res) => {
+  try {
+    const {
+      nazwa,
+      organizator_nazwa,
+      organizator_kontakt,
+      liczba_uczestnikow,
+      liczba_opiekunow,
+      liczba_pilotow,
+      liczba_kierowcow,
+      liczba_kadry,
+      wiek_grupy,
+      data_pierwszy_posilek,
+      data_ostatni_posilek,
+      pierwszy_posilek_typ,
+      ostatni_posilek_typ,
+      schemat_id,
+      status
+    } = req.body;
+    
+    const { data, error } = await supabase
+      .from('groups')
+      .update({
+        nazwa,
+        organizator_nazwa,
+        organizator_kontakt,
+        liczba_uczestnikow,
+        liczba_opiekunow,
+        liczba_pilotow,
+        liczba_kierowcow,
+        liczba_kadry,
+        wiek_grupy,
+        data_pierwszy_posilek,
+        data_ostatni_posilek,
+        pierwszy_posilek_typ,
+        ostatni_posilek_typ,
+        schemat_id,
+        status
+      })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE - usuń grupę
+app.delete('/api/groups/:id', async (req, res) => {
+  try {
+    // Cascade delete posiłków działa automatycznie (ON DELETE CASCADE)
+    const { error } = await supabase
+      .from('groups')
+      .delete()
+      .eq('id', req.params.id);
+    
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========== POSIŁKI W GRUPIE ==========
+
+// GET - pobierz posiłki dla grupy
+app.get('/api/groups/:groupId/meals', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('group_meals')
+      .select('*, dishes(id, nazwa, typ)')
+      .eq('group_id', req.params.groupId)
+      .order('dzien_numer')
+      .order('typ_posilku');
+    
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST - dodaj posiłek do grupy
+app.post('/api/groups/:groupId/meals', async (req, res) => {
+  try {
+    const { dzien_numer, data, typ_posilku, dish_id, liczba_porcji, uwagi, kolejnosc } = req.body;
+    
+    const { data: meal, error } = await supabase
+      .from('group_meals')
+      .insert([{
+        group_id: req.params.groupId,
+        dzien_numer,
+        data,
+        typ_posilku,
+        dish_id,
+        liczba_porcji,
+        uwagi,
+        kolejnosc: kolejnosc || 1
+      }])
+      .select('*, dishes(id, nazwa, typ)')
+      .single();
+    
+    if (error) throw error;
+    res.status(201).json(meal);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT - aktualizuj posiłek
+app.put('/api/group-meals/:id', async (req, res) => {
+  try {
+    const { dzien_numer, data, typ_posilku, dish_id, liczba_porcji, uwagi, kolejnosc } = req.body;
+    
+    const { data: meal, error } = await supabase
+      .from('group_meals')
+      .update({
+        dzien_numer,
+        data,
+        typ_posilku,
+        dish_id,
+        liczba_porcji,
+        uwagi,
+        kolejnosc
+      })
+      .eq('id', req.params.id)
+      .select('*, dishes(id, nazwa, typ)')
+      .single();
+    
+    if (error) throw error;
+    res.json(meal);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE - usuń posiłek
+app.delete('/api/group-meals/:id', async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('group_meals')
+      .delete()
+      .eq('id', req.params.id);
+    
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========== GENEROWANIE LISTY ZAKUPÓW ==========
+
+// GET - wygeneruj listę zakupów dla grupy
+app.get('/api/groups/:groupId/shopping-list', async (req, res) => {
+  try {
+    // Pobierz dane grupy
+    const { data: group, error: groupError } = await supabase
+      .from('groups')
+      .select('*')
+      .eq('id', req.params.groupId)
+      .single();
+    
+    if (groupError) throw groupError;
+    
+    // Oblicz łączną liczbę osób
+    const liczbaOsob = (group.liczba_uczestnikow || 0) + 
+                       (group.liczba_opiekunow || 0) + 
+                       (group.liczba_pilotow || 0) + 
+                       (group.liczba_kierowcow || 0) + 
+                       (group.liczba_kadry || 0);
+    
+    // Pobierz wszystkie posiłki z componentami
+    const { data: meals, error: mealsError } = await supabase
+      .from('group_meals')
+      .select(`
+        *,
+        dishes (
+          id,
+          nazwa,
+          dish_components (
+            recipe_id,
+            ilosc,
+            jm,
+            kategoria,
+            recipes (
+              nazwa,
+              recipe_ingredients (
+                ingredient_id,
+                ilosc,
+                jm,
+                ingredients (nazwa)
+              )
+            )
+          )
+        )
+      `)
+      .eq('group_id', req.params.groupId);
+    
+    if (mealsError) throw mealsError;
+    
+    // Agreguj składniki
+    const skladniki = {};
+    
+    meals.forEach(meal => {
+      const porcje = meal.liczba_porcji || liczbaOsob;
+      
+      if (meal.dishes && meal.dishes.dish_components) {
+        meal.dishes.dish_components.forEach(component => {
+          if (component.recipes && component.recipes.recipe_ingredients) {
+            component.recipes.recipe_ingredients.forEach(ri => {
+              const key = ri.ingredient_id;
+              const nazwa = ri.ingredients?.nazwa || 'Nieznany';
+              const ilosc = (ri.ilosc || 0) * porcje;
+              
+              if (!skladniki[key]) {
+                skladniki[key] = {
+                  nazwa,
+                  ilosc: 0,
+                  jm: ri.jm
+                };
+              }
+              
+              skladniki[key].ilosc += ilosc;
+            });
+          }
+        });
+      }
+    });
+    
+    // Konwertuj do array i posortuj
+    const lista = Object.values(skladniki).sort((a, b) => 
+      a.nazwa.localeCompare(b.nazwa, 'pl')
+    );
+    
+    res.json({
+      group_id: req.params.groupId,
+      group_nazwa: group.nazwa,
+      liczba_osob: liczbaOsob,
+      liczba_dni: meals.length > 0 ? Math.max(...meals.map(m => m.dzien_numer)) : 0,
+      skladniki: lista
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========================================
+// KONIEC - Endpointy gotowe!
+// ========================================
+
 app.listen(3000, () => console.log('Serwer dziaÅ‚a na http://localhost:3000'));
