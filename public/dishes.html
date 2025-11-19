@@ -4,234 +4,99 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chefsystent - Dania</title>
+<link rel="stylesheet" href="chefsystent-brand.css">
+<link rel="icon" type="image/png" href="piktogram.png">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        header h1 { font-size: 2.5em; margin-bottom: 10px; }
-        .nav {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 15px;
-        }
-        .nav a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 20px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 20px;
-            transition: all 0.3s;
-        }
-        .nav a:hover { background: rgba(255,255,255,0.3); }
-        
-        .content { padding: 30px; }
-        .btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-        .btn-primary:hover { background: #5568d3; transform: translateY(-2px); }
-
-/* Przyciski Eksport/Import */
-.export-import-buttons {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.btn-export, .btn-import {
-    padding: 10px 20px;
-    background: #D4AF37;
-    color: #0A1F44;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.btn-export:hover, .btn-import:hover {
-    background: #B8941F;
-    transform: translateY(-2px);
-}
-
-.btn-import {
-    display: inline-block;
-}
-        .btn-small {
-            padding: 8px 15px;
-            font-size: 13px;
-        }
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-        .btn-danger:hover { background: #c82333; }
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-        .btn-success:hover { background: #218838; }
-        
-        .dish-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-        .dish-card {
-            background: white;
-            border: 2px solid #f0f0f0;
-            border-radius: 12px;
-            padding: 20px;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        .dish-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
-            transform: translateY(-3px);
-        }
-        .dish-card h3 {
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-        .dish-meta {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .badge-type { background: #e3f2fd; color: #1976d2; }
-        .badge-price { background: #fff3e0; color: #e65100; }
-        .badge-vegan { background: #e8f5e9; color: #388e3c; }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            overflow-y: auto;
-        }
-        .modal-content {
-            background: white;
-            margin: 50px auto;
-            padding: 30px;
-            width: 90%;
-            max-width: 800px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        .close {
-            font-size: 28px;
-            font-weight: bold;
-            color: #999;
-            cursor: pointer;
-        }
-        .close:hover { color: #333; }
-        
-        .components-list {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-        }
-        .component-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .component-item:last-child { border-bottom: none; }
-        
-        .component-builder {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 15px 0;
-        }
-        .component-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr auto;
-            gap: 10px;
-            margin-bottom: 10px;
-            align-items: center;
-        }
-        select, input[type="text"], input[type="number"], textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
-    </style>
+    /* Dodatkowe style dla dań */
+    body {
+        background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+    }
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        overflow: hidden;
+    }
+    .content { padding: 30px; }
+    
+    .dish-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+    }
+    .dish-card {
+        background: white;
+        border: 2px solid #f0f0f0;
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    .dish-card:hover {
+        border-color: #D4AF37;
+        box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+        transform: translateY(-3px);
+    }
+    .dish-card h3 {
+        color: #0A1F44;
+        margin-bottom: 10px;
+    }
+    .dish-meta {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+    .badge-type { background: #e3f2fd; color: #1976d2; }
+    .badge-price { background: #fff3e0; color: #e65100; }
+    .badge-vegan { background: #e8f5e9; color: #388e3c; }
+    
+    .components-list {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+    .component-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .component-item:last-child { border-bottom: none; }
+    
+    .component-builder {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+    .component-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+    }
+</style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🍽️ Chefsystent - Dania</h1>
-            <div class="nav">
-                <a href="index.html">Surowce</a>
-                <a href="recipes.html">Receptury</a>
-                <a href="dishes.html">Dania</a>
-            </div>
-        </header>
+    <div class="header-logo">
+        <img src="LOGO_chefsystent.png" alt="Chefsystent Logo">
+    </div>
+    <p>System Zarządzania Kuchnią - Dania</p>
+    
+    <nav>
+        <a href="index.html">← Surowce</a>
+        <a href="recipes.html">Receptury</a>
+        <a href="dishes.html" class="active">Dania →</a>
+    </nav>
+</header>
         
         <div class="content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
