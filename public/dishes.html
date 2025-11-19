@@ -58,6 +58,33 @@
             color: white;
         }
         .btn-primary:hover { background: #5568d3; transform: translateY(-2px); }
+
+/* Przyciski Eksport/Import */
+.export-import-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.btn-export, .btn-import {
+    padding: 10px 20px;
+    background: #D4AF37;
+    color: #0A1F44;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-export:hover, .btn-import:hover {
+    background: #B8941F;
+    transform: translateY(-2px);
+}
+
+.btn-import {
+    display: inline-block;
+}
         .btn-small {
             padding: 8px 15px;
             font-size: 13px;
@@ -211,6 +238,18 @@
                 <h2>Lista dań</h2>
                 <button class="btn btn-primary" onclick="openAddModal()">➕ Dodaj danie</button>
             </div>
+
+<!-- Przyciski Eksport/Import -->
+<div class="export-import-buttons" style="margin-bottom: 20px;">
+    <button onclick="exportDishes()" class="btn-export">
+        📥 Eksportuj CSV
+    </button>
+    
+    <label for="importDishesFile" class="btn-import">
+        📤 Importuj CSV
+        <input type="file" id="importDishesFile" accept=".csv" style="display:none" onchange="importDishes(event)">
+    </label>
+</div>
             
             <div class="dish-grid" id="dishGrid">
                 <div class="loading">Ładowanie dań...</div>
@@ -537,6 +576,57 @@ function closeFormModal() {
         return;
     }
     document.getElementById('formModal').style.display = 'none';
+}
+
+// ========== EKSPORT ==========
+function exportDishes() {
+  window.location.href = '/api/dishes/export/csv';
+}
+
+// ========== IMPORT ==========
+async function importDishes(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!confirm(`Importować dania z pliku: ${file.name}?`)) {
+    event.target.value = '';
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  try {
+    const response = await fetch('/api/dishes/import/csv', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      let message = `✅ Import zakończony!\n\n`;
+      message += `Zaimportowano: ${result.success}\n`;
+      message += `Pominięto (duplikaty): ${result.skipped}\n`;
+      message += `Błędy: ${result.errors.length}`;
+      
+      if (result.errors.length > 0) {
+        message += `\n\nPierwsze błędy:\n`;
+        result.errors.slice(0, 3).forEach(err => {
+          message += `- Wiersz ${err.row}: ${err.error}\n`;
+        });
+      }
+      
+      alert(message);
+      loadDishes();
+    } else {
+      alert('❌ Błąd importu: ' + result.error);
+    }
+  } catch (error) {
+    alert('❌ Błąd połączenia: ' + error.message);
+  } finally {
+    event.target.value = '';
+  }
 }
 
 loadData();
