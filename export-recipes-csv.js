@@ -18,23 +18,18 @@ async function exportRecipesToCSV(req, res) {
   try {
     // Pobierz wszystkie receptury z składnikami
     const { data: recipes, error } = await supabase
-      .from('recipes')
-      .select(`
-        *,
-        recipe_ingredients (
-          ingredient_id,
-          ilosc,
-          jm,
-          kolejnosc,
-          ingredients (nazwa)
-        ),
-        recipe_steps (
-          krok,
-          opis,
-          czas_min
-        )
-      `)
-      .order('id');
+  .from('recipes')
+  .select(`
+    *,
+    recipe_ingredients (
+      ingredient_id,
+      ilosc,
+      jm,
+      kolejnosc,
+      ingredients (nazwa)
+    )
+  `)
+  .order('id');
     
     if (error) throw error;
     
