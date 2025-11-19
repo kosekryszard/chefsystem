@@ -2,13 +2,6 @@ const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-const multer = require('multer');
-const Papa = require('papaparse');
-const { exportRecipesToCSV } = require('./export-recipes-csv');
-const { exportDishesToCSV } = require('./export-dishes-csv');
-const { importRecipesFromCSV } = require('./import-recipes-csv');
-const { importDishesFromCSV } = require('./import-dishes-csv');
-
 const app = express();
 app.use(express.json());
 app.use((req, res, next) => {
@@ -24,12 +17,6 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
-
-// Konfiguracja uploadu plików
-const upload = multer({ 
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 } // max 10MB
-});
 
 // Test endpoint
 app.get('/', (req, res) => {
@@ -489,21 +476,5 @@ app.get('/api/ingredients/export/csv', async (req, res) => {
 res.setHeader('Content-Disposition', 'attachment; filename=surowce_export.csv');
 res.send('\uFEFF' + csv);
 });
-
-// ========================================
-// EKSPORT/IMPORT RECEPTUR I DAŃ
-// ========================================
-
-// Eksport receptur do CSV
-app.get('/api/recipes/export/csv', exportRecipesToCSV);
-
-// Eksport dań do CSV
-app.get('/api/dishes/export/csv', exportDishesToCSV);
-
-// Import receptur z CSV
-app.post('/api/recipes/import/csv', upload.single('file'), importRecipesFromCSV);
-
-// Import dań z CSV
-app.post('/api/dishes/import/csv', upload.single('file'), importDishesFromCSV);
 
 app.listen(3000, () => console.log('Serwer dziaÅ‚a na http://localhost:3000'));
