@@ -756,8 +756,9 @@ window.isSaving = false; // Resetuj flagę
             alert(`Planowanie posiłków dla grupy ${id} - będzie w następnej fazie!`);
         }
 
-// ========== NOWE FUNKCJE: MENU STATUSÓW + DUPLIKACJA ==========
+        // ========== NOWE FUNKCJE: MENU STATUSÓW + DUPLIKACJA ==========
         
+        // Toggle menu statusów
         function toggleStatusMenu(groupId) {
             event.stopPropagation();
             const menu = document.getElementById(`statusMenu-${groupId}`);
@@ -792,29 +793,6 @@ window.isSaving = false; // Resetuj flagę
                     }
                 }, 10);
             }
-        }
-            
-            // Sprawdź czy menu wychodzi poza ekran i ustaw pozycję
-            if (!isVisible) {
-                const rect = menu.getBoundingClientRect();
-                const viewportHeight = window.innerHeight;
-                
-                // Jeśli menu wychodzi poza dolną krawędź ekranu, pokaż w górę
-                if (rect.bottom > viewportHeight - 20) {
-                    menu.style.bottom = '100%';
-                    menu.style.top = 'auto';
-                    menu.style.marginBottom = '5px';
-                    menu.style.marginTop = '0';
-                } else {
-                    menu.style.top = '100%';
-                    menu.style.bottom = 'auto';
-                    menu.style.marginTop = '5px';
-                    menu.style.marginBottom = '0';
-                }
-            }
-        }
-            
-            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
         }
 
         // Zmiana statusu grupy
