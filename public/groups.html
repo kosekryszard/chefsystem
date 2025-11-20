@@ -153,6 +153,51 @@
         .filter-btn:hover:not(.active) {
             border-color: #D4AF37;
         }
+
+/* Menu statusów */
+        .btn-secondary {
+            background: #1a3a6b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: #0A1F44;
+            transform: translateY(-1px);
+        }
+        .status-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 2px solid #0A1F44;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 180px;
+            margin-top: 5px;
+        }
+        .status-menu div {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .status-menu div:last-child {
+            border-bottom: none;
+        }
+        .status-menu div:hover {
+            background: #f8f9fa;
+            color: #D4AF37;
+            font-weight: 600;
+        }
+
+    </style>
+
     </style>
 </head>
 <body>
@@ -466,6 +511,7 @@
         }
 
         // Renderowanie grup
+        // Renderowanie grup
         function renderGroups() {
             const grid = document.getElementById('groupsGrid');
             
@@ -473,6 +519,13 @@
             if (currentFilter !== 'all') {
                 filtered = allGroups.filter(g => g.status === currentFilter);
             }
+            
+            // Sortuj chronologicznie (najnowsze na górze)
+            filtered.sort((a, b) => {
+                const dateA = new Date(a.data_pierwszy_posilek);
+                const dateB = new Date(b.data_pierwszy_posilek);
+                return dateB - dateA;
+            });
             
             if (filtered.length === 0) {
                 grid.innerHTML = '<div class="loading">Brak grup do wyświetlenia</div>';
@@ -511,6 +564,20 @@
                             ${getStatusLabel(group.status)}
                         </span>
                         <div class="action-buttons" onclick="event.stopPropagation()">
+                            <div style="position: relative; display: inline-block;">
+                                <button onclick="toggleStatusMenu(${group.id})" class="btn-secondary">
+                                    📋 Przenieś do... ▼
+                                </button>
+                                <div id="statusMenu-${group.id}" class="status-menu" style="display: none;">
+                                    <div onclick="changeStatus(${group.id}, 'draft')">📝 Robocze</div>
+                                    <div onclick="changeStatus(${group.id}, 'active')">✅ Aktywne</div>
+                                    <div onclick="changeStatus(${group.id}, 'completed')">🎯 Zakończone</div>
+                                    <div onclick="changeStatus(${group.id}, 'archived')">📦 Archiwum</div>
+                                </div>
+                            </div>
+                            <button class="btn-secondary" onclick="duplicateGroup(${group.id})">
+                                📋 Stwórz podobną
+                            </button>
                             <button class="btn-edit" onclick="editGroup(${group.id})">
                                 ✏️ Edytuj
                             </button>
@@ -599,6 +666,14 @@
 
         // Zamknij modal
         function closeModal() {
+            // Jeśli właśnie zapisujemy, nie pokazuj promptu
+            if (window.isSaving) {
+                window.isSaving = false;
+                document.getElementById('groupModal').style.display = 'none';
+                document.getElementById('groupForm').reset();
+                return;
+            }
+            
             const form = document.getElementById('groupForm');
             const hasData = document.getElementById('nazwa').value.trim() !== '';
             
@@ -607,11 +682,15 @@
             }
             
             document.getElementById('groupModal').style.display = 'none';
+            document.getElementById('groupForm').reset();
         }
 
         // Zapisz grupę
         document.getElementById('groupForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Flaga żeby nie pokazywać promptu przy zapisie
+            window.isSaving = true;
             
             const groupId = document.getElementById('groupId').value;
             
@@ -620,6 +699,16 @@
             document.querySelectorAll('input[name="meal_types"]:checked').forEach(cb => {
                 selectedMealTypes.push(cb.value);
             });
+            
+// Walidacja dat
+            const dateFirst = document.getElementById('data_pierwszy_posilek').value;
+            const dateLast = document.getElementById('data_ostatni_posilek').value;
+            
+            if (dateFirst && dateLast && new Date(dateLast) < new Date(dateFirst)) {
+                window.isSaving = false;
+                alert('❌ Data ostatniego posiłku nie może być wcześniej niż data pierwszego posiłku!');
+                return;
+            }
             
             const data = {
                 nazwa: document.getElementById('nazwa').value,
@@ -654,6 +743,7 @@
                 
                 closeModal();
                 loadGroups();
+window.isSaving = false; // Resetuj flagę
                 alert(groupId ? 'Grupa zaktualizowana!' : 'Grupa dodana!');
             } catch (error) {
                 alert('Błąd zapisu: ' + error.message);
@@ -665,6 +755,117 @@
             // TODO: Następna faza - strona planowania
             alert(`Planowanie posiłków dla grupy ${id} - będzie w następnej fazie!`);
         }
+
+// ========== NOWE FUNKCJE: MENU STATUSÓW + DUPLIKACJA ==========
+        
+        // Toggle menu statusów
+        function toggleStatusMenu(groupId) {
+            event.stopPropagation();
+            const menu = document.getElementById(`statusMenu-${groupId}`);
+            
+            // Zamknij inne otwarte menu
+            document.querySelectorAll('.status-menu').forEach(m => {
+                if (m.id !== `statusMenu-${groupId}`) {
+                    m.style.display = 'none';
+                }
+            });
+            
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Zmiana statusu grupy
+        async function changeStatus(groupId, newStatus) {
+            event.stopPropagation();
+            
+            try {
+                const response = await fetch(`/api/groups/${groupId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                if (!response.ok) throw new Error('Błąd zmiany statusu');
+                
+                // Zamknij menu
+                document.getElementById(`statusMenu-${groupId}`).style.display = 'none';
+                
+                // Odśwież listę
+                loadGroups();
+                
+                const statusNames = {
+                    draft: 'Robocze',
+                    active: 'Aktywne',
+                    completed: 'Zakończone',
+                    archived: 'Archiwum'
+                };
+                
+                alert(`✅ Grupa przeniesiona do: ${statusNames[newStatus]}`);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd zmiany statusu');
+            }
+        }
+
+        // Duplikuj grupę (stwórz podobną)
+        async function duplicateGroup(groupId) {
+            event.stopPropagation();
+            
+            try {
+                const response = await fetch(`/api/groups/${groupId}`);
+                if (!response.ok) throw new Error('Błąd pobierania grupy');
+                
+                const group = await response.json();
+                
+                // Otwórz formularz i wypełnij danymi (bez id i dat)
+                document.getElementById('modalTitle').textContent = 'Nowa grupa (na podstawie: ' + group.nazwa + ')';
+                document.getElementById('groupId').value = '';
+                
+                // Podstawowe dane
+                document.getElementById('nazwa').value = group.nazwa + ' (kopia)';
+                document.getElementById('organizator_nazwa').value = group.organizator_nazwa || '';
+                document.getElementById('organizator_kontakt').value = group.organizator_kontakt || '';
+                
+                // Liczby osób
+                document.getElementById('liczba_uczestnikow').value = group.liczba_uczestnikow || 0;
+                document.getElementById('liczba_opiekunow').value = group.liczba_opiekunow || 0;
+                document.getElementById('liczba_pilotow').value = group.liczba_pilotow || 0;
+                document.getElementById('liczba_kierowcow').value = group.liczba_kierowcow || 0;
+                document.getElementById('liczba_kadry').value = group.liczba_kadry || 0;
+                document.getElementById('wiek_grupy').value = group.wiek_grupy || '';
+                
+                // Szablon
+                if (group.schemat_id) {
+                    document.getElementById('schemat_id').value = group.schemat_id;
+                }
+                
+                // Checkboxy meal_types
+                document.querySelectorAll('input[name="meal_types"]').forEach(cb => cb.checked = false);
+                if (group.meal_types) {
+                    group.meal_types.forEach(type => {
+                        const checkbox = document.querySelector(`input[name="meal_types"][value="${type}"]`);
+                        if (checkbox) checkbox.checked = true;
+                    });
+                }
+                
+                // NIE kopiujemy dat - user musi ustawić nowe
+                document.getElementById('data_pierwszy_posilek').value = '';
+                document.getElementById('data_ostatni_posilek').value = '';
+                
+                calculateTotal();
+                document.getElementById('groupModal').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd duplikowania grupy');
+            }
+        }
+
+        // Zamknij menu po kliknięciu poza nim
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.status-menu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+        });
 
         // Helper functions
         function formatDate(dateStr) {
