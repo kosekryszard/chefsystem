@@ -169,7 +169,7 @@
             background: #0A1F44;
             transform: translateY(-1px);
         }
-        .status-menu {
+       .status-menu {
             position: absolute;
             top: 100%;
             left: 0;
@@ -520,11 +520,11 @@
                 filtered = allGroups.filter(g => g.status === currentFilter);
             }
             
-            // Sortuj chronologicznie (najnowsze na górze)
+            // Sortuj chronologicznie (najbliższe przyjazdy na górze)
             filtered.sort((a, b) => {
                 const dateA = new Date(a.data_pierwszy_posilek);
                 const dateB = new Date(b.data_pierwszy_posilek);
-                return dateB - dateA;
+                return dateA - dateB; // zmiana kolejności
             });
             
             if (filtered.length === 0) {
@@ -758,7 +758,6 @@ window.isSaving = false; // Resetuj flagę
 
 // ========== NOWE FUNKCJE: MENU STATUSÓW + DUPLIKACJA ==========
         
-        // Toggle menu statusów
         function toggleStatusMenu(groupId) {
             event.stopPropagation();
             const menu = document.getElementById(`statusMenu-${groupId}`);
@@ -769,6 +768,29 @@ window.isSaving = false; // Resetuj flagę
                     m.style.display = 'none';
                 }
             });
+            
+            const isVisible = menu.style.display === 'block';
+            menu.style.display = isVisible ? 'none' : 'block';
+            
+            // Sprawdź czy menu wychodzi poza ekran i ustaw pozycję
+            if (!isVisible) {
+                const rect = menu.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+                
+                // Jeśli menu wychodzi poza dolną krawędź ekranu, pokaż w górę
+                if (rect.bottom > viewportHeight - 20) {
+                    menu.style.bottom = '100%';
+                    menu.style.top = 'auto';
+                    menu.style.marginBottom = '5px';
+                    menu.style.marginTop = '0';
+                } else {
+                    menu.style.top = '100%';
+                    menu.style.bottom = 'auto';
+                    menu.style.marginTop = '5px';
+                    menu.style.marginBottom = '0';
+                }
+            }
+        }
             
             menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
         }
