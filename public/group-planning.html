@@ -799,7 +799,7 @@
                     await fetch(`/api/group-meals/${meal.id}`, { method: 'DELETE' });
                 }
                 
-                // Dodaj nowe
+                // Dodaj nowe (z kolejnością)
                 for (const meal of mealsData) {
                     const data = {
                         dzien_numer: meal.dayNumber,
@@ -807,6 +807,7 @@
                         typ_posilku: meal.mealType,
                         dish_id: meal.dishId,
                         liczba_porcji: meal.portions,
+                        kolejnosc: meal.kolejnosc || 1,  // DODANE
                         uwagi: meal.uwagi
                     };
                     
@@ -816,13 +817,17 @@
                         body: JSON.stringify(data)
                     });
                     
-                    if (!response.ok) throw new Error('Błąd zapisu posiłku');
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Błąd zapisu posiłku');
+                    }
                 }
                 
                 alert('✅ Jadłospis zapisany pomyślnie!');
                 
                 // Przeładuj dane
                 await loadExistingMeals();
+                generateDaysTimeline(); // Odśwież widok
                 
             } catch (error) {
                 console.error('Error:', error);
