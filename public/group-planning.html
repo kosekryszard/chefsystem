@@ -434,7 +434,7 @@
                 
                 const meals = await response.json();
                 
-                // Przekształć dane z bazy do formatu lokalnego
+                // Przekształć dane - grupuj po (dzien, typ_posilku)
                 mealsData = meals.map(m => ({
                     id: m.id,
                     dayNumber: m.dzien_numer,
@@ -442,7 +442,8 @@
                     mealType: m.typ_posilku,
                     dishId: m.dish_id,
                     portions: m.liczba_porcji,
-                    uwagi: m.uwagi
+                    uwagi: m.uwagi,
+                    kolejnosc: m.kolejnosc || 1
                 }));
                 
             } catch (error) {
@@ -500,9 +501,10 @@
         }
         
         function generateMealCardsForDay(dayNumber, date) {
-            if (!groupData.meal_types || groupData.meal_types.length === 0) {
-                return '<p class="no-dish">Brak zdefiniowanych typów posiłków dla tej grupy</p>';
-            }
+            // Jeśli nie ma meal_types, użyj domyślnych
+            const mealTypes = (groupData.meal_types && groupData.meal_types.length > 0) 
+                ? groupData.meal_types 
+                : ['sniadanie', 'obiad', 'kolacja'];
             
             const mealIcons = {
                 'sniadanie': '🍳',
@@ -526,72 +528,86 @@
                 'ognisko': 'Ognisko'
             };
             
-            return groupData.meal_types.map(mealType => {
-                const existingMeal = mealsData.find(m => 
+            return mealTypes.map(mealType => {
+                // Znajdź WSZYSTKIE dania dla tego posiłku (może być wiele)
+                const existingMeals = mealsData.filter(m => 
                     m.dayNumber === dayNumber && m.mealType === mealType
                 );
                 
-                return createMealCard(dayNumber, date, mealType, mealIcons[mealType], mealNames[mealType], existingMeal);
+                return createMealCard(dayNumber, date, mealType, mealIcons[mealType], mealNames[mealType], existingMeals);
             }).join('');
         }
         
-        function createMealCard(dayNumber, date, mealType, icon, name, existingMeal) {
-            const hasM = existingMeal ? 'has-dish' : '';
+        function createMealCard(dayNumber, date, mealType, icon, name, existingMeals) {
+            // existingMeals to teraz TABLICA dań dla tego posiłku
+            const hasDishes = existingMeals && existingMeals.length > 0;
+            const cardClass = hasDishes ? 'has-dish' : '';
             
-            if (existingMeal) {
-                const dish = allDishes.find(d => d.id === existingMeal.dishId);
-                const dishName = dish ? dish.nazwa : 'Nieznane danie';
-                
-                return `
-                    <div class="meal-card ${hasM}">
-                        <div class="meal-type">
-                            <span class="meal-type-icon">${icon}</span>
-                            ${name}
-                        </div>
-                        <div class="selected-dish">
-                            <div class="dish-name">${dishName}</div>
-                            <div class="portions">
-                                <label>Porcje:</label>
-                                <input type="number" min="1" value="${existingMeal.portions}" 
-                                       onchange="updatePortions(${dayNumber}, '${mealType}', this.value)">
+            let dishesHTML = '';
+            
+            if (hasDishes) {
+                // Pokaż listę dań
+                dishesHTML = existingMeals.map((meal, idx) => {
+                    const dish = allDishes.find(d => d.id === meal.dishId);
+                    const dishName = dish ? dish.nazwa : 'Nieznane danie';
+                    
+                    return `
+                        <div class="selected-dish" style="margin-top: ${idx > 0 ? '10px' : '0'};">
+                            <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;">
+                                <div class="dish-name">${dishName}</div>
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="number" min="1" value="${meal.portions}" 
+                                           style="width: 70px; padding: 5px; border: 1px solid #dee2e6; border-radius: 6px; text-align: center;"
+                                           onchange="updatePortions(${dayNumber}, '${mealType}', ${meal.id}, this.value)">
+                                    <span style="font-size: 12px; color: #666;">porcji</span>
+                                </div>
+                                <button class="btn-small btn-remove" 
+                                        onclick="removeDish(${dayNumber}, '${mealType}', ${meal.id})"
+                                        title="Usuń to danie">
+                                    🗑️
+                                </button>
                             </div>
                         </div>
-                        <div class="meal-actions">
-                            <button class="btn-small btn-change" 
-                                    onclick="openDishSelector(${dayNumber}, '${mealType}')">
-                                🔄 Zmień
-                            </button>
-                            <button class="btn-small btn-remove" 
-                                    onclick="removeMeal(${dayNumber}, '${mealType}')">
-                                🗑️ Usuń
-                            </button>
-                        </div>
+                    `;
+                }).join('');
+                
+                // Przycisk "Dodaj kolejne danie"
+                dishesHTML += `
+                    <div style="margin-top: 10px;">
+                        <button class="btn-small btn-add" 
+                                onclick="openDishSelector(${dayNumber}, '${mealType}', ${existingMeals.length + 1})"
+                                style="width: 100%;">
+                            ➕ Dodaj kolejne danie
+                        </button>
                     </div>
                 `;
             } else {
-                return `
-                    <div class="meal-card">
-                        <div class="meal-type">
-                            <span class="meal-type-icon">${icon}</span>
-                            ${name}
-                        </div>
-                        <div class="no-dish">Nie wybrano dania</div>
-                        <div class="meal-actions">
-                            <button class="btn-small btn-add" 
-                                    onclick="openDishSelector(${dayNumber}, '${mealType}')">
-                                ➕ Dodaj danie
-                            </button>
-                        </div>
+                dishesHTML = `
+                    <div class="no-dish">Nie wybrano dania</div>
+                    <div class="meal-actions">
+                        <button class="btn-small btn-add" 
+                                onclick="openDishSelector(${dayNumber}, '${mealType}', 1)">
+                            ➕ Dodaj danie
+                        </button>
                     </div>
                 `;
             }
+            
+            return `
+                <div class="meal-card ${cardClass}">
+                    <div class="meal-type">
+                        <span class="meal-type-icon">${icon}</span>
+                        ${name}
+                    </div>
+                    ${dishesHTML}
+                </div>
+            `;
         }
 
-        // Ciąg dalszy w następnej wiadomości...
     // ========== AKCJE NA POSIŁKACH ==========
         
-    function openDishSelector(dayNumber, mealType) {
-            currentEditingMeal = { dayNumber, mealType };
+    function openDishSelector(dayNumber, mealType, kolejnosc) {
+        currentEditingMeal = { dayNumber, mealType, kolejnosc };
             
             // Pokaż modal
             document.getElementById('dishModal').style.display = 'flex';
@@ -639,7 +655,39 @@
         function selectDish(dishId) {
             if (!currentEditingMeal) return;
             
-            const { dayNumber, mealType } = currentEditingMeal;
+            const { dayNumber, mealType, kolejnosc } = currentEditingMeal;
+            
+            // Znajdź datę dla tego dnia
+            const dateFirst = new Date(groupData.data_pierwszy_posilek);
+            const mealDate = new Date(dateFirst);
+            mealDate.setDate(mealDate.getDate() + (dayNumber - 1));
+            
+            // Domyślna liczba porcji = suma osób
+            const defaultPortions = (groupData.liczba_uczestnikow || 0) + 
+                                   (groupData.liczba_opiekunow || 0) + 
+                                   (groupData.liczba_pilotow || 0) + 
+                                   (groupData.liczba_kierowcow || 0) + 
+                                   (groupData.liczba_kadry || 0);
+            
+            // Dodaj nowe danie (nie sprawdzamy czy istnieje - pozwalamy na wiele)
+            mealsData.push({
+                id: null, // będzie nadane przez backend
+                dayNumber,
+                date: mealDate.toISOString().split('T')[0],
+                mealType,
+                dishId,
+                portions: defaultPortions,
+                uwagi: null,
+                kolejnosc: kolejnosc || 1
+            });
+            
+            // Odśwież wyświetlanie
+            refreshDayMeals(dayNumber);
+            updateStats();
+            
+            // Zamknij modal
+            closeDishModal();
+        }
             
             // Znajdź datę dla tego dnia
             const dateFirst = new Date(groupData.data_pierwszy_posilek);
@@ -680,24 +728,19 @@
             
             // Zamknij modal
             closeDishModal();
-        }
         
-        function updatePortions(dayNumber, mealType, newPortions) {
-            const meal = mealsData.find(m => 
-                m.dayNumber === dayNumber && m.mealType === mealType
-            );
-            
-            if (meal) {
-                meal.portions = parseInt(newPortions) || 0;
-            }
-        }
+        function updatePortions(dayNumber, mealType, mealId, newPortions) {
+    const meal = mealsData.find(m => m.id === mealId);
+    
+    if (meal) {
+        meal.portions = parseInt(newPortions) || 0;
+    }
+}
         
-        function removeMeal(dayNumber, mealType) {
-            if (!confirm('Czy na pewno usunąć ten posiłek?')) return;
+        function removeDish(dayNumber, mealType, mealId) {
+            if (!confirm('Czy na pewno usunąć to danie?')) return;
             
-            const index = mealsData.findIndex(m => 
-                m.dayNumber === dayNumber && m.mealType === mealType
-            );
+            const index = mealsData.findIndex(m => m.id === mealId);
             
             if (index >= 0) {
                 mealsData.splice(index, 1);
