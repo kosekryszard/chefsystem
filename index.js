@@ -669,6 +669,7 @@ app.post('/api/groups', async (req, res) => {
       pierwszy_posilek_typ,
       ostatni_posilek_typ,
       schemat_id,
+      meal_types,  // DODANE
       status
     } = req.body;
     
@@ -689,6 +690,7 @@ app.post('/api/groups', async (req, res) => {
         pierwszy_posilek_typ,
         ostatni_posilek_typ,
         schemat_id,
+        meal_types,  // DODANE
         status: status || 'draft'
       }])
       .select()
@@ -719,28 +721,30 @@ app.put('/api/groups/:id', async (req, res) => {
       pierwszy_posilek_typ,
       ostatni_posilek_typ,
       schemat_id,
+      meal_types,  // DODANE
       status
     } = req.body;
     
     const { data, error } = await supabase
-      .from('groups')
-      .update({
-        nazwa,
-        organizator_nazwa,
-        organizator_kontakt,
-        liczba_uczestnikow,
-        liczba_opiekunow,
-        liczba_pilotow,
-        liczba_kierowcow,
-        liczba_kadry,
-        wiek_grupy,
-        data_pierwszy_posilek,
-        data_ostatni_posilek,
-        pierwszy_posilek_typ,
-        ostatni_posilek_typ,
-        schemat_id,
-        status
-      })
+    .from('groups')
+    .update({
+      nazwa,
+      organizator_nazwa,
+      organizator_kontakt,
+      liczba_uczestnikow,
+      liczba_opiekunow,
+      liczba_pilotow,
+      liczba_kierowcow,
+      liczba_kadry,
+      wiek_grupy,
+      data_pierwszy_posilek,
+      data_ostatni_posilek,
+      pierwszy_posilek_typ,
+      ostatni_posilek_typ,
+      schemat_id,
+      meal_types,  // DODANE
+      status
+    })
       .eq('id', req.params.id)
       .select()
       .single();

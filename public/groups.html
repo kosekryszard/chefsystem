@@ -656,6 +656,15 @@
                 document.getElementById('pierwszy_posilek_typ').value = group.pierwszy_posilek_typ;
                 document.getElementById('ostatni_posilek_typ').value = group.ostatni_posilek_typ;
                 document.getElementById('schemat_id').value = group.schemat_id || '';
+               
+                // Załaduj checkboxy meal_types
+                document.querySelectorAll('input[name="meal_types"]').forEach(cb => cb.checked = false);
+                if (group.meal_types && Array.isArray(group.meal_types)) {
+                    group.meal_types.forEach(type => {
+                        const checkbox = document.querySelector(`input[name="meal_types"][value="${type}"]`);
+                        if (checkbox) checkbox.checked = true;
+                    });
+                }
                 
                 calculateTotal();
                 document.getElementById('groupModal').style.display = 'flex';
