@@ -752,8 +752,7 @@ window.isSaving = false; // Resetuj flagę
 
         // Otwórz planowanie posiłków
         function openGroupPlanning(id) {
-            // TODO: Następna faza - strona planowania
-            alert(`Planowanie posiłków dla grupy ${id} - będzie w następnej fazie!`);
+            window.location.href = `group-planning.html?id=${id}`;
         }
 
         // ========== NOWE FUNKCJE: MENU STATUSÓW + DUPLIKACJA ==========
