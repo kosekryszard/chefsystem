@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chefsystent - Planowanie Posiłków</title>
+    <link rel="stylesheet" href="chefsystent-brand.css">
+    <link rel="icon" type="image/png" href="piktogram.png">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .content { padding: 30px; }
+        
+        /* Header info grupy */
+        .group-info-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-item label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .info-item .value {
+            font-size: 16px;
+            color: #0A1F44;
+            font-weight: 700;
+        }
+        
+        /* Timeline dni */
+        .days-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        /* Karta dnia */
+        .day-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .day-card:hover {
+            border-color: #D4AF37;
+            box-shadow: 0 5px 20px rgba(212, 175, 55, 0.15);
+        }
+        
+        /* Header dnia */
+        .day-header {
+            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .day-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .day-header .day-date {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Sekcja posiłków */
+        .meals-section {
+            padding: 20px;
+        }
+        
+        /* Grid posiłków */
+        .meals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        /* Karta posiłku */
+        .meal-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+        .meal-card:hover {
+            border-color: #D4AF37;
+            background: #fff;
+        }
+        .meal-card.has-dish {
+            border-color: #28a745;
+            background: #f0f8f4;
+        }
+        
+        /* Typ posiłku */
+        .meal-type {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0A1F44;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .meal-type-icon {
+            font-size: 18px;
+        }
+        
+        /* Wybrane danie */
+        .selected-dish {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+        .selected-dish .dish-name {
+            font-weight: 600;
+            color: #0A1F44;
+            margin-bottom: 8px;
+        }
+        .selected-dish .portions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        .selected-dish input[type="number"] {
+            width: 80px;
+            padding: 5px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        /* Przyciski w meal-card */
+        .meal-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-add {
+            background: #28a745;
+            color: white;
+        }
+        .btn-add:hover {
+            background: #218838;
+        }
+        .btn-change {
+            background: #17a2b8;
+            color: white;
+        }
+        .btn-change:hover {
+            background: #138496;
+        }
+        .btn-remove {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-remove:hover {
+            background: #c82333;
+        }
+        
+        /* Placeholder gdy brak dania */
+        .no-dish {
+            color: #999;
+            font-style: italic;
+            font-size: 14px;
+            padding: 10px 0;
+        }
+        
+        /* Sticky header z akcjami */
+        .sticky-actions {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 15px 0;
+            border-bottom: 2px solid #e0e0e0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        /* Statystyki */
+        .stats-bar {
+            background: #e3f2fd;
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-item .label {
+            font-size: 12px;
+            color: #666;
+        }
+        .stat-item .value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0A1F44;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-logo">
+                <img src="LOGO_chefsystent.png" alt="Chefsystent Logo">
+            </div>
+            <p>System Zarządzania Kuchnią - Planowanie Posiłków</p>
+            
+            <nav>
+                <a href="index.html">Surowce</a>
+                <a href="recipes.html">Receptury</a>
+                <a href="dishes.html">Dania</a>
+                <a href="groups.html">← Grupy</a>
+            </nav>
+        </header>
+
+        <div class="content">
+            <!-- Loading state -->
+            <div id="loadingState" class="loading">
+                Ładowanie danych grupy...
+            </div>
+
+            <!-- Main content (ukryte na starcie) -->
+            <div id="mainContent" style="display: none;">
+                
+                <!-- Info o grupie -->
+                <div class="group-info-header">
+                    <div class="info-item">
+                        <label>Nazwa grupy</label>
+                        <div class="value" id="groupName">—</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Organizator</label>
+                        <div class="value" id="groupOrganizer">—</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Liczba osób</label>
+                        <div class="value" id="groupPeople">—</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Wiek grupy</label>
+                        <div class="value" id="groupAge">—</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Okres</label>
+                        <div class="value" id="groupPeriod">—</div>
+                    </div>
+                </div>
+
+                <!-- Sticky akcje -->
+                <div class="sticky-actions">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn" onclick="window.location.href='groups.html'" 
+                                style="background: #6c757d; color: white;">
+                            ← Wróć do grup
+                        </button>
+                        <h2 style="margin: 0;">Jadłospis grupy</h2>
+                    </div>
+                    <button class="btn btn-success" onclick="saveAllMeals()">
+                        💾 Zapisz wszystkie zmiany
+                    </button>
+                </div>
+
+                <!-- Timeline dni -->
+                <div class="days-timeline" id="daysTimeline">
+                    <!-- Dni będą generowane dynamicznie przez JS -->
+                </div>
+
+                <!-- Statystyki -->
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <span class="label">Dni w jadłospisie</span>
+                        <span class="value" id="statDays">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">Zaplanowane posiłki</span>
+                        <span class="value" id="statPlanned">0 / 0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">Postęp</span>
+                        <span class="value" id="statProgress">0%</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Wybór dania -->
+    <div id="dishModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>Wybierz danie</h2>
+                <span class="close" onclick="closeDishModal()">&times;</span>
+            </div>
+
+            <div style="padding: 20px;">
+                <!-- Wyszukiwanie -->
+                <input type="text" id="dishSearch" placeholder="🔍 Szukaj dania..." 
+                       style="width: 100%; padding: 10px; margin-bottom: 20px; border: 2px solid #e0e0e0; border-radius: 8px;">
+
+                <!-- Lista dań -->
+                <div id="dishesList" style="max-height: 400px; overflow-y: auto;">
+                    <!-- Dania będą generowane przez JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== ZMIENNE GLOBALNE ==========
+        let groupId = null;
+        let groupData = null;
+        let allDishes = [];
+        let mealsData = []; // Stan posiłków {dayNumber, date, mealType, dishId, portions}
+        let currentEditingMeal = null; // {dayNumber, mealType}
+        
+        // ========== INICJALIZACJA ==========
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Pobierz ID grupy z URL
+            const urlParams = new URLSearchParams(window.location.search);
+            groupId = urlParams.get('id');
+            
+            if (!groupId) {
+                alert('❌ Brak ID grupy w URL!');
+                window.location.href = 'groups.html';
+                return;
+            }
+            
+            await loadGroupData();
+            await loadDishes();
+            await loadExistingMeals();
+            generateDaysTimeline();
+            updateStats();
+            
+            // Pokaż główną zawartość
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+        });
+
+        // ========== ŁADOWANIE DANYCH ==========
+        
+        async function loadGroupData() {
+            try {
+                const response = await fetch(`/api/groups/${groupId}`);
+                if (!response.ok) throw new Error('Błąd pobierania grupy');
+                
+                groupData = await response.json();
+                
+                // Wypełnij header
+                document.getElementById('groupName').textContent = groupData.nazwa;
+                document.getElementById('groupOrganizer').textContent = groupData.organizator_nazwa || '—';
+                
+                const totalPeople = (groupData.liczba_uczestnikow || 0) + 
+                                   (groupData.liczba_opiekunow || 0) + 
+                                   (groupData.liczba_pilotow || 0) + 
+                                   (groupData.liczba_kierowcow || 0) + 
+                                   (groupData.liczba_kadry || 0);
+                document.getElementById('groupPeople').textContent = `${totalPeople} osób`;
+                document.getElementById('groupAge').textContent = groupData.wiek_grupy || '—';
+                
+                const dateFirst = new Date(groupData.data_pierwszy_posilek).toLocaleDateString('pl-PL');
+                const dateLast = new Date(groupData.data_ostatni_posilek).toLocaleDateString('pl-PL');
+                document.getElementById('groupPeriod').textContent = `${dateFirst} – ${dateLast}`;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd ładowania danych grupy');
+            }
+        }
+        
+        async function loadDishes() {
+            try {
+                const response = await fetch('/api/dishes');
+                if (!response.ok) throw new Error('Błąd pobierania dań');
+                
+                allDishes = await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd ładowania dań');
+            }
+        }
+        
+        async function loadExistingMeals() {
+            try {
+                const response = await fetch(`/api/groups/${groupId}/meals`);
+                if (!response.ok) throw new Error('Błąd pobierania posiłków');
+                
+                const meals = await response.json();
+                
+                // Przekształć dane z bazy do formatu lokalnego
+                mealsData = meals.map(m => ({
+                    id: m.id,
+                    dayNumber: m.dzien_numer,
+                    date: m.data,
+                    mealType: m.typ_posilku,
+                    dishId: m.dish_id,
+                    portions: m.liczba_porcji,
+                    uwagi: m.uwagi
+                }));
+                
+            } catch (error) {
+                console.error('Error:', error);
+                // Nie pokazuj alertu - może po prostu nie ma jeszcze posiłków
+            }
+        }
+
+        // ========== GENEROWANIE TIMELINE ==========
+        
+        function generateDaysTimeline() {
+            const timeline = document.getElementById('daysTimeline');
+            timeline.innerHTML = '';
+            
+            const dateFirst = new Date(groupData.data_pierwszy_posilek);
+            const dateLast = new Date(groupData.data_ostatni_posilek);
+            
+            let currentDate = new Date(dateFirst);
+            let dayNumber = 1;
+            
+            while (currentDate <= dateLast) {
+                const dayCard = createDayCard(dayNumber, new Date(currentDate));
+                timeline.appendChild(dayCard);
+                
+                // Następny dzień
+                currentDate.setDate(currentDate.getDate() + 1);
+                dayNumber++;
+            }
+            
+            // Aktualizuj statystykę dni
+            document.getElementById('statDays').textContent = dayNumber - 1;
+        }
+        
+        function createDayCard(dayNumber, date) {
+            const card = document.createElement('div');
+            card.className = 'day-card';
+            card.id = `day-${dayNumber}`;
+            
+            const dayName = date.toLocaleDateString('pl-PL', { weekday: 'long' });
+            const dateStr = date.toLocaleDateString('pl-PL');
+            
+            card.innerHTML = `
+                <div class="day-header">
+                    <h3>Dzień ${dayNumber} - ${dayName}</h3>
+                    <div class="day-date">${dateStr}</div>
+                </div>
+                <div class="meals-section">
+                    <div class="meals-grid" id="meals-day-${dayNumber}">
+                        ${generateMealCardsForDay(dayNumber, date)}
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        function generateMealCardsForDay(dayNumber, date) {
+            if (!groupData.meal_types || groupData.meal_types.length === 0) {
+                return '<p class="no-dish">Brak zdefiniowanych typów posiłków dla tej grupy</p>';
+            }
+            
+            const mealIcons = {
+                'sniadanie': '🍳',
+                'ii_sniadanie': '🥪',
+                'suchy_prowiant': '🥡',
+                'obiad': '🍽️',
+                'powieczorek': '🧁',
+                'kolacja': '🍲',
+                'obiadokolacja': '🍛',
+                'ognisko': '🔥'
+            };
+            
+            const mealNames = {
+                'sniadanie': 'Śniadanie',
+                'ii_sniadanie': 'II Śniadanie',
+                'suchy_prowiant': 'Suchy prowiant',
+                'obiad': 'Obiad',
+                'powieczorek': 'Powieczorek',
+                'kolacja': 'Kolacja',
+                'obiadokolacja': 'Obiadokolacja',
+                'ognisko': 'Ognisko'
+            };
+            
+            return groupData.meal_types.map(mealType => {
+                const existingMeal = mealsData.find(m => 
+                    m.dayNumber === dayNumber && m.mealType === mealType
+                );
+                
+                return createMealCard(dayNumber, date, mealType, mealIcons[mealType], mealNames[mealType], existingMeal);
+            }).join('');
+        }
+        
+        function createMealCard(dayNumber, date, mealType, icon, name, existingMeal) {
+            const hasM = existingMeal ? 'has-dish' : '';
+            
+            if (existingMeal) {
+                const dish = allDishes.find(d => d.id === existingMeal.dishId);
+                const dishName = dish ? dish.nazwa : 'Nieznane danie';
+                
+                return `
+                    <div class="meal-card ${hasM}">
+                        <div class="meal-type">
+                            <span class="meal-type-icon">${icon}</span>
+                            ${name}
+                        </div>
+                        <div class="selected-dish">
+                            <div class="dish-name">${dishName}</div>
+                            <div class="portions">
+                                <label>Porcje:</label>
+                                <input type="number" min="1" value="${existingMeal.portions}" 
+                                       onchange="updatePortions(${dayNumber}, '${mealType}', this.value)">
+                            </div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-small btn-change" 
+                                    onclick="openDishSelector(${dayNumber}, '${mealType}')">
+                                🔄 Zmień
+                            </button>
+                            <button class="btn-small btn-remove" 
+                                    onclick="removeMeal(${dayNumber}, '${mealType}')">
+                                🗑️ Usuń
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="meal-card">
+                        <div class="meal-type">
+                            <span class="meal-type-icon">${icon}</span>
+                            ${name}
+                        </div>
+                        <div class="no-dish">Nie wybrano dania</div>
+                        <div class="meal-actions">
+                            <button class="btn-small btn-add" 
+                                    onclick="openDishSelector(${dayNumber}, '${mealType}')">
+                                ➕ Dodaj danie
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Ciąg dalszy w następnej wiadomości...
+    // ========== AKCJE NA POSIŁKACH ==========
+        
+    function openDishSelector(dayNumber, mealType) {
+            currentEditingMeal = { dayNumber, mealType };
+            
+            // Pokaż modal
+            document.getElementById('dishModal').style.display = 'flex';
+            
+            // Wygeneruj listę dań
+            renderDishesList(allDishes);
+            
+            // Wyczyść wyszukiwanie
+            document.getElementById('dishSearch').value = '';
+            document.getElementById('dishSearch').focus();
+        }
+        
+        function renderDishesList(dishes) {
+            const container = document.getElementById('dishesList');
+            
+            if (dishes.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Brak dań</p>';
+                return;
+            }
+            
+            container.innerHTML = dishes.map(dish => `
+                <div class="dish-item" onclick="selectDish(${dish.id})" 
+                     style="padding: 15px; border-bottom: 1px solid #e0e0e0; cursor: pointer; transition: all 0.2s;">
+                    <div style="font-weight: 600; color: #0A1F44; margin-bottom: 5px;">
+                        ${dish.nazwa}
+                    </div>
+                    <div style="font-size: 13px; color: #666;">
+                        ${dish.typ || 'Brak typu'} • ${dish.cena ? dish.cena + ' zł' : 'Brak ceny'}
+                    </div>
+                </div>
+            `).join('');
+            
+            // Hover effect
+            const items = container.querySelectorAll('.dish-item');
+            items.forEach(item => {
+                item.addEventListener('mouseenter', () => {
+                    item.style.background = '#f8f9fa';
+                });
+                item.addEventListener('mouseleave', () => {
+                    item.style.background = 'white';
+                });
+            });
+        }
+        
+        function selectDish(dishId) {
+            if (!currentEditingMeal) return;
+            
+            const { dayNumber, mealType } = currentEditingMeal;
+            
+            // Znajdź datę dla tego dnia
+            const dateFirst = new Date(groupData.data_pierwszy_posilek);
+            const mealDate = new Date(dateFirst);
+            mealDate.setDate(mealDate.getDate() + (dayNumber - 1));
+            
+            // Domyślna liczba porcji = suma osób
+            const defaultPortions = (groupData.liczba_uczestnikow || 0) + 
+                                   (groupData.liczba_opiekunow || 0) + 
+                                   (groupData.liczba_pilotow || 0) + 
+                                   (groupData.liczba_kierowcow || 0) + 
+                                   (groupData.liczba_kadry || 0);
+            
+            // Sprawdź czy posiłek już istnieje
+            const existingIndex = mealsData.findIndex(m => 
+                m.dayNumber === dayNumber && m.mealType === mealType
+            );
+            
+            if (existingIndex >= 0) {
+                // Aktualizuj istniejący
+                mealsData[existingIndex].dishId = dishId;
+            } else {
+                // Dodaj nowy
+                mealsData.push({
+                    id: null, // będzie nadane przez backend
+                    dayNumber,
+                    date: mealDate.toISOString().split('T')[0],
+                    mealType,
+                    dishId,
+                    portions: defaultPortions,
+                    uwagi: null
+                });
+            }
+            
+            // Odśwież wyświetlanie
+            refreshDayMeals(dayNumber);
+            updateStats();
+            
+            // Zamknij modal
+            closeDishModal();
+        }
+        
+        function updatePortions(dayNumber, mealType, newPortions) {
+            const meal = mealsData.find(m => 
+                m.dayNumber === dayNumber && m.mealType === mealType
+            );
+            
+            if (meal) {
+                meal.portions = parseInt(newPortions) || 0;
+            }
+        }
+        
+        function removeMeal(dayNumber, mealType) {
+            if (!confirm('Czy na pewno usunąć ten posiłek?')) return;
+            
+            const index = mealsData.findIndex(m => 
+                m.dayNumber === dayNumber && m.mealType === mealType
+            );
+            
+            if (index >= 0) {
+                mealsData.splice(index, 1);
+            }
+            
+            refreshDayMeals(dayNumber);
+            updateStats();
+        }
+        
+        function refreshDayMeals(dayNumber) {
+            const dateFirst = new Date(groupData.data_pierwszy_posilek);
+            const currentDate = new Date(dateFirst);
+            currentDate.setDate(currentDate.getDate() + (dayNumber - 1));
+            
+            const container = document.getElementById(`meals-day-${dayNumber}`);
+            container.innerHTML = generateMealCardsForDay(dayNumber, currentDate);
+        }
+        
+        // ========== MODAL ZARZĄDZANIE ==========
+        
+        function closeDishModal() {
+            document.getElementById('dishModal').style.display = 'none';
+            currentEditingMeal = null;
+        }
+        
+        // Wyszukiwanie dań
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('dishSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase();
+                    const filtered = allDishes.filter(d => 
+                        d.nazwa.toLowerCase().includes(query)
+                    );
+                    renderDishesList(filtered);
+                });
+            }
+        });
+        
+        // ========== ZAPIS DO BAZY ==========
+        
+        async function saveAllMeals() {
+            if (mealsData.length === 0) {
+                alert('⚠️ Brak posiłków do zapisania');
+                return;
+            }
+            
+            if (!confirm(`Zapisać ${mealsData.length} posiłków?`)) return;
+            
+            try {
+                // Usuń wszystkie istniejące posiłki grupy
+                const existingResponse = await fetch(`/api/groups/${groupId}/meals`);
+                const existing = await existingResponse.json();
+                
+                for (const meal of existing) {
+                    await fetch(`/api/group-meals/${meal.id}`, { method: 'DELETE' });
+                }
+                
+                // Dodaj nowe
+                for (const meal of mealsData) {
+                    const data = {
+                        dzien_numer: meal.dayNumber,
+                        data: meal.date,
+                        typ_posilku: meal.mealType,
+                        dish_id: meal.dishId,
+                        liczba_porcji: meal.portions,
+                        uwagi: meal.uwagi
+                    };
+                    
+                    const response = await fetch(`/api/groups/${groupId}/meals`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    if (!response.ok) throw new Error('Błąd zapisu posiłku');
+                }
+                
+                alert('✅ Jadłospis zapisany pomyślnie!');
+                
+                // Przeładuj dane
+                await loadExistingMeals();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd zapisu: ' + error.message);
+            }
+        }
+        
+        // ========== STATYSTYKI ==========
+        
+        function updateStats() {
+            // Całkowita liczba posiłków do zaplanowania
+            const dateFirst = new Date(groupData.data_pierwszy_posilek);
+            const dateLast = new Date(groupData.data_ostatni_posilek);
+            const daysDiff = Math.ceil((dateLast - dateFirst) / (1000 * 60 * 60 * 24)) + 1;
+            const mealTypesCount = groupData.meal_types ? groupData.meal_types.length : 0;
+            const totalMeals = daysDiff * mealTypesCount;
+            
+            // Zaplanowane
+            const plannedMeals = mealsData.length;
+            
+            // Procent
+            const progress = totalMeals > 0 ? Math.round((plannedMeals / totalMeals) * 100) : 0;
+            
+            document.getElementById('statPlanned').textContent = `${plannedMeals} / ${totalMeals}`;
+            document.getElementById('statProgress').textContent = `${progress}%`;
+            
+            // Kolor w zależności od postępu
+            const progressEl = document.getElementById('statProgress');
+            if (progress === 100) {
+                progressEl.style.color = '#28a745';
+            } else if (progress >= 50) {
+                progressEl.style.color = '#ffc107';
+            } else {
+                progressEl.style.color = '#dc3545';
+            }
+        }
+        
+        // ========== HELPERS ==========
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('pl-PL');
+        }
+        
+    </script>
+</body>
+</html>
