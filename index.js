@@ -782,7 +782,8 @@ app.get('/api/groups/:groupId/meals', async (req, res) => {
       .select('*, dishes(id, nazwa, typ)')
       .eq('group_id', req.params.groupId)
       .order('dzien_numer')
-      .order('typ_posilku');
+      .order('typ_posilku')
+      .order('kolejnosc'); // DODANE
     
     if (error) throw error;
     res.json(data);
