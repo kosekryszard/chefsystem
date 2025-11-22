@@ -666,7 +666,24 @@
                 'ognisko': 'Ognisko'
             };
             
-            return mealTypes.map(mealType => {
+            // Sortuj typy posiłków po godzinie
+            const mealTypesWithTime = mealTypes.map(mealType => {
+                // Znajdź pierwszą godzinę dla tego typu
+                const mealsOfType = mealsData.filter(m => 
+                    m.dayNumber === dayNumber && m.mealType === mealType
+                );
+                
+                const time = mealsOfType.length > 0 && mealsOfType[0].godzina
+                    ? mealsOfType[0].godzina
+                    : (mealTypeDefaults[mealType] || '12:00');
+                
+                return { mealType, time };
+            });
+            
+            // Sortuj po godzinie
+            mealTypesWithTime.sort((a, b) => a.time.localeCompare(b.time));
+            
+            return mealTypesWithTime.map(({ mealType }) => {
                 // Znajdź WSZYSTKIE dania dla tego posiłku (może być wiele)
                 const existingMeals = mealsData
                     .filter(m => m.dayNumber === dayNumber && m.mealType === mealType)
@@ -847,6 +864,14 @@
                                    (groupData.liczba_kierowcow || 0) + 
                                    (groupData.liczba_kadry || 0);
             
+// Pobierz godzinę - z istniejących dań tego typu lub domyślną
+const existingMealsOfType = mealsData.filter(m => 
+                m.dayNumber === dayNumber && m.mealType === mealType
+            );
+            const mealTime = existingMealsOfType.length > 0 && existingMealsOfType[0].godzina
+                ? existingMealsOfType[0].godzina
+                : (mealTypeDefaults[mealType] || '12:00');
+            
             // Dodaj nowe danie (nie sprawdzamy czy istnieje - pozwalamy na wiele)
             mealsData.push({
                 id: null, // będzie nadane przez backend
@@ -856,7 +881,8 @@
                 dishId,
                 portions: defaultPortions,
                 uwagi: null,
-                kolejnosc: kolejnosc || 1
+                kolejnosc: kolejnosc || 1,
+                godzina: mealTime  // DODANE
             });
             
             // Odśwież wyświetlanie
@@ -928,6 +954,50 @@
             updateStats();
         }
         
+// Aktualizuj godzinę posiłku
+function updateMealTime(dayNumber, mealType, newTime) {
+            // Znajdź wszystkie dania tego typu posiłku w tym dniu
+            const meals = mealsData.filter(m => 
+                m.dayNumber === dayNumber && m.mealType === mealType
+            );
+            
+            // Ustaw nową godzinę dla wszystkich
+            meals.forEach(meal => {
+                meal.godzina = newTime;
+            });
+            
+            // Odśwież widok (z sortowaniem)
+            refreshDayMeals(dayNumber);
+        }
+        
+        // Usuń cały typ posiłku z dnia
+        function removeMealType(dayNumber, mealType) {
+            const mealNames = {
+                'sniadanie': 'Śniadanie',
+                'ii_sniadanie': 'II Śniadanie',
+                'suchy_prowiant': 'Suchy prowiant',
+                'obiad': 'Obiad',
+                'powieczorek': 'Powieczorek',
+                'kolacja': 'Kolacja',
+                'obiadokolacja': 'Obiadokolacja',
+                'ognisko': 'Ognisko'
+            };
+            
+            const mealName = mealNames[mealType] || mealType;
+            
+            if (!confirm(`Czy na pewno usunąć ${mealName} z tego dnia?\n\nSpowoduje to usunięcie wszystkich dań tego posiłku.`)) {
+                return;
+            }
+            
+            // Usuń wszystkie dania tego typu z dnia
+            mealsData = mealsData.filter(m => 
+                !(m.dayNumber === dayNumber && m.mealType === mealType)
+            );
+            
+            refreshDayMeals(dayNumber);
+            updateStats();
+        }
+
         // Przesuń danie w górę (zmniejsz kolejność)
         function moveUp(dayNumber, mealType, currentIdx) {
             // Znajdź wszystkie dania tego posiłku
@@ -1021,7 +1091,8 @@
                         typ_posilku: meal.mealType,
                         dish_id: meal.dishId,
                         liczba_porcji: meal.portions,
-                        kolejnosc: meal.kolejnosc || 1,  // DODANE
+                        kolejnosc: meal.kolejnosc || 1,
+                        godzina: meal.godzina || '12:00',  // DODANE
                         uwagi: meal.uwagi
                     };
                     
