@@ -491,6 +491,7 @@
         let currentEditingMeal = null;
         let mealTypeDefaults = {};  // DODANE - domyślne godziny typów posiłków
         let currentAddMealDay = null;  // DODANE - dzień dla modalu dodawania typu
+        let copyDishData = null;  // DODANE - dane kopiowanego dania
 
         // ========== INICJALIZACJA ==========
         document.addEventListener('DOMContentLoaded', async () => {
@@ -1128,11 +1129,13 @@ currentAddMealDay = null;
             currentAddMealDay = null;
         }
         
-        // Zmienne dla kopiowania dania
-        let copyDishData = null;
-        
         // Otwórz modal kopiowania dania
         function openCopyDishModal(sourceDayNumber, mealType, dishId, portions) {
+            if (!groupData) {
+                alert('❌ Błąd: Dane grupy nie są załadowane');
+                return;
+            }
+            
             const dish = allDishes.find(d => d.id === dishId);
             const dishName = dish ? dish.nazwa : 'Nieznane danie';
             
