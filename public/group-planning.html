@@ -242,6 +242,31 @@
             font-weight: 700;
             color: #0A1F44;
         }
+        /* Drag & Drop styles */
+        .selected-dish {
+            cursor: move;
+            transition: all 0.2s;
+        }
+        .selected-dish.dragging {
+            opacity: 0.4;
+        }
+        .selected-dish.drag-over {
+            border-top: 3px solid #D4AF37;
+            padding-top: 3px;
+        }
+        .drag-handle {
+            cursor: grab;
+            color: #999;
+            font-size: 16px;
+            user-select: none;
+        }
+        .drag-handle:hover {
+            color: #D4AF37;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
     </style>
 </head>
 <body>
@@ -561,6 +586,18 @@
                                            onchange="updatePortions(${dayNumber}, '${mealType}', ${meal.id}, this.value)">
                                     <span style="font-size: 12px; color: #666;">porcji</span>
                                 </div>
+                                ${idx > 0 ? `<button class="btn-small" 
+                                        onclick="moveUp(${dayNumber}, '${mealType}', ${meal.id})"
+                                        title="W górę"
+                                        style="background: #17a2b8; color: white; padding: 6px 10px;">
+                                    ↑
+                                </button>` : ''}
+                                ${idx < existingMeals.length - 1 ? `<button class="btn-small" 
+                                        onclick="moveDown(${dayNumber}, '${mealType}', ${meal.id})"
+                                        title="W dół"
+                                        style="background: #17a2b8; color: white; padding: 6px 10px;">
+                                    ↓
+                                </button>` : ''}
                                 <button class="btn-small btn-remove" 
                                         onclick="removeDish(${dayNumber}, '${mealType}', ${meal.id})"
                                         title="Usuń to danie">
@@ -750,6 +787,46 @@
             updateStats();
         }
         
+        // Przesuń danie w górę (zmniejsz kolejność)
+        function moveUp(dayNumber, mealType, mealId) {
+            // Znajdź wszystkie dania tego posiłku
+            const meals = mealsData.filter(m => 
+                m.dayNumber === dayNumber && m.mealType === mealType
+            ).sort((a, b) => (a.kolejnosc || 1) - (b.kolejnosc || 1));
+            
+            // Znajdź indeks dania do przesunięcia
+            const currentIndex = meals.findIndex(m => m.id === mealId);
+            
+            if (currentIndex > 0) {
+                // Zamień kolejność z poprzednim
+                const temp = meals[currentIndex].kolejnosc;
+                meals[currentIndex].kolejnosc = meals[currentIndex - 1].kolejnosc;
+                meals[currentIndex - 1].kolejnosc = temp;
+                
+                refreshDayMeals(dayNumber);
+            }
+        }
+        
+        // Przesuń danie w dół (zwiększ kolejność)
+        function moveDown(dayNumber, mealType, mealId) {
+            // Znajdź wszystkie dania tego posiłku
+            const meals = mealsData.filter(m => 
+                m.dayNumber === dayNumber && m.mealType === mealType
+            ).sort((a, b) => (a.kolejnosc || 1) - (b.kolejnosc || 1));
+            
+            // Znajdź indeks dania do przesunięcia
+            const currentIndex = meals.findIndex(m => m.id === mealId);
+            
+            if (currentIndex < meals.length - 1) {
+                // Zamień kolejność z następnym
+                const temp = meals[currentIndex].kolejnosc;
+                meals[currentIndex].kolejnosc = meals[currentIndex + 1].kolejnosc;
+                meals[currentIndex + 1].kolejnosc = temp;
+                
+                refreshDayMeals(dayNumber);
+            }
+        }
+
         function refreshDayMeals(dayNumber) {
             const dateFirst = new Date(groupData.data_pierwszy_posilek);
             const currentDate = new Date(dateFirst);
