@@ -68,23 +68,50 @@
         
         /* Header dnia */
         .day-header {
-            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+            background: linear-gradient(135deg, #1e3a5f 0%, #0A1F44 100%);
+            padding: 20px;
             color: white;
-            padding: 15px 20px;
+            border-radius: 12px 12px 0 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .day-header h3 {
-            margin: 0;
-            font-size: 18px;
-        }
-        .day-header .day-date {
+        
+        .btn-add-meal {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
             font-size: 14px;
-            opacity: 0.9;
+            font-weight: 600;
+            transition: all 0.2s;
         }
         
-        /* Sekcja posiłków */
+        .btn-add-meal:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+        
+        .day-date-info {
+            text-align: right;
+        }
+        
+        .day-date-large {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .day-name {
+            font-size: 16px;
+            opacity: 0.9;
+            text-transform: capitalize;
+        }
+        
+        * Sekcja posiłków */
         .meals-section {
             padding: 20px;
         }
@@ -518,8 +545,13 @@
             
             card.innerHTML = `
                 <div class="day-header">
-                    <h3>Dzień ${dayNumber} - ${dayName}</h3>
-                    <div class="day-date">${dateStr}</div>
+                    <button class="btn-add-meal" onclick="openAddMealTypeModal(${dayNumber})">
+                        ➕ Dodaj posiłek
+                    </button>
+                    <div class="day-date-info">
+                        <div class="day-date-large">${dateStr}</div>
+                        <div class="day-name">${dayName}</div>
+                    </div>
                 </div>
                 <div class="meals-section">
                     <div class="meals-grid" id="meals-day-${dayNumber}">
