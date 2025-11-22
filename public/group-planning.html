@@ -578,26 +578,27 @@
                     
                     return `
                         <div class="selected-dish" style="margin-top: ${idx > 0 ? '10px' : '0'};">
-                            <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;">
-                                <div class="dish-name">${dishName}</div>
+                            <div style="display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 5px; align-items: center;">    <div class="dish-name">${dishName}</div>
                                 <div style="display: flex; align-items: center; gap: 5px;">
                                     <input type="number" min="1" value="${meal.portions}" 
                                            style="width: 70px; padding: 5px; border: 1px solid #dee2e6; border-radius: 6px; text-align: center;"
                                            onchange="updatePortions(${dayNumber}, '${mealType}', ${meal.id}, this.value)">
                                     <span style="font-size: 12px; color: #666;">porcji</span>
                                 </div>
-                                ${idx > 0 ? `<button class="btn-small" 
-                                        onclick="moveUp(${dayNumber}, '${mealType}', ${meal.id})"
-                                        title="W górę"
-                                        style="background: #17a2b8; color: white; padding: 6px 10px;">
-                                    ↑
-                                </button>` : ''}
-                                ${idx < existingMeals.length - 1 ? `<button class="btn-small" 
-                                        onclick="moveDown(${dayNumber}, '${mealType}', ${meal.id})"
-                                        title="W dół"
-                                        style="background: #17a2b8; color: white; padding: 6px 10px;">
-                                    ↓
-                                </button>` : ''}
+                                ${idx > 0 ? `
+                                    <button class="btn-small btn-change" 
+                                            onclick="moveUp(${dayNumber}, '${mealType}', ${meal.id})"
+                                            title="Przesuń w górę">
+                                        ↑
+                                    </button>
+                                ` : '<span style="width: 32px;"></span>'}
+                                ${idx < existingMeals.length - 1 ? `
+                                    <button class="btn-small btn-change" 
+                                            onclick="moveDown(${dayNumber}, '${mealType}', ${meal.id})"
+                                            title="Przesuń w dół">
+                                        ↓
+                                    </button>
+                                ` : '<span style="width: 32px;"></span>'}
                                 <button class="btn-small btn-remove" 
                                         onclick="removeDish(${dayNumber}, '${mealType}', ${meal.id})"
                                         title="Usuń to danie">
@@ -789,18 +790,23 @@
         
         // Przesuń danie w górę (zmniejsz kolejność)
         function moveUp(dayNumber, mealType, mealId) {
-            // Znajdź wszystkie dania tego posiłku
+            // Znajdź wszystkie dania tego posiłku, posortowane po kolejności
             const meals = mealsData.filter(m => 
                 m.dayNumber === dayNumber && m.mealType === mealType
             ).sort((a, b) => (a.kolejnosc || 1) - (b.kolejnosc || 1));
             
-            // Znajdź indeks dania do przesunięcia
-            const currentIndex = meals.findIndex(m => m.id === mealId);
+            // Znajdź indeks - szukaj po wszystkich polach (dla nowych dań id może być null)
+            const currentIndex = meals.findIndex(m => {
+                if (mealId === null || mealId === undefined) {
+                    return m.dishId === mealId; // fallback
+                }
+                return m.id === mealId || (m.id === null && meals.indexOf(m) === mealId);
+            });
             
             if (currentIndex > 0) {
                 // Zamień kolejność z poprzednim
-                const temp = meals[currentIndex].kolejnosc;
-                meals[currentIndex].kolejnosc = meals[currentIndex - 1].kolejnosc;
+                const temp = meals[currentIndex].kolejnosc || currentIndex + 1;
+                meals[currentIndex].kolejnosc = meals[currentIndex - 1].kolejnosc || currentIndex;
                 meals[currentIndex - 1].kolejnosc = temp;
                 
                 refreshDayMeals(dayNumber);
@@ -809,18 +815,23 @@
         
         // Przesuń danie w dół (zwiększ kolejność)
         function moveDown(dayNumber, mealType, mealId) {
-            // Znajdź wszystkie dania tego posiłku
+            // Znajdź wszystkie dania tego posiłku, posortowane po kolejności
             const meals = mealsData.filter(m => 
                 m.dayNumber === dayNumber && m.mealType === mealType
             ).sort((a, b) => (a.kolejnosc || 1) - (b.kolejnosc || 1));
             
-            // Znajdź indeks dania do przesunięcia
-            const currentIndex = meals.findIndex(m => m.id === mealId);
+            // Znajdź indeks
+            const currentIndex = meals.findIndex(m => {
+                if (mealId === null || mealId === undefined) {
+                    return m.dishId === mealId;
+                }
+                return m.id === mealId || (m.id === null && meals.indexOf(m) === mealId);
+            });
             
-            if (currentIndex < meals.length - 1) {
+            if (currentIndex >= 0 && currentIndex < meals.length - 1) {
                 // Zamień kolejność z następnym
-                const temp = meals[currentIndex].kolejnosc;
-                meals[currentIndex].kolejnosc = meals[currentIndex + 1].kolejnosc;
+                const temp = meals[currentIndex].kolejnosc || currentIndex + 1;
+                meals[currentIndex].kolejnosc = meals[currentIndex + 1].kolejnosc || currentIndex + 2;
                 meals[currentIndex + 1].kolejnosc = temp;
                 
                 refreshDayMeals(dayNumber);
