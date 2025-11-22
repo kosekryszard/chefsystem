@@ -469,7 +469,7 @@
         let currentEditingMeal = null;
         let mealTypeDefaults = {};  // DODANE - domyślne godziny typów posiłków
         let currentAddMealDay = null;  // DODANE - dzień dla modalu dodawania typu
-        
+
         // ========== INICJALIZACJA ==========
         document.addEventListener('DOMContentLoaded', async () => {
             // Pobierz ID grupy z URL
@@ -1036,7 +1036,7 @@ function updateMealTime(dayNumber, mealType, newTime) {
 
 // Otwórz modal dodawania typu posiłku do dnia
 // Zmienna do śledzenia bieżącego dnia
-let currentAddMealDay = null;
+currentAddMealDay = null;
         
         // Otwórz modal dodawania typu posiłku do dnia
         function openAddMealTypeModal(dayNumber) {
