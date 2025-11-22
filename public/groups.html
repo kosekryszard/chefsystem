@@ -364,64 +364,6 @@
                     </div>
                 </div>
 
-                <!-- Sekcja 4: Szablon (opcjonalnie) -->
-                <div class="form-section">
-                    <h3>📝 Szablon i struktura posiłków</h3>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Wybierz szablon (opcjonalnie)</label>
-                            <select id="schemat_id" onchange="loadTemplateStructure()">
-                                <option value="">Bez szablonu - wybierz posiłki poniżej</option>
-                            </select>
-                            <small style="color: #666;">Szablon automatycznie wypełni strukturę posiłków</small>
-                        </div>
-                    </div>
-                    
-                    <!-- Struktura posiłków - checkboxy -->
-                    <div style="margin-top: 20px;">
-                        <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #0A1F44;">
-                            Wybierz typy posiłków w jadłospisie:
-                        </label>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                            <label style="display: flex; align-items: center; font-weight: normal; cursor: pointer;">
-                                <input type="checkbox" name="meal_types" value="sniadanie" style="margin-right: 8px;">
-                                Śniadanie
-                            </label>
-                            <label style="display: flex; align-items: center; font-weight: normal; cursor: pointer;">
-                                <input type="checkbox" name="meal_types" value="ii_sniadanie" style="margin-right: 8px;">
-                                II Śniadanie
-                            </label>
-                            <label style="display: flex; align-items: center; font-weight: normal; cursor: pointer;">
-                                <input type="checkbox" name="meal_types" value="suchy_prowiant" style="margin-right: 8px;">
-                                Suchy prowiant
-                            </label>
-                            <label style="display: flex; align-items: center; font-weight: normal; cursor: pointer;">
-                                <input type="checkbox" name="meal_types" value="obiad" style="margin-right: 8px;">
-                                Obiad
-                            </label>
-                            <label style="display: flex; align-items: center; font-weight: normal; cursor: pointer;">
-                                <input type="checkbox" name="meal_types" value="powieczorek" style="margin-right: 8px;">
-                                Powieczorek
-                            </label>
-                            <label style="display: flex; align-items: center; font-weight: normal; cursor: pointer;">
-                                <input type="checkbox" name="meal_types" value="kolacja" style="margin-right: 8px;">
-                                Kolacja
-                            </label>
-                            <label style="display: flex; align-items: center; font-weight: normal; cursor: pointer;">
-                                <input type="checkbox" name="meal_types" value="obiadokolacja" style="margin-right: 8px;">
-                                Obiadokolacja
-                            </label>
-                            <label style="display: flex; align-items: center; font-weight: normal; cursor: pointer;">
-                                <input type="checkbox" name="meal_types" value="ognisko" style="margin-right: 8px;">
-                                Ognisko
-                            </label>
-                        </div>
-                        <small style="color: #666; display: block; margin-top: 10px;">
-                            Te posiłki będą dostępne przy planowaniu jadłospisu
-                        </small>
-                    </div>
-                </div>
-
                 <!-- Przyciski -->
                 <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
                     <button type="button" class="btn" onclick="closeModal()" 
@@ -471,10 +413,7 @@
             const templateId = document.getElementById('schemat_id').value;
             
             if (!templateId) {
-                // Wyczyść checkboxy
-                document.querySelectorAll('input[name="meal_types"]').forEach(cb => {
-                    cb.checked = false;
-                });
+            
                 return;
             }
             
@@ -487,11 +426,6 @@
                 if (Array.isArray(dayMeals)) {
                     dayMeals.forEach(meal => mealTypes.add(meal));
                 }
-            });
-            
-            // Zaznacz odpowiednie checkboxy
-            document.querySelectorAll('input[name="meal_types"]').forEach(cb => {
-                cb.checked = mealTypes.has(cb.value);
             });
             
             console.log('Załadowano strukturę szablonu:', template.nazwa, mealTypes);
@@ -656,15 +590,6 @@
                 document.getElementById('pierwszy_posilek_typ').value = group.pierwszy_posilek_typ;
                 document.getElementById('ostatni_posilek_typ').value = group.ostatni_posilek_typ;
                 document.getElementById('schemat_id').value = group.schemat_id || '';
-               
-                // Załaduj checkboxy meal_types
-                document.querySelectorAll('input[name="meal_types"]').forEach(cb => cb.checked = false);
-                if (group.meal_types && Array.isArray(group.meal_types)) {
-                    group.meal_types.forEach(type => {
-                        const checkbox = document.querySelector(`input[name="meal_types"][value="${type}"]`);
-                        if (checkbox) checkbox.checked = true;
-                    });
-                }
                 
                 calculateTotal();
                 document.getElementById('groupModal').style.display = 'flex';
@@ -703,12 +628,6 @@
             
             const groupId = document.getElementById('groupId').value;
             
-            // Zbierz wybrane typy posiłków
-            const selectedMealTypes = [];
-            document.querySelectorAll('input[name="meal_types"]:checked').forEach(cb => {
-                selectedMealTypes.push(cb.value);
-            });
-            
 // Walidacja dat
             const dateFirst = document.getElementById('data_pierwszy_posilek').value;
             const dateLast = document.getElementById('data_ostatni_posilek').value;
@@ -734,7 +653,7 @@
                 pierwszy_posilek_typ: document.getElementById('pierwszy_posilek_typ').value,
                 ostatni_posilek_typ: document.getElementById('ostatni_posilek_typ').value,
                 schemat_id: document.getElementById('schemat_id').value || null,
-                meal_types: selectedMealTypes, // nowe pole
+                meal_types: [],  // pusta tablica - typy zarządzane w planerze
                 status: groupId ? undefined : 'draft' // przy nowej grupie ustaw draft
             };
             
@@ -866,15 +785,6 @@ window.isSaving = false; // Resetuj flagę
                 // Szablon
                 if (group.schemat_id) {
                     document.getElementById('schemat_id').value = group.schemat_id;
-                }
-                
-                // Checkboxy meal_types
-                document.querySelectorAll('input[name="meal_types"]').forEach(cb => cb.checked = false);
-                if (group.meal_types) {
-                    group.meal_types.forEach(type => {
-                        const checkbox = document.querySelector(`input[name="meal_types"][value="${type}"]`);
-                        if (checkbox) checkbox.checked = true;
-                    });
                 }
                 
                 // NIE kopiujemy dat - user musi ustawić nowe
