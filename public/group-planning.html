@@ -460,6 +460,28 @@
     </div>
 </div>
 
+<!-- Modal kopiowania dania -->
+<div id="copyDishModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h2>Kopiuj danie do innego dnia</h2>
+            <button class="btn-close" onclick="closeCopyDishModal()">✕</button>
+        </div>
+        
+        <div style="padding: 20px;">
+            <p id="copyDishInfo" style="margin-bottom: 15px; font-weight: 600;"></p>
+            
+            <label style="display: block; margin-bottom: 10px; font-weight: 600;">
+                Wybierz dzień docelowy:
+            </label>
+            
+            <div id="targetDaysList" style="display: grid; gap: 10px;">
+                <!-- Dynamicznie generowana lista dni -->
+            </div>
+        </div>
+    </div>
+</div>
+
     <script>
         // ========== ZMIENNE GLOBALNE ==========
         let groupId = null;
@@ -776,6 +798,12 @@
                                             ↓
                                         </button>
                                     ` : '<span style="width: 32px;"></span>'}
+                                    <button class="btn-small btn-copy" 
+                                            onclick="openCopyDishModal(${dayNumber}, '${mealType}', ${meal.dishId}, ${meal.portions})"
+                                            title="Kopiuj to danie do innego dnia"
+                                            style="background: #17a2b8; color: white;">
+                                        📋
+                                    </button>
                                     <button class="btn-small btn-remove" 
                                             onclick="removeDish(${dayNumber}, '${mealType}', ${meal.id})"
                                             title="Usuń to danie">
@@ -1100,6 +1128,126 @@ currentAddMealDay = null;
             currentAddMealDay = null;
         }
         
+        // Zmienne dla kopiowania dania
+        let copyDishData = null;
+        
+        // Otwórz modal kopiowania dania
+        function openCopyDishModal(sourceDayNumber, mealType, dishId, portions) {
+            const dish = allDishes.find(d => d.id === dishId);
+            const dishName = dish ? dish.nazwa : 'Nieznane danie';
+            
+            // Zapisz dane do skopiowania
+            copyDishData = {
+                sourceDayNumber,
+                mealType,
+                dishId,
+                portions
+            };
+            
+            // Pokaż info o daniu
+            document.getElementById('copyDishInfo').textContent = 
+                `Danie: ${dishName} (${portions} porcji)`;
+            
+            // Wygeneruj listę dni (wszystkie dni grupy OPRÓCZ źródłowego)
+            const container = document.getElementById('targetDaysList');
+            const dayButtons = [];
+            
+            for (let day = 1; day <= groupData.liczba_dni; day++) {
+                if (day === sourceDayNumber) continue; // Pomiń źródłowy dzień
+                
+                const dateFirst = new Date(groupData.data_pierwszy_posilek);
+                const currentDate = new Date(dateFirst);
+                currentDate.setDate(currentDate.getDate() + (day - 1));
+                
+                const dayName = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 
+                                 'Czwartek', 'Piątek', 'Sobota'][currentDate.getDay()];
+                const dateStr = currentDate.toLocaleDateString('pl-PL');
+                
+                dayButtons.push(`
+                    <button class="day-select-btn" 
+                            onclick="copyDishToDay(${day})"
+                            style="display: flex; justify-content: space-between; align-items: center;
+                                   padding: 15px 20px; border: 2px solid #e9ecef; border-radius: 8px;
+                                   background: white; cursor: pointer; transition: all 0.2s;">
+                        <div>
+                            <div style="font-weight: 600; color: #0A1F44;">Dzień ${day}</div>
+                            <div style="font-size: 14px; color: #666;">${dayName}, ${dateStr}</div>
+                        </div>
+                        <div style="font-size: 24px;">→</div>
+                    </button>
+                `);
+            }
+            
+            container.innerHTML = dayButtons.join('');
+            
+            // Dodaj hover effect
+            const style = document.createElement('style');
+            style.textContent = `
+                .day-select-btn:hover {
+                    border-color: #D4AF37;
+                    background: #fffbf0;
+                    transform: translateX(5px);
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Pokaż modal
+            document.getElementById('copyDishModal').style.display = 'flex';
+        }
+        
+        function closeCopyDishModal() {
+            document.getElementById('copyDishModal').style.display = 'none';
+            copyDishData = null;
+        }
+        
+        // Skopiuj danie do wybranego dnia
+        function copyDishToDay(targetDayNumber) {
+            if (!copyDishData) return;
+            
+            const { mealType, dishId, portions } = copyDishData;
+            
+            // Znajdź datę dla docelowego dnia
+            const dateFirst = new Date(groupData.data_pierwszy_posilek);
+            const targetDate = new Date(dateFirst);
+            targetDate.setDate(targetDate.getDate() + (targetDayNumber - 1));
+            
+            // Pobierz godzinę - z istniejących dań tego typu w docelowym dniu lub domyślną
+            const existingMealsOfType = mealsData.filter(m => 
+                m.dayNumber === targetDayNumber && m.mealType === mealType
+            );
+            const mealTime = existingMealsOfType.length > 0 && existingMealsOfType[0].godzina
+                ? existingMealsOfType[0].godzina
+                : (mealTypeDefaults[mealType] || '12:00');
+            
+            // Znajdź najwyższą kolejność dla tego typu w docelowym dniu
+            const maxKolejnosc = Math.max(
+                0,
+                ...existingMealsOfType.map(m => m.kolejnosc || 0)
+            );
+            
+            // Dodaj skopiowane danie
+            mealsData.push({
+                id: null,
+                dayNumber: targetDayNumber,
+                date: targetDate.toISOString().split('T')[0],
+                mealType,
+                dishId,
+                portions,
+                uwagi: null,
+                kolejnosc: maxKolejnosc + 1,
+                godzina: mealTime
+            });
+            
+            // Odśwież widok docelowego dnia
+            refreshDayMeals(targetDayNumber);
+            
+            // Zamknij modal
+            closeCopyDishModal();
+            
+            // Pokaż komunikat
+            alert(`✅ Skopiowano danie do dnia ${targetDayNumber}`);
+        }
+
         // Dodaj typ posiłku do dnia (bez dań)
         function addMealTypeToDay(dayNumber, mealType) {
             // Sprawdź czy już nie istnieje
