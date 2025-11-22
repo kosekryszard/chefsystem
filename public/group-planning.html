@@ -593,14 +593,14 @@
                                 </div>
                                 ${idx > 0 ? `
                                     <button class="btn-small btn-change" 
-                                            onclick="moveUp(${dayNumber}, '${mealType}', ${meal.id})"
+                                            onclick="moveUp(${dayNumber}, '${mealType}', ${idx})"
                                             title="Przesuń w górę">
                                         ↑
                                     </button>
                                 ` : '<span style="width: 32px;"></span>'}
                                 ${idx < existingMeals.length - 1 ? `
                                     <button class="btn-small btn-change" 
-                                            onclick="moveDown(${dayNumber}, '${mealType}', ${meal.id})"
+                                            onclick="moveDown(${dayNumber}, '${mealType}', ${idx})"
                                             title="Przesuń w dół">
                                         ↓
                                     </button>
