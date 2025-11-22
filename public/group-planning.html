@@ -1131,6 +1131,10 @@ currentAddMealDay = null;
         
         // Otwórz modal kopiowania dania
         function openCopyDishModal(sourceDayNumber, mealType, dishId, portions) {
+            console.log('🔍 Debug - groupData:', groupData);
+            console.log('🔍 Debug - groupData.liczba_dni:', groupData?.liczba_dni);
+            console.log('🔍 Debug - groupData.data_pierwszy_posilek:', groupData?.data_pierwszy_posilek);
+            
             if (!groupData) {
                 alert('❌ Błąd: Dane grupy nie są załadowane');
                 return;
