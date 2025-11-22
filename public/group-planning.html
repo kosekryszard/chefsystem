@@ -639,10 +639,19 @@
         }
         
         function generateMealCardsForDay(dayNumber, date) {
-            // Jeśli nie ma meal_types, użyj domyślnych
-            const mealTypes = (groupData.meal_types && groupData.meal_types.length > 0) 
-                ? groupData.meal_types 
-                : ['sniadanie', 'obiad', 'kolacja'];
+            // Pobierz unikalne typy posiłków dla tego dnia z mealsData
+            const dayMeals = mealsData.filter(m => m.dayNumber === dayNumber);
+            const mealTypes = [...new Set(dayMeals.map(m => m.mealType))];
+            
+            // Jeśli nie ma żadnych - użyj domyślnych z grupy
+            if (mealTypes.length === 0 && groupData.meal_types) {
+                mealTypes.push(...groupData.meal_types);
+            }
+            
+            // Jeśli dalej pusto - użyj podstawowych
+            if (mealTypes.length === 0) {
+                mealTypes.push('sniadanie', 'obiad', 'kolacja');
+            }
             
             const mealIcons = {
                 'sniadanie': '🍳',
@@ -998,6 +1007,98 @@ function updateMealTime(dayNumber, mealType, newTime) {
             updateStats();
         }
 
+// Otwórz modal dodawania typu posiłku do dnia
+function openAddMealTypeModal(dayNumber) {
+            // Pobierz typy posiłków już dodane w tym dniu
+            const existingTypes = [...new Set(mealsData
+                .filter(m => m.dayNumber === dayNumber)
+                .map(m => m.mealType)
+            )];
+            
+            // Wszystkie dostępne typy
+            const allTypes = [
+                { id: 'sniadanie', name: 'Śniadanie', icon: '🍳' },
+                { id: 'ii_sniadanie', name: 'II Śniadanie', icon: '🥪' },
+                { id: 'suchy_prowiant', name: 'Suchy prowiant', icon: '🥡' },
+                { id: 'obiad', name: 'Obiad', icon: '🍽️' },
+                { id: 'powieczorek', name: 'Powieczorek', icon: '🧁' },
+                { id: 'kolacja', name: 'Kolacja', icon: '🍲' },
+                { id: 'obiadokolacja', name: 'Obiadokolacja', icon: '🍛' },
+                { id: 'ognisko', name: 'Ognisko', icon: '🔥' }
+            ];
+            
+            // Typy które można dodać (nie ma ich jeszcze w tym dniu)
+            const availableTypes = allTypes.filter(t => !existingTypes.includes(t.id));
+            
+            if (availableTypes.length === 0) {
+                alert('✅ Wszystkie typy posiłków są już dodane do tego dnia!');
+                return;
+            }
+            
+            // Pokaż wybór
+            const options = availableTypes.map(t => 
+                `${t.icon} ${t.name}`
+            ).join('\n');
+            
+            const choice = prompt(`Wybierz typ posiłku do dodania:\n\n${availableTypes.map((t, i) => 
+                `${i + 1}. ${t.icon} ${t.name}`
+            ).join('\n')}\n\nWpisz numer:`);
+            
+            if (!choice) return;
+            
+            const index = parseInt(choice) - 1;
+            if (index >= 0 && index < availableTypes.length) {
+                const selectedType = availableTypes[index];
+                addMealTypeToDay(dayNumber, selectedType.id);
+            } else {
+                alert('❌ Nieprawidłowy wybór');
+            }
+        }
+        
+        // Dodaj typ posiłku do dnia (bez dań)
+        function addMealTypeToDay(dayNumber, mealType) {
+            // Sprawdź czy już nie istnieje
+            const exists = mealsData.some(m => 
+                m.dayNumber === dayNumber && m.mealType === mealType
+            );
+            
+            if (exists) {
+                alert('Ten typ posiłku już istnieje w tym dniu');
+                return;
+            }
+            
+            // Znajdź datę dla tego dnia
+            const dateFirst = new Date(groupData.data_pierwszy_posilek);
+            const mealDate = new Date(dateFirst);
+            mealDate.setDate(mealDate.getDate() + (dayNumber - 1));
+            
+            // Pobierz domyślną godzinę
+            const defaultTime = mealTypeDefaults[mealType] || '12:00';
+            
+            // Dodaj placeholder (pusty typ posiłku bez dania)
+            mealsData.push({
+                id: null,
+                dayNumber,
+                date: mealDate.toISOString().split('T')[0],
+                mealType,
+                dishId: null,  // BRAK DANIA
+                portions: 0,
+                uwagi: null,
+                kolejnosc: 1,
+                godzina: defaultTime,
+                isPlaceholder: true  // Oznacz jako placeholder
+            });
+            
+            // Dodaj typ do meal_types grupy (jeśli nie ma)
+            if (groupData.meal_types && !groupData.meal_types.includes(mealType)) {
+                groupData.meal_types.push(mealType);
+            }
+            
+            refreshDayMeals(dayNumber);
+            
+            alert(`✅ Dodano typ posiłku. Teraz możesz dodać dania.`);
+        }
+
         // Przesuń danie w górę (zmniejsz kolejność)
         function moveUp(dayNumber, mealType, currentIdx) {
             // Znajdź wszystkie dania tego posiłku
@@ -1083,8 +1184,11 @@ function updateMealTime(dayNumber, mealType, newTime) {
                     await fetch(`/api/group-meals/${meal.id}`, { method: 'DELETE' });
                 }
                 
+                // Filtruj placeholdery (nie zapisuj pustych typów)
+                const mealsToSave = mealsData.filter(m => !m.isPlaceholder && m.dishId !== null);
+                
                 // Dodaj nowe (z kolejnością)
-                for (const meal of mealsData) {
+                for (const meal of mealsToSave) {
                     const data = {
                         dzien_numer: meal.dayNumber,
                         data: meal.date,
