@@ -796,15 +796,10 @@
         
         // Przesuń danie w górę (zmniejsz kolejność)
         function moveUp(dayNumber, mealType, currentIdx) {
-            console.log('moveUp called:', dayNumber, mealType, currentIdx);
-            
             // Znajdź wszystkie dania tego posiłku
             const meals = mealsData.filter(m => 
                 m.dayNumber === dayNumber && m.mealType === mealType
             ).sort((a, b) => (a.kolejnosc || 1) - (b.kolejnosc || 1));
-            
-            console.log('Meals found:', meals.length, 'Moving index:', currentIdx);
-            
             if (currentIdx > 0 && currentIdx < meals.length) {
                 // Zamień kolejność z poprzednim
                 const temp = meals[currentIdx].kolejnosc || currentIdx + 1;
@@ -819,15 +814,10 @@
         
         // Przesuń danie w dół (zwiększ kolejność)
         function moveDown(dayNumber, mealType, currentIdx) {
-            console.log('moveDown called:', dayNumber, mealType, currentIdx);
-            
             // Znajdź wszystkie dania tego posiłku
             const meals = mealsData.filter(m => 
                 m.dayNumber === dayNumber && m.mealType === mealType
             ).sort((a, b) => (a.kolejnosc || 1) - (b.kolejnosc || 1));
-            
-            console.log('Meals found:', meals.length, 'Moving index:', currentIdx);
-            
             if (currentIdx >= 0 && currentIdx < meals.length - 1) {
                 // Zamień kolejność z następnym
                 const temp = meals[currentIdx].kolejnosc || currentIdx + 1;
