@@ -861,6 +861,45 @@ app.delete('/api/group-meals/:id', async (req, res) => {
   }
 });
 
+// GET - domyślne godziny typów posiłków dla grupy
+app.get('/api/groups/:groupId/meal-type-defaults', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('group_meal_type_defaults')
+      .select('*')
+      .eq('group_id', req.params.groupId);
+    
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST - ustaw domyślną godzinę dla typu posiłku w grupie
+app.post('/api/groups/:groupId/meal-type-defaults', async (req, res) => {
+  try {
+    const { typ_posilku, domyslna_godzina } = req.body;
+    
+    const { data, error } = await supabase
+      .from('group_meal_type_defaults')
+      .upsert({
+        group_id: req.params.groupId,
+        typ_posilku,
+        domyslna_godzina
+      }, {
+        onConflict: 'group_id,typ_posilku'
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ========== GENEROWANIE LISTY ZAKUPÓW ==========
 
 // GET - wygeneruj listę zakupów dla grupy
