@@ -483,6 +483,12 @@
             const timeline = document.getElementById('daysTimeline');
             timeline.innerHTML = '';
             
+            // Sprawdź czy dane grupy zostały załadowane
+            if (!groupData || !groupData.data_pierwszy_posilek) {
+                timeline.innerHTML = '<div class="loading">Ładowanie danych grupy...</div>';
+                return;
+            }
+            
             const dateFirst = new Date(groupData.data_pierwszy_posilek);
             const dateLast = new Date(groupData.data_ostatni_posilek);
             
@@ -789,8 +795,10 @@
         }
         
         // Przesuń danie w górę (zmniejsz kolejność)
-        function moveUp(dayNumber, mealType, mealId) {
-            // Znajdź wszystkie dania tego posiłku, posortowane po kolejności
+        function moveUp(dayNumber, mealType, currentIdx) {
+            console.log('moveUp called:', dayNumber, mealType, currentIdx); // DEBUG
+            
+            // Znajdź wszystkie dania tego posiłku
             const meals = mealsData.filter(m => 
                 m.dayNumber === dayNumber && m.mealType === mealType
             ).sort((a, b) => (a.kolejnosc || 1) - (b.kolejnosc || 1));
@@ -815,6 +823,7 @@
         
         // Przesuń danie w dół (zwiększ kolejność)
         function moveDown(dayNumber, mealType, mealId) {
+            console.log('movedown called:', dayNumber, mealType, currentIdx); // DEBUG
             // Znajdź wszystkie dania tego posiłku, posortowane po kolejności
             const meals = mealsData.filter(m => 
                 m.dayNumber === dayNumber && m.mealType === mealType
