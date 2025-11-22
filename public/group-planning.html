@@ -446,6 +446,20 @@
         </div>
     </div>
 
+<!-- Modal dodawania typu posiłku -->
+<div id="addMealTypeModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h2>Dodaj typ posiłku</h2>
+            <button class="btn-close" onclick="closeAddMealTypeModal()">✕</button>
+        </div>
+        
+        <div id="mealTypesList" style="display: grid; gap: 10px; padding: 20px;">
+            <!-- Dynamicznie generowana lista -->
+        </div>
+    </div>
+</div>
+
     <script>
         // ========== ZMIENNE GLOBALNE ==========
         let groupId = null;
@@ -643,14 +657,10 @@
             const dayMeals = mealsData.filter(m => m.dayNumber === dayNumber);
             const mealTypes = [...new Set(dayMeals.map(m => m.mealType))];
             
-            // Jeśli nie ma żadnych - użyj domyślnych z grupy
-            if (mealTypes.length === 0 && groupData.meal_types) {
-                mealTypes.push(...groupData.meal_types);
-            }
-            
-            // Jeśli dalej pusto - użyj podstawowych
+            // Jeśli nie ma żadnych typów w tym dniu - nie pokazuj nic
+            // (użytkownik użyje przycisku "Dodaj posiłek")
             if (mealTypes.length === 0) {
-                mealTypes.push('sniadanie', 'obiad', 'kolacja');
+                return '<div style="text-align: center; padding: 40px; color: #999;">Brak posiłków. Kliknij "➕ Dodaj posiłek" aby dodać.</div>';
             }
             
             const mealIcons = {
@@ -715,61 +725,77 @@
             let dishesHTML = '';
             
             if (hasDishes) {
-                // Pokaż listę dań
-                dishesHTML = existingMeals.map((meal, idx) => {
-                    const dish = allDishes.find(d => d.id === meal.dishId);
-                    const dishName = dish ? dish.nazwa : 'Nieznane danie';
-                    
-                    return `
-                        <div class="selected-dish" 
-                             draggable="true"
-                             data-meal-id="${meal.id || 'temp-' + idx}"
-                             data-day="${dayNumber}"
-                             data-meal-type="${mealType}"
-                             data-dish-id="${meal.dishId}"
-                             style="margin-top: ${idx > 0 ? '10px' : '0'};">
-                            <div style="display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 5px; align-items: center;">
-                                <div class="dish-name">${dishName}</div>
-                                <div style="display: flex; align-items: center; gap: 5px;">
-                                    <input type="number" min="1" value="${meal.portions}" 
-                                           style="width: 70px; padding: 5px; border: 1px solid #dee2e6; border-radius: 6px; text-align: center;"
-                                           onchange="updatePortions(${dayNumber}, '${mealType}', ${meal.id}, this.value)">
-                                    <span style="font-size: 12px; color: #666;">porcji</span>
-                                </div>
-                                ${idx > 0 ? `
-                                    <button class="btn-small btn-change" 
-                                            onclick="moveUp(${dayNumber}, '${mealType}', ${idx})"
-                                            title="Przesuń w górę">
-                                        ↑
-                                    </button>
-                                ` : '<span style="width: 32px;"></span>'}
-                                ${idx < existingMeals.length - 1 ? `
-                                    <button class="btn-small btn-change" 
-                                            onclick="moveDown(${dayNumber}, '${mealType}', ${idx})"
-                                            title="Przesuń w dół">
-                                        ↓
-                                    </button>
-                                ` : '<span style="width: 32px;"></span>'}
-                                <button class="btn-small btn-remove" 
-                                        onclick="removeDish(${dayNumber}, '${mealType}', ${meal.id})"
-                                        title="Usuń to danie">
-                                    🗑️
-                                </button>
-                            </div>
+                // Filtruj placeholdery (bez dań)
+                const realMeals = existingMeals.filter(m => m.dishId !== null && !m.isPlaceholder);
+                
+                if (realMeals.length === 0) {
+                    // Tylko placeholdery - pokaż jako puste
+                    dishesHTML = `
+                        <div class="no-dish">Nie wybrano dania</div>
+                        <div class="meal-actions">
+                            <button class="btn-small btn-add" 
+                                    onclick="openDishSelector(${dayNumber}, '${mealType}', 1)">
+                                ➕ Dodaj danie
+                            </button>
                         </div>
                     `;
-                }).join('');
-                
-                // Przycisk "Dodaj kolejne danie"
-                dishesHTML += `
-                    <div style="margin-top: 10px;">
-                        <button class="btn-small btn-add" 
-                                onclick="openDishSelector(${dayNumber}, '${mealType}', ${existingMeals.length + 1})"
-                                style="width: 100%;">
-                            ➕ Dodaj kolejne danie
-                        </button>
-                    </div>
-                `;
+                } else {
+                    // Pokaż listę prawdziwych dań
+                    dishesHTML = realMeals.map((meal, idx) => {
+                        const dish = allDishes.find(d => d.id === meal.dishId);
+                        const dishName = dish ? dish.nazwa : 'Nieznane danie';
+                        
+                        return `
+                            <div class="selected-dish" 
+                                 draggable="true"
+                                 data-meal-id="${meal.id || 'temp-' + idx}"
+                                 data-day="${dayNumber}"
+                                 data-meal-type="${mealType}"
+                                 data-dish-id="${meal.dishId}"
+                                 style="margin-top: ${idx > 0 ? '10px' : '0'};">
+                                <div style="display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 5px; align-items: center;">
+                                    <div class="dish-name">${dishName}</div>
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        <input type="number" min="1" value="${meal.portions}" 
+                                               style="width: 70px; padding: 5px; border: 1px solid #dee2e6; border-radius: 6px; text-align: center;"
+                                               onchange="updatePortions(${dayNumber}, '${mealType}', ${meal.id}, this.value)">
+                                        <span style="font-size: 12px; color: #666;">porcji</span>
+                                    </div>
+                                    ${idx > 0 ? `
+                                        <button class="btn-small btn-change" 
+                                                onclick="moveUp(${dayNumber}, '${mealType}', ${idx})"
+                                                title="Przesuń w górę">
+                                            ↑
+                                        </button>
+                                    ` : '<span style="width: 32px;"></span>'}
+                                    ${idx < realMeals.length - 1 ? `
+                                        <button class="btn-small btn-change" 
+                                                onclick="moveDown(${dayNumber}, '${mealType}', ${idx})"
+                                                title="Przesuń w dół">
+                                            ↓
+                                        </button>
+                                    ` : '<span style="width: 32px;"></span>'}
+                                    <button class="btn-small btn-remove" 
+                                            onclick="removeDish(${dayNumber}, '${mealType}', ${meal.id})"
+                                            title="Usuń to danie">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    // Przycisk "Dodaj kolejne danie"
+                    dishesHTML += `
+                        <div style="margin-top: 10px;">
+                            <button class="btn-small btn-add" 
+                                    onclick="openDishSelector(${dayNumber}, '${mealType}', ${realMeals.length + 1})"
+                                    style="width: 100%;">
+                                ➕ Dodaj kolejne danie
+                            </button>
+                        </div>
+                    `;
+                }
             } else {
                 dishesHTML = `
                     <div class="no-dish">Nie wybrano dania</div>
@@ -1008,7 +1034,13 @@ function updateMealTime(dayNumber, mealType, newTime) {
         }
 
 // Otwórz modal dodawania typu posiłku do dnia
-function openAddMealTypeModal(dayNumber) {
+// Zmienna do śledzenia bieżącego dnia
+let currentAddMealDay = null;
+        
+        // Otwórz modal dodawania typu posiłku do dnia
+        function openAddMealTypeModal(dayNumber) {
+            currentAddMealDay = dayNumber;
+            
             // Pobierz typy posiłków już dodane w tym dniu
             const existingTypes = [...new Set(mealsData
                 .filter(m => m.dayNumber === dayNumber)
@@ -1035,24 +1067,36 @@ function openAddMealTypeModal(dayNumber) {
                 return;
             }
             
-            // Pokaż wybór
-            const options = availableTypes.map(t => 
-                `${t.icon} ${t.name}`
-            ).join('\n');
+            // Generuj przyciski
+            const container = document.getElementById('mealTypesList');
+            container.innerHTML = availableTypes.map(t => `
+                <button class="meal-type-option" onclick="addMealTypeToDay(${dayNumber}, '${t.id}')"
+                        style="display: flex; align-items: center; gap: 15px; padding: 15px 20px; 
+                               border: 2px solid #e9ecef; border-radius: 8px; background: white;
+                               cursor: pointer; transition: all 0.2s; font-size: 16px;">
+                    <span style="font-size: 32px;">${t.icon}</span>
+                    <span style="font-weight: 600; color: #0A1F44;">${t.name}</span>
+                </button>
+            `).join('');
             
-            const choice = prompt(`Wybierz typ posiłku do dodania:\n\n${availableTypes.map((t, i) => 
-                `${i + 1}. ${t.icon} ${t.name}`
-            ).join('\n')}\n\nWpisz numer:`);
+            // Dodaj hover effect przez CSS
+            const style = document.createElement('style');
+            style.textContent = `
+                .meal-type-option:hover {
+                    border-color: #D4AF37;
+                    background: #fffbf0;
+                    transform: translateX(5px);
+                }
+            `;
+            document.head.appendChild(style);
             
-            if (!choice) return;
-            
-            const index = parseInt(choice) - 1;
-            if (index >= 0 && index < availableTypes.length) {
-                const selectedType = availableTypes[index];
-                addMealTypeToDay(dayNumber, selectedType.id);
-            } else {
-                alert('❌ Nieprawidłowy wybór');
-            }
+            // Pokaż modal
+            document.getElementById('addMealTypeModal').style.display = 'flex';
+        }
+        
+        function closeAddMealTypeModal() {
+            document.getElementById('addMealTypeModal').style.display = 'none';
+            currentAddMealDay = null;
         }
         
         // Dodaj typ posiłku do dnia (bez dań)
@@ -1096,7 +1140,8 @@ function openAddMealTypeModal(dayNumber) {
             
             refreshDayMeals(dayNumber);
             
-            alert(`✅ Dodano typ posiłku. Teraz możesz dodać dania.`);
+            // Zamknij modal
+            closeAddMealTypeModal();
         }
 
         // Przesuń danie w górę (zmniejsz kolejność)
