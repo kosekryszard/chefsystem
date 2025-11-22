@@ -385,7 +385,6 @@
 
         // Inicjalizacja
         document.addEventListener('DOMContentLoaded', () => {
-            loadTemplates();
             loadGroups();
             setupFormCalculations();
         });
@@ -397,40 +396,19 @@
                 templates = await response.json();
                 
                 const select = document.getElementById('schemat_id');
-                templates.forEach(t => {
-                    const option = document.createElement('option');
-                    option.value = t.id;
-                    option.textContent = t.nazwa;
-                    select.appendChild(option);
+        if (!select) return;  // DODANE - element nie istnieje
+        
+        templates.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t.id;
+            option.textContent = t.nazwa;
+            select.appendChild(option);
                 });
             } catch (error) {
                 console.error('Błąd ładowania szablonów:', error);
             }
         }
         
-        // Załaduj strukturę z wybranego szablonu
-        function loadTemplateStructure() {
-            const templateId = document.getElementById('schemat_id').value;
-            
-            if (!templateId) {
-            
-                return;
-            }
-            
-            const template = templates.find(t => t.id == templateId);
-            if (!template || !template.struktura) return;
-            
-            // Wyciągnij unikalne typy posiłków ze struktury
-            const mealTypes = new Set();
-            Object.values(template.struktura).forEach(dayMeals => {
-                if (Array.isArray(dayMeals)) {
-                    dayMeals.forEach(meal => mealTypes.add(meal));
-                }
-            });
-            
-            console.log('Załadowano strukturę szablonu:', template.nazwa, mealTypes);
-        }
-
         // Ładowanie grup
         async function loadGroups() {
             try {
