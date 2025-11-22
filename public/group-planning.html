@@ -141,17 +141,58 @@
         }
         
         /* Typ posiłku */
-        .meal-type {
-            font-size: 14px;
-            font-weight: 700;
-            color: #0A1F44;
-            margin-bottom: 10px;
+        .meal-type-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .meal-type-left {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
+        
+        .meal-time-input {
+            padding: 6px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #0A1F44;
+            cursor: pointer;
+        }
+        
+        .meal-time-input:hover {
+            border-color: #D4AF37;
+        }
+        
         .meal-type-icon {
+            font-size: 24px;
+        }
+        
+        .meal-type-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #0A1F44;
+        }
+        
+        .btn-remove-meal-type {
+            background: none;
+            border: none;
             font-size: 18px;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: all 0.2s;
+            padding: 5px;
+        }
+        
+        .btn-remove-meal-type:hover {
+            opacity: 1;
+            transform: scale(1.2);
         }
         
         /* Wybrane danie */
@@ -409,9 +450,10 @@
         // ========== ZMIENNE GLOBALNE ==========
         let groupId = null;
         let groupData = null;
+        let mealsData = [];
         let allDishes = [];
-        let mealsData = []; // Stan posiłków {dayNumber, date, mealType, dishId, portions}
-        let currentEditingMeal = null; // {dayNumber, mealType}
+        let currentEditingMeal = null;
+        let mealTypeDefaults = {};  // DODANE - domyślne godziny typów posiłków
         
         // ========== INICJALIZACJA ==========
         document.addEventListener('DOMContentLoaded', async () => {
@@ -427,6 +469,7 @@
             
             await loadGroupData();
             await loadDishes();
+            await loadMealTypeDefaults();  // DODANE
             await loadExistingMeals();
             generateDaysTimeline();
             updateStats();
@@ -478,7 +521,38 @@
                 alert('❌ Błąd ładowania dań');
             }
         }
-        
+        // Załaduj domyślne godziny typów posiłków dla grupy
+        async function loadMealTypeDefaults() {
+            try {
+                const response = await fetch(`/api/groups/${groupId}/meal-type-defaults`);
+                if (!response.ok) throw new Error('Błąd pobierania domyślnych godzin');
+                
+                const defaults = await response.json();
+                
+                // Konwertuj do obiektu { typ_posilku: godzina }
+                mealTypeDefaults = {};
+                defaults.forEach(d => {
+                    mealTypeDefaults[d.typ_posilku] = d.domyslna_godzina;
+                });
+                
+                console.log('Załadowano domyślne godziny:', mealTypeDefaults);
+                
+            } catch (error) {
+                console.error('Error loading meal type defaults:', error);
+                // Ustaw domyślne wartości
+                mealTypeDefaults = {
+                    'sniadanie': '08:00',
+                    'ii_sniadanie': '10:00',
+                    'suchy_prowiant': '12:00',
+                    'obiad': '14:00',
+                    'powieczorek': '16:00',
+                    'kolacja': '18:00',
+                    'obiadokolacja': '15:00',
+                    'ognisko': '20:00'
+                };
+            }
+        }
+
         async function loadExistingMeals() {
             try {
                 const response = await fetch(`/api/groups/${groupId}/meals`);
@@ -495,7 +569,8 @@
                     dishId: m.dish_id,
                     portions: m.liczba_porcji,
                     uwagi: m.uwagi,
-                    kolejnosc: m.kolejnosc || 1
+                    kolejnosc: m.kolejnosc || 1,
+                    godzina: m.godzina || '12:00'  // DODANE
                 }));
                 
             } catch (error) {
@@ -606,6 +681,11 @@
             const hasDishes = existingMeals && existingMeals.length > 0;
             const cardClass = hasDishes ? 'has-dish' : '';
             
+            // Pobierz godzinę - z pierwszego dania lub domyślna
+            const mealTime = hasDishes && existingMeals[0].godzina 
+                ? existingMeals[0].godzina 
+                : (mealTypeDefaults[mealType] || '12:00');
+            
             let dishesHTML = '';
             
             if (hasDishes) {
@@ -615,8 +695,15 @@
                     const dishName = dish ? dish.nazwa : 'Nieznane danie';
                     
                     return `
-                        <div class="selected-dish" style="margin-top: ${idx > 0 ? '10px' : '0'};">
-                            <div style="display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 5px; align-items: center;">    <div class="dish-name">${dishName}</div>
+                        <div class="selected-dish" 
+                             draggable="true"
+                             data-meal-id="${meal.id || 'temp-' + idx}"
+                             data-day="${dayNumber}"
+                             data-meal-type="${mealType}"
+                             data-dish-id="${meal.dishId}"
+                             style="margin-top: ${idx > 0 ? '10px' : '0'};">
+                            <div style="display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 5px; align-items: center;">
+                                <div class="dish-name">${dishName}</div>
                                 <div style="display: flex; align-items: center; gap: 5px;">
                                     <input type="number" min="1" value="${meal.portions}" 
                                            style="width: 70px; padding: 5px; border: 1px solid #dee2e6; border-radius: 6px; text-align: center;"
@@ -671,11 +758,26 @@
             
             return `
                 <div class="meal-card ${cardClass}">
-                    <div class="meal-type">
-                        <span class="meal-type-icon">${icon}</span>
-                        ${name}
+                    <div class="meal-type-header">
+                        <div class="meal-type-left">
+                            <input type="time" 
+                                   value="${mealTime}" 
+                                   step="900"
+                                   class="meal-time-input"
+                                   onchange="updateMealTime(${dayNumber}, '${mealType}', this.value)"
+                                   title="Godzina posiłku (co 15 min)">
+                            <span class="meal-type-icon">${icon}</span>
+                            <span class="meal-type-name">${name}</span>
+                        </div>
+                        <button class="btn-remove-meal-type" 
+                                onclick="removeMealType(${dayNumber}, '${mealType}')"
+                                title="Usuń ten typ posiłku z dnia">
+                            ❌
+                        </button>
                     </div>
-                    ${dishesHTML}
+                    <div class="meal-content">
+                        ${dishesHTML}
+                    </div>
                 </div>
             `;
         }
