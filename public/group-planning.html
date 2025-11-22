@@ -335,6 +335,63 @@
             cursor: grabbing;
         }
 
+/* Responsywny layout dań */
+.dish-row {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .dish-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .dish-name {
+            font-weight: 600;
+            color: #0A1F44;
+            flex: 1;
+        }
+        
+        .dish-portions {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .portions-input {
+            width: 70px;
+            padding: 5px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .dish-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        
+        /* Na większych ekranach - jeden wiersz */
+        @media (min-width: 768px) {
+            .dish-row {
+                flex-direction: row;
+                align-items: center;
+            }
+            
+            .dish-info {
+                flex: 1;
+            }
+            
+            .dish-actions {
+                flex-wrap: nowrap;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -779,45 +836,49 @@
                                  data-meal-type="${mealType}"
                                  data-dish-id="${meal.dishId}"
                                  style="margin-top: ${idx > 0 ? '10px' : '0'};">
-                                <div style="display: grid; grid-template-columns: 1fr auto auto auto auto auto auto; gap: 5px; align-items: center;">
-                                    <div class="dish-name">${dishName}</div>
-                                    <div style="display: flex; align-items: center; gap: 5px;">
-                                        <input type="number" min="1" value="${meal.portions}" 
-                                               style="width: 70px; padding: 5px; border: 1px solid #dee2e6; border-radius: 6px; text-align: center;"
-                                               onchange="updatePortions(${dayNumber}, '${mealType}', ${meal.id}, this.value)">
-                                        <span style="font-size: 12px; color: #666;">porcji</span>
+                                <div class="dish-row">
+                                    <div class="dish-info">
+                                        <div class="dish-name">${dishName}</div>
+                                        <div class="dish-portions">
+                                            <input type="number" min="1" value="${meal.portions}" 
+                                                   class="portions-input"
+                                                   onchange="updatePortions(${dayNumber}, '${mealType}', ${meal.id}, this.value)">
+                                            <span style="font-size: 12px; color: #666;">porcji</span>
+                                        </div>
                                     </div>
-                                    ${idx > 0 ? `
-                                        <button class="btn-small btn-change" 
-                                                onclick="moveUp(${dayNumber}, '${mealType}', ${idx})"
-                                                title="Przesuń w górę">
-                                            ↑
+                                    <div class="dish-actions">
+                                        ${idx > 0 ? `
+                                            <button class="btn-small btn-change" 
+                                                    onclick="moveUp(${dayNumber}, '${mealType}', ${idx})"
+                                                    title="Przesuń w górę">
+                                                ↑
+                                            </button>
+                                        ` : '<span style="width: 32px;"></span>'}
+                                        ${idx < realMeals.length - 1 ? `
+                                            <button class="btn-small btn-change" 
+                                                    onclick="moveDown(${dayNumber}, '${mealType}', ${idx})"
+                                                    title="Przesuń w dół">
+                                                ↓
+                                            </button>
+                                        ` : '<span style="width: 32px;"></span>'}
+                                        <button class="btn-small btn-copy" 
+                                                onclick="openCopyDishModal(${dayNumber}, '${mealType}', ${meal.dishId}, ${meal.portions})"
+                                                title="Kopiuj to danie do innego dnia"
+                                                style="background: #17a2b8; color: white;">
+                                            📋
                                         </button>
-                                    ` : '<span style="width: 32px;"></span>'}
-                                    ${idx < realMeals.length - 1 ? `
-                                        <button class="btn-small btn-change" 
-                                                onclick="moveDown(${dayNumber}, '${mealType}', ${idx})"
-                                                title="Przesuń w dół">
-                                            ↓
+                                        <button class="btn-small btn-move" 
+                                                onclick="openMoveDishModal(${dayNumber}, '${mealType}', ${meal.dishId}, ${meal.portions})"
+                                                title="Przenieś to danie do innego dnia"
+                                                style="background: #ff9800; color: white;">
+                                            ✂️
                                         </button>
-                                    ` : '<span style="width: 32px;"></span>'}
-                                    <button class="btn-small btn-copy" 
-                                            onclick="openCopyDishModal(${dayNumber}, '${mealType}', ${meal.dishId}, ${meal.portions})"
-                                            title="Kopiuj to danie do innego dnia"
-                                            style="background: #17a2b8; color: white;">
-                                        📋
-                                    </button>
-                                    <button class="btn-small btn-move" 
-                                            onclick="openMoveDishModal(${dayNumber}, '${mealType}', ${meal.dishId}, ${meal.portions})"
-                                            title="Przenieś to danie do innego dnia"
-                                            style="background: #ff9800; color: white;">
-                                        ✂️
-                                    </button>
-                                    <button class="btn-small btn-remove" 
-                                            onclick="removeDish(${dayNumber}, '${mealType}', ${meal.id})"
-                                            title="Usuń to danie">
-                                        🗑️
-                                    </button>
+                                        <button class="btn-small btn-remove" 
+                                                onclick="removeDish(${dayNumber}, '${mealType}', ${meal.id})"
+                                                title="Usuń to danie">
+                                            🗑️
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         `;
@@ -1391,7 +1452,7 @@ function openMoveDishModal(sourceDayNumber, mealType, dishId, portions) {
             // Pokaż komunikat
             alert(`✅ Przeniesiono danie do dnia ${targetDayNumber}`);
         }
-        
+
         // Dodaj typ posiłku do dnia (bez dań)
         function addMealTypeToDay(dayNumber, mealType) {
             // Sprawdź czy już nie istnieje
