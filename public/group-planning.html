@@ -525,6 +525,8 @@
                 if (!response.ok) throw new Error('Błąd pobierania grupy');
                 
                 groupData = await response.json();
+                console.log('📊 Załadowano groupData:', groupData);
+                console.log('📊 Pola:', Object.keys(groupData));
                 
                 // Wypełnij header
                 document.getElementById('groupName').textContent = groupData.nazwa;
@@ -1159,7 +1161,13 @@ currentAddMealDay = null;
             const container = document.getElementById('targetDaysList');
             const dayButtons = [];
             
-            for (let day = 1; day <= groupData.liczba_dni; day++) {
+            // Oblicz liczbę dni z dat
+const dateFirst = new Date(groupData.data_pierwszy_posilek);
+const dateLast = new Date(groupData.data_ostatni_posilek);
+const diffTime = Math.abs(dateLast - dateFirst);
+const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+for (let day = 1; day <= diffDays; day++) {
                 if (day === sourceDayNumber) continue; // Pomiń źródłowy dzień
                 
                 const dateFirst = new Date(groupData.data_pierwszy_posilek);
