@@ -561,9 +561,9 @@
             
             return mealTypes.map(mealType => {
                 // Znajdź WSZYSTKIE dania dla tego posiłku (może być wiele)
-                const existingMeals = mealsData.filter(m => 
-                    m.dayNumber === dayNumber && m.mealType === mealType
-                );
+                const existingMeals = mealsData
+                    .filter(m => m.dayNumber === dayNumber && m.mealType === mealType)
+                    .sort((a, b) => (a.kolejnosc || 1) - (b.kolejnosc || 1)); // SORTUJ PO KOLEJNOŚCI
                 
                 return createMealCard(dayNumber, date, mealType, mealIcons[mealType], mealNames[mealType], existingMeals);
             }).join('');
