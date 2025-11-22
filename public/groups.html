@@ -395,7 +395,6 @@
                 const response = await fetch('/api/meal-templates');
                 templates = await response.json();
                 
-                const select = document.getElementById('schemat_id');
         if (!select) return;  // DODANE - element nie istnieje
         
         templates.forEach(t => {
@@ -567,7 +566,6 @@
                 document.getElementById('data_ostatni_posilek').value = group.data_ostatni_posilek;
                 document.getElementById('pierwszy_posilek_typ').value = group.pierwszy_posilek_typ;
                 document.getElementById('ostatni_posilek_typ').value = group.ostatni_posilek_typ;
-                document.getElementById('schemat_id').value = group.schemat_id || '';
                 
                 calculateTotal();
                 document.getElementById('groupModal').style.display = 'flex';
@@ -630,7 +628,6 @@
                 data_ostatni_posilek: document.getElementById('data_ostatni_posilek').value,
                 pierwszy_posilek_typ: document.getElementById('pierwszy_posilek_typ').value,
                 ostatni_posilek_typ: document.getElementById('ostatni_posilek_typ').value,
-                schemat_id: document.getElementById('schemat_id').value || null,
                 meal_types: [],  // pusta tablica - typy zarządzane w planerze
                 status: groupId ? undefined : 'draft' // przy nowej grupie ustaw draft
             };
@@ -759,11 +756,6 @@ window.isSaving = false; // Resetuj flagę
                 document.getElementById('liczba_kierowcow').value = group.liczba_kierowcow || 0;
                 document.getElementById('liczba_kadry').value = group.liczba_kadry || 0;
                 document.getElementById('wiek_grupy').value = group.wiek_grupy || '';
-                
-                // Szablon
-                if (group.schemat_id) {
-                    document.getElementById('schemat_id').value = group.schemat_id;
-                }
                 
                 // NIE kopiujemy dat - user musi ustawić nowe
                 document.getElementById('data_pierwszy_posilek').value = '';
