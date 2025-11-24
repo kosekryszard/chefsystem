@@ -112,12 +112,17 @@
             border-color: #D4AF37;
         }
         
-        /* Przyciski akcji */
         .action-buttons {
             display: flex;
-            gap: 10px;
-            margin-top: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
         }
+        
+        .action-btn {
+            flex: 0 0 auto;
+        }
+
         .btn-edit {
             background: #17A2B8;
             color: white;
@@ -129,11 +134,19 @@
         }
         .btn-edit:hover { background: #138496; }
         .btn-delete {
-            background: #dc3545;
+            background: #dc3545 !important;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
         }
         
         .btn-delete:hover {
-            background: #c82333;
+            background: #c82333 !important;
+            transform: translateY(-2px);
         }
 
         /* Filtry */
@@ -482,14 +495,15 @@
                             ${getStatusLabel(group.status)}
                         </span>
                         <div class="action-buttons" onclick="event.stopPropagation()">
+                            <button class="action-btn btn-delete" 
+                                    onclick="event.stopPropagation(); deleteGroup(${group.id})"
+                                    title="Usuń grupę">
+                                🗑️
+                            </button>
+                            
                             <div style="position: relative; display: inline-block;">
-                               <button class="action-btn btn-delete" 
-                                        onclick="event.stopPropagation(); deleteGroup(${group.id})"
-                                        title="Usuń grupę">
-                                    🗑️ Usuń
-                                </button>
                                 <button onclick="toggleStatusMenu(${group.id})" class="btn-secondary">
-                                    📋 Przenieś do... ▼
+                                    📦 Przenieś do... ▼
                                 </button>
                                 <div id="statusMenu-${group.id}" class="status-menu" style="display: none;">
                                     <div onclick="changeStatus(${group.id}, 'draft')">📝 Robocze</div>
@@ -498,12 +512,15 @@
                                     <div onclick="changeStatus(${group.id}, 'archived')">📦 Archiwum</div>
                                 </div>
                             </div>
+                            
                             <button class="btn-secondary" onclick="duplicateGroup(${group.id})">
                                 📋 Stwórz podobną
                             </button>
+                            
                             <button class="btn-edit" onclick="editGroup(${group.id})">
                                 ✏️ Edytuj
                             </button>
+                            
                             <button class="btn-edit" onclick="openGroupPlanning(${group.id})" 
                                     style="background: #28a745;">
                                 📅 Planuj posiłki
