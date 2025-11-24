@@ -653,44 +653,51 @@ app.get('/api/groups/:id', async (req, res) => {
 
 // Usuń grupę i wszystkie powiązane posiłki
 app.delete('/api/groups/:id', async (req, res) => {
-  const client = await pool.connect();
   try {
       const groupId = req.params.id;
       
       // Sprawdź czy grupa istnieje
-      const checkResult = await client.query(
-          'SELECT id FROM groups WHERE id = $1',
-          [groupId]
-      );
+      const { data: group, error: checkError } = await supabase
+          .from('groups')
+          .select('id')
+          .eq('id', groupId)
+          .single();
       
-      if (checkResult.rows.length === 0) {
+      if (checkError || !group) {
           return res.status(404).json({ error: 'Grupa nie znaleziona' });
       }
       
-      await client.query('BEGIN');
-      
       // Usuń wszystkie posiłki grupy
-      await client.query(
-          'DELETE FROM group_meals WHERE group_id = $1',
-          [groupId]
-      );
+      const { error: mealsError } = await supabase
+          .from('group_meals')
+          .delete()
+          .eq('group_id', groupId);
+      
+      if (mealsError) {
+          console.error('Error deleting meals:', mealsError);
+          throw mealsError;
+      }
       
       // Usuń grupę
-      await client.query(
-          'DELETE FROM groups WHERE id = $1',
-          [groupId]
-      );
+      const { error: deleteError } = await supabase
+          .from('groups')
+          .delete()
+          .eq('id', groupId);
       
-      await client.query('COMMIT');
+      if (deleteError) {
+          console.error('Error deleting group:', deleteError);
+          throw deleteError;
+      }
       
       res.json({ message: 'Grupa usunięta pomyślnie' });
       
   } catch (error) {
-      await client.query('ROLLBACK');
       console.error('Error deleting group:', error);
-      res.status(500).json({ error: 'Błąd usuwania grupy' });
-  } finally {
-      client.release();
+      console.error('Error details:', error.message);
+      res.status(500).json({ 
+          error: 'Błąd usuwania grupy',
+          details: error.message 
+      });
   }
 });
 
