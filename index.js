@@ -1147,4 +1147,708 @@ app.get('/api/ingredients/export/csv', async (req, res) => {
   }
 });
 
+// ============================================
+// GET /api/events - Lista eventów z filtrowaniem
+// ============================================
+app.get('/api/events', async (req, res) => {
+  try {
+      const { status } = req.query;
+      
+      let query = supabase
+          .from('events')
+          .select(`
+              *,
+              event_days (
+                  id,
+                  data,
+                  nazwa,
+                  kolejnosc
+              )
+          `)
+          .order('data_rozpoczecia', { ascending: false });
+      
+      // Filtrowanie po statusie
+      if (status && status !== 'wszystkie') {
+          query = query.eq('status', status);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      // Auto-archiwizacja eventów (końcowa data > 1 dzień w przeszłości)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      for (const event of data) {
+          const endDate = new Date(event.data_zakonczenia);
+          endDate.setHours(0, 0, 0, 0);
+          
+          const diffDays = Math.floor((today - endDate) / (1000 * 60 * 60 * 24));
+          
+          // Jeśli różnica > 1 dzień i status nie jest archiwum
+          if (diffDays > 1 && event.status !== 'archiwum') {
+              await supabase
+                  .from('events')
+                  .update({ status: 'archiwum' })
+                  .eq('id', event.id);
+              
+              event.status = 'archiwum'; // Aktualizuj w odpowiedzi
+          }
+      }
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Błąd pobierania eventów:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// GET /api/events/:id - Szczegóły eventu
+// ============================================
+app.get('/api/events/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .from('events')
+          .select(`
+              *,
+              event_days (
+                  id,
+                  data,
+                  nazwa,
+                  kolejnosc,
+                  event_sections (
+                      id,
+                      nazwa,
+                      godzina_start,
+                      godzina_koniec,
+                      rodzaj_serwisu,
+                      liczba_porcji,
+                      kolejnosc,
+                      event_section_dishes (
+                          id,
+                          liczba_porcji,
+                          kolejnosc,
+                          dish_id,
+                          dishes (
+                              id,
+                              nazwa,
+                              typ,
+                              dieta
+                          )
+                      )
+                  ),
+                  event_tasks (
+                      id,
+                      nazwa,
+                      zrobione,
+                      data_wykonania,
+                      source_type,
+                      source_id,
+                      source_dish_id,
+                      kolejnosc
+                  )
+              )
+          `)
+          .eq('id', id)
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Błąd pobierania eventu:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// POST /api/events - Nowy event
+// ============================================
+app.post('/api/events', async (req, res) => {
+  try {
+      const {
+          nazwa,
+          typ,
+          data_rozpoczecia,
+          data_zakonczenia,
+          liczba_osob_doroslych,
+          liczba_dzieci_0_3,
+          liczba_dzieci_4_12,
+          liczba_dzieci_12_18,
+          liczba_osob_18_plus,
+          lokalizacja,
+          notatki,
+          status
+      } = req.body;
+      
+      // Walidacja dat
+      if (new Date(data_rozpoczecia) > new Date(data_zakonczenia)) {
+          return res.status(400).json({ 
+              error: 'Data rozpoczęcia nie może być późniejsza niż data zakończenia' 
+          });
+      }
+      
+      // Tworzenie eventu
+      const { data: newEvent, error: eventError } = await supabase
+          .from('events')
+          .insert([{
+              nazwa,
+              typ: typ || 'event',
+              data_rozpoczecia,
+              data_zakonczenia,
+              liczba_osob_doroslych: liczba_osob_doroslych || 0,
+              liczba_dzieci_0_3: liczba_dzieci_0_3 || 0,
+              liczba_dzieci_4_12: liczba_dzieci_4_12 || 0,
+              liczba_dzieci_12_18: liczba_dzieci_12_18 || 0,
+              liczba_osob_18_plus: liczba_osob_18_plus || 0,
+              lokalizacja,
+              notatki,
+              status: status || 'roboczy'
+          }])
+          .select()
+          .single();
+      
+      if (eventError) throw eventError;
+      
+      // Automatyczne tworzenie dni eventu
+      const days = [];
+      
+      // Dzień -1: "Produkcja" (bez daty)
+      days.push({
+          event_id: newEvent.id,
+          data: null,
+          nazwa: 'Produkcja',
+          kolejnosc: -1
+      });
+      
+      // Dni eventu (od data_rozpoczecia do data_zakonczenia)
+      const startDate = new Date(data_rozpoczecia);
+      const endDate = new Date(data_zakonczenia);
+      
+      let currentDate = new Date(startDate);
+      let dayIndex = 0;
+      
+      while (currentDate <= endDate) {
+          const dayName = currentDate.toLocaleDateString('pl-PL', { 
+              weekday: 'long',
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit'
+          });
+          
+          days.push({
+              event_id: newEvent.id,
+              data: currentDate.toISOString().split('T')[0],
+              nazwa: dayName.charAt(0).toUpperCase() + dayName.slice(1),
+              kolejnosc: dayIndex
+          });
+          
+          currentDate.setDate(currentDate.getDate() + 1);
+          dayIndex++;
+      }
+      
+      // Wstawianie dni
+      const { error: daysError } = await supabase
+          .from('event_days')
+          .insert(days);
+      
+      if (daysError) throw daysError;
+      
+      res.status(201).json(newEvent);
+  } catch (error) {
+      console.error('Błąd tworzenia eventu:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// PUT /api/events/:id - Edycja eventu
+// ============================================
+app.put('/api/events/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const updateData = req.body;
+      
+      // Walidacja dat
+      if (updateData.data_rozpoczecia && updateData.data_zakonczenia) {
+          if (new Date(updateData.data_rozpoczecia) > new Date(updateData.data_zakonczenia)) {
+              return res.status(400).json({ 
+                  error: 'Data rozpoczęcia nie może być późniejsza niż data zakończenia' 
+              });
+          }
+      }
+      
+      const { data, error } = await supabase
+          .from('events')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Błąd edycji eventu:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// DELETE /api/events/:id - Usunięcie eventu
+// ============================================
+app.delete('/api/events/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      // CASCADE delete obsłuży powiązane dni, sekcje, dania i zadania
+      const { error } = await supabase
+          .from('events')
+          .delete()
+          .eq('id', id);
+      
+      if (error) throw error;
+      
+      res.json({ message: 'Event usunięty pomyślnie' });
+  } catch (error) {
+      console.error('Błąd usuwania eventu:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// POST /api/events/:id/duplicate - Duplikacja eventu
+// ============================================
+app.post('/api/events/:id/duplicate', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      // Pobierz event z pełnymi danymi
+      const { data: originalEvent, error: fetchError } = await supabase
+          .from('events')
+          .select(`
+              *,
+              event_days (
+                  *,
+                  event_sections (
+                      *,
+                      event_section_dishes (
+                          *
+                      )
+                  ),
+                  event_tasks (
+                      *
+                  )
+              )
+          `)
+          .eq('id', id)
+          .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Utwórz kopię eventu
+      const { data: newEvent, error: eventError } = await supabase
+          .from('events')
+          .insert([{
+              nazwa: `${originalEvent.nazwa} (Kopia)`,
+              typ: originalEvent.typ,
+              data_rozpoczecia: originalEvent.data_rozpoczecia,
+              data_zakonczenia: originalEvent.data_zakonczenia,
+              liczba_osob_doroslych: originalEvent.liczba_osob_doroslych,
+              liczba_dzieci_0_3: originalEvent.liczba_dzieci_0_3,
+              liczba_dzieci_4_12: originalEvent.liczba_dzieci_4_12,
+              liczba_dzieci_12_18: originalEvent.liczba_dzieci_12_18,
+              liczba_osob_18_plus: originalEvent.liczba_osob_18_plus,
+              lokalizacja: originalEvent.lokalizacja,
+              notatki: originalEvent.notatki,
+              status: 'roboczy'
+          }])
+          .select()
+          .single();
+      
+      if (eventError) throw eventError;
+      
+      // Kopiuj dni
+      for (const day of originalEvent.event_days) {
+          const { data: newDay, error: dayError } = await supabase
+              .from('event_days')
+              .insert([{
+                  event_id: newEvent.id,
+                  data: day.data,
+                  nazwa: day.nazwa,
+                  kolejnosc: day.kolejnosc
+              }])
+              .select()
+              .single();
+          
+          if (dayError) throw dayError;
+          
+          // Kopiuj sekcje
+          for (const section of day.event_sections) {
+              const { data: newSection, error: sectionError } = await supabase
+                  .from('event_sections')
+                  .insert([{
+                      event_day_id: newDay.id,
+                      nazwa: section.nazwa,
+                      godzina_start: section.godzina_start,
+                      godzina_koniec: section.godzina_koniec,
+                      rodzaj_serwisu: section.rodzaj_serwisu,
+                      liczba_porcji: section.liczba_porcji,
+                      kolejnosc: section.kolejnosc
+                  }])
+                  .select()
+                  .single();
+              
+              if (sectionError) throw sectionError;
+              
+              // Kopiuj dania w sekcji
+              for (const dish of section.event_section_dishes) {
+                  const { error: dishError } = await supabase
+                      .from('event_section_dishes')
+                      .insert([{
+                          event_section_id: newSection.id,
+                          dish_id: dish.dish_id,
+                          liczba_porcji: dish.liczba_porcji,
+                          kolejnosc: dish.kolejnosc
+                      }]);
+                  
+                  if (dishError) throw dishError;
+              }
+          }
+          
+          // Kopiuj zadania (tylko custom, recipe regenerują się automatycznie)
+          for (const task of day.event_tasks) {
+              if (task.source_type === 'custom') {
+                  const { error: taskError } = await supabase
+                      .from('event_tasks')
+                      .insert([{
+                          event_day_id: newDay.id,
+                          nazwa: task.nazwa,
+                          zrobione: false,
+                          data_wykonania: task.data_wykonania,
+                          source_type: 'custom',
+                          kolejnosc: task.kolejnosc
+                      }]);
+                  
+                  if (taskError) throw taskError;
+              }
+          }
+      }
+      
+      res.status(201).json(newEvent);
+  } catch (error) {
+      console.error('Błąd duplikacji eventu:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// POST /api/events/:id/sections - Dodaj sekcję w dniu
+// ============================================
+app.post('/api/events/:eventId/days/:dayId/sections', async (req, res) => {
+  try {
+      const { eventId, dayId } = req.params;
+      const { nazwa, godzina_start, godzina_koniec, rodzaj_serwisu, liczba_porcji } = req.body;
+      
+      // Pobierz maksymalną kolejność dla tego dnia
+      const { data: sections, error: fetchError } = await supabase
+          .from('event_sections')
+          .select('kolejnosc')
+          .eq('event_day_id', dayId)
+          .order('kolejnosc', { ascending: false })
+          .limit(1);
+      
+      if (fetchError) throw fetchError;
+      
+      const nextKolejnosc = sections.length > 0 ? sections[0].kolejnosc + 1 : 0;
+      
+      // Dodaj sekcję
+      const { data, error } = await supabase
+          .from('event_sections')
+          .insert([{
+              event_day_id: dayId,
+              nazwa,
+              godzina_start,
+              godzina_koniec,
+              rodzaj_serwisu,
+              liczba_porcji: liczba_porcji || 0,
+              kolejnosc: nextKolejnosc
+          }])
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.status(201).json(data);
+  } catch (error) {
+      console.error('Błąd dodawania sekcji:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// DELETE /api/event-sections/:id - Usuń sekcję
+// ============================================
+app.delete('/api/event-sections/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      // CASCADE delete obsłuży powiązane dania
+      const { error } = await supabase
+          .from('event_sections')
+          .delete()
+          .eq('id', id);
+      
+      if (error) throw error;
+      
+      res.json({ message: 'Sekcja usunięta pomyślnie' });
+  } catch (error) {
+      console.error('Błąd usuwania sekcji:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// POST /api/event-sections/:id/dishes - Dodaj danie do sekcji
+// ============================================
+app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
+  try {
+      const { sectionId } = req.params;
+      const { dish_id, liczba_porcji } = req.body;
+      
+      // Pobierz maksymalną kolejność dla tej sekcji
+      const { data: dishes, error: fetchError } = await supabase
+          .from('event_section_dishes')
+          .select('kolejnosc')
+          .eq('event_section_id', sectionId)
+          .order('kolejnosc', { ascending: false })
+          .limit(1);
+      
+      if (fetchError) throw fetchError;
+      
+      const nextKolejnosc = dishes.length > 0 ? dishes[0].kolejnosc + 1 : 0;
+      
+      // Dodaj danie
+      const { data, error } = await supabase
+          .from('event_section_dishes')
+          .insert([{
+              event_section_id: sectionId,
+              dish_id,
+              liczba_porcji: liczba_porcji || 1,
+              kolejnosc: nextKolejnosc
+          }])
+          .select(`
+              *,
+              dishes (
+                  id,
+                  nazwa,
+                  typ,
+                  dieta
+              )
+          `)
+          .single();
+      
+      if (error) throw error;
+      
+      // TODO: Auto-generowanie zadań z kroków receptury
+      // (implementacja w kolejnym kroku)
+      
+      res.status(201).json(data);
+  } catch (error) {
+      console.error('Błąd dodawania dania:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// DELETE /api/event-section-dishes/:id - Usuń danie z sekcji
+// ============================================
+app.delete('/api/event-section-dishes/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      // Pobierz source_dish_id przed usunięciem
+      const { data: dishData, error: fetchError } = await supabase
+          .from('event_section_dishes')
+          .select('event_section_id, dish_id, event_sections(event_day_id)')
+          .eq('id', id)
+          .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Usuń danie
+      const { error: deleteError } = await supabase
+          .from('event_section_dishes')
+          .delete()
+          .eq('id', id);
+      
+      if (deleteError) throw deleteError;
+      
+      // Usuń powiązane zadania z receptury tego dania
+      // (we wszystkich dniach eventu!)
+      const eventDayId = dishData.event_sections.event_day_id;
+      
+      // Pobierz event_id z day_id
+      const { data: dayData, error: dayError } = await supabase
+          .from('event_days')
+          .select('event_id')
+          .eq('id', eventDayId)
+          .single();
+      
+      if (!dayError && dayData) {
+          // Pobierz wszystkie dni tego eventu
+          const { data: allDays, error: daysError } = await supabase
+              .from('event_days')
+              .select('id')
+              .eq('event_id', dayData.event_id);
+          
+          if (!daysError && allDays) {
+              const dayIds = allDays.map(d => d.id);
+              
+              // Usuń zadania z receptury tego dania we wszystkich dniach
+              const { error: tasksError } = await supabase
+                  .from('event_tasks')
+                  .delete()
+                  .in('event_day_id', dayIds)
+                  .eq('source_type', 'recipe')
+                  .eq('source_dish_id', dishData.dish_id);
+              
+              if (tasksError) {
+                  console.error('Błąd usuwania zadań:', tasksError);
+              }
+          }
+      }
+      
+      res.json({ message: 'Danie usunięte pomyślnie' });
+  } catch (error) {
+      console.error('Błąd usuwania dania:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// POST /api/event-tasks - Dodaj zadanie
+// ============================================
+app.post('/api/event-tasks', async (req, res) => {
+  try {
+      const { event_day_id, nazwa, data_wykonania, source_type } = req.body;
+      
+      // Pobierz maksymalną kolejność dla tego dnia
+      const { data: tasks, error: fetchError } = await supabase
+          .from('event_tasks')
+          .select('kolejnosc')
+          .eq('event_day_id', event_day_id)
+          .order('kolejnosc', { ascending: false })
+          .limit(1);
+      
+      if (fetchError) throw fetchError;
+      
+      const nextKolejnosc = tasks.length > 0 ? tasks[0].kolejnosc + 1 : 0;
+      
+      // Dodaj zadanie
+      const { data, error } = await supabase
+          .from('event_tasks')
+          .insert([{
+              event_day_id,
+              nazwa,
+              zrobione: false,
+              data_wykonania,
+              source_type: source_type || 'custom',
+              kolejnosc: nextKolejnosc
+          }])
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.status(201).json(data);
+  } catch (error) {
+      console.error('Błąd dodawania zadania:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// PUT /api/event-tasks/:id - Aktualizuj zadanie (toggle zrobione)
+// ============================================
+app.put('/api/event-tasks/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const updateData = req.body;
+      
+      const { data, error } = await supabase
+          .from('event_tasks')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Błąd aktualizacji zadania:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// DELETE /api/event-tasks/:id - Usuń zadanie
+// ============================================
+app.delete('/api/event-tasks/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { error } = await supabase
+          .from('event_tasks')
+          .delete()
+          .eq('id', id);
+      
+      if (error) throw error;
+      
+      res.json({ message: 'Zadanie usunięte pomyślnie' });
+  } catch (error) {
+      console.error('Błąd usuwania zadania:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// PUT /api/event-tasks/:id/move - Przenieś zadanie między dniami
+// ============================================
+app.put('/api/event-tasks/:id/move', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { new_day_id, new_data_wykonania } = req.body;
+      
+      const updateData = {
+          event_day_id: new_day_id
+      };
+      
+      // Jeśli to dzień "Produkcja", dodaj/zaktualizuj data_wykonania
+      if (new_data_wykonania) {
+          updateData.data_wykonania = new_data_wykonania;
+      }
+      
+      const { data, error } = await supabase
+          .from('event_tasks')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Błąd przenoszenia zadania:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+console.log('✅ Endpointy Events załadowane pomyślnie');
 app.listen(3000, () => console.log('Serwer dziaÅ‚a na http://localhost:3000'));
