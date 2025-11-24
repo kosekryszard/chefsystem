@@ -128,7 +128,14 @@
             cursor: pointer;
         }
         .btn-edit:hover { background: #138496; }
+        .btn-delete {
+            background: #dc3545;
+        }
         
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
         /* Filtry */
         .filters {
             display: flex;
@@ -451,7 +458,7 @@
                                    (group.liczba_kadry || 0);
                 
                 return `
-                    <div class="group-card" onclick="editGroup(${group.id})">
+                    <div class="group-card">
                         <h3>${group.nazwa}</h3>
                         <div class="group-info">
                             <div class="group-info-row">
@@ -476,6 +483,11 @@
                         </span>
                         <div class="action-buttons" onclick="event.stopPropagation()">
                             <div style="position: relative; display: inline-block;">
+                               <button class="action-btn btn-delete" 
+                                        onclick="event.stopPropagation(); deleteGroup(${group.id})"
+                                        title="Usuń grupę">
+                                    🗑️ Usuń
+                                </button>
                                 <button onclick="toggleStatusMenu(${group.id})" class="btn-secondary">
                                     📋 Przenieś do... ▼
                                 </button>
@@ -795,6 +807,41 @@ window.isSaving = false; // Resetuj flagę
         }
 
         // Nie zamykaj modala kliknięciem poza nim - tylko przez X lub Anuluj
+        // ========== USUWANIE GRUPY ==========
+        async function deleteGroup(id) {
+            const group = allGroups.find(g => g.id === id);
+            const groupName = group ? group.nazwa : 'tę grupę';
+            
+            // Dwuetapowe potwierdzenie
+            if (!confirm(`🗑️ Czy na pewno usunąć grupę "${groupName}"?\n\nUWAGA: Ta operacja jest nieodwracalna!`)) {
+                return;
+            }
+            
+            if (!confirm(`⚠️ OSTATECZNE POTWIERDZENIE\n\nUsunięcie grupy spowoduje:\n• Utratę wszystkich zaplanowanych posiłków\n• Utratę historii grupy\n• Nie można tego cofnąć\n\nCzy NA PEWNO chcesz kontynuować?`)) {
+                return;
+            }
+            
+            try {
+                // Usuń grupę (backend powinien automatycznie usunąć powiązane posiłki)
+                const response = await fetch(`/api/groups/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Błąd usuwania grupy');
+                }
+                
+                alert('✅ Grupa została usunięta');
+                
+                // Odśwież listę
+                await loadGroups();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd usuwania grupy: ' + error.message);
+            }
+        }
     </script>
 </body>
 </html>

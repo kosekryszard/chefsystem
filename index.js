@@ -651,6 +651,49 @@ app.get('/api/groups/:id', async (req, res) => {
   }
 });
 
+// Usuń grupę i wszystkie powiązane posiłki
+app.delete('/api/groups/:id', async (req, res) => {
+  const client = await pool.connect();
+  try {
+      const groupId = req.params.id;
+      
+      // Sprawdź czy grupa istnieje
+      const checkResult = await client.query(
+          'SELECT id FROM grupy WHERE id = $1',
+          [groupId]
+      );
+      
+      if (checkResult.rows.length === 0) {
+          return res.status(404).json({ error: 'Grupa nie znaleziona' });
+      }
+      
+      await client.query('BEGIN');
+      
+      // Usuń wszystkie posiłki grupy
+      await client.query(
+          'DELETE FROM group_meals WHERE group_id = $1',
+          [groupId]
+      );
+      
+      // Usuń grupę
+      await client.query(
+          'DELETE FROM grupy WHERE id = $1',
+          [groupId]
+      );
+      
+      await client.query('COMMIT');
+      
+      res.json({ message: 'Grupa usunięta pomyślnie' });
+      
+  } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Error deleting group:', error);
+      res.status(500).json({ error: 'Błąd usuwania grupy' });
+  } finally {
+      client.release();
+  }
+});
+
 // POST - utwórz nową grupę
 app.post('/api/groups', async (req, res) => {
   try {
@@ -870,7 +913,7 @@ app.get('/api/groups/:groupId/meal-type-defaults', async (req, res) => {
       .eq('group_id', req.params.groupId);
     
     if (error) throw error;
-    res.json(data);
+    res.json(data || []);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -899,7 +942,6 @@ app.post('/api/groups/:groupId/meal-type-defaults', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 // ========== GENEROWANIE LISTY ZAKUPÓW ==========
 
 // GET - wygeneruj listę zakupów dla grupy
