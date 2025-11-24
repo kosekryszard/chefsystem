@@ -415,6 +415,11 @@
         }
 
     </style>
+
+    <!-- Biblioteki do eksportu -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -476,6 +481,16 @@
                     </div>
                     <button class="btn btn-success" onclick="saveAllMeals()">
                         💾 Zapisz wszystkie zmiany
+                    </button>
+                    
+                    <button class="btn" onclick="exportToPDF()" 
+                            style="background: #dc3545; color: white;">
+                        📄 Eksport PDF
+                    </button>
+                    
+                    <button class="btn" onclick="exportToExcel()" 
+                            style="background: #17a2b8; color: white;">
+                        📊 Eksport Excel
                     </button>
                 </div>
 
@@ -1682,7 +1697,237 @@ function openMoveDishModal(sourceDayNumber, mealType, dishId, portions) {
             const d = new Date(dateStr);
             return d.toLocaleDateString('pl-PL');
         }
+        // ========== EKSPORT DO PDF ==========
+        async function exportToPDF() {
+            if (!groupData || mealsData.length === 0) {
+                alert('❌ Brak danych do eksportu');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Nagłówek
+            doc.setFontSize(18);
+            doc.text(`Jadłospis: ${groupData.nazwa}`, 14, 20);
+            
+            doc.setFontSize(11);
+            doc.text(`Organizator: ${groupData.organizator_nazwa || ''}`, 14, 28);
+            doc.text(`Liczba osób: ${getTotalPeople()}`, 14, 34);
+            doc.text(`Okres: ${groupData.data_pierwszy_posilek} - ${groupData.data_ostatni_posilek}`, 14, 40);
+            
+            let yPos = 50;
+            
+            // Oblicz liczbę dni
+            const dateFirst = new Date(groupData.data_pierwszy_posilek);
+            const dateLast = new Date(groupData.data_ostatni_posilek);
+            const diffDays = Math.ceil((dateLast - dateFirst) / (1000 * 60 * 60 * 24)) + 1;
+            
+            // Dla każdego dnia
+            for (let day = 1; day <= diffDays; day++) {
+                const currentDate = new Date(dateFirst);
+                currentDate.setDate(currentDate.getDate() + (day - 1));
+                
+                const dayName = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 
+                                 'Czwartek', 'Piątek', 'Sobota'][currentDate.getDay()];
+                const dateStr = currentDate.toLocaleDateString('pl-PL');
+                
+                // Sprawdź czy trzeba nową stronę
+                if (yPos > 250) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                // Nagłówek dnia
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'bold');
+                doc.text(`Dzień ${day} - ${dayName}, ${dateStr}`, 14, yPos);
+                yPos += 8;
+                
+                // Pobierz posiłki dla tego dnia
+                const dayMeals = mealsData.filter(m => m.dayNumber === day);
+                
+                if (dayMeals.length === 0) {
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    doc.text('Brak zaplanowanych posiłków', 20, yPos);
+                    yPos += 10;
+                    continue;
+                }
+                
+                // Grupuj po typach
+                const mealsByType = {};
+                dayMeals.forEach(meal => {
+                    if (!mealsByType[meal.mealType]) {
+                        mealsByType[meal.mealType] = [];
+                    }
+                    mealsByType[meal.mealType].push(meal);
+                });
+                
+                // Sortuj typy po godzinie
+                const sortedTypes = Object.keys(mealsByType).sort((a, b) => {
+                    const timeA = mealsByType[a][0].godzina || '12:00';
+                    const timeB = mealsByType[b][0].godzina || '12:00';
+                    return timeA.localeCompare(timeB);
+                });
+                
+                // Dla każdego typu posiłku
+                sortedTypes.forEach(mealType => {
+                    const meals = mealsByType[mealType];
+                    const mealTime = meals[0].godzina || '12:00';
+                    
+                    doc.setFontSize(11);
+                    doc.setFont(undefined, 'bold');
+                    
+                    // Ikona + nazwa typu
+                    const icon = getMealIcon(mealType);
+                    const typeName = getMealTypeName(mealType);
+                    doc.text(`${icon} ${typeName} - ${mealTime}`, 20, yPos);
+                    yPos += 6;
+                    
+                    // Lista dań
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    
+                    meals.forEach(meal => {
+                        const dish = allDishes.find(d => d.id === meal.dishId);
+                        const dishName = dish ? dish.nazwa : 'Nieznane danie';
+                        
+                        doc.text(`  • ${dishName} (${meal.portions} porcji)`, 24, yPos);
+                        yPos += 5;
+                    });
+                    
+                    yPos += 3;
+                });
+                
+                yPos += 5;
+            }
+            
+            // Zapisz
+            doc.save(`jadlospis_${groupData.nazwa.replace(/\s+/g, '_')}.pdf`);
+            alert('✅ Jadłospis wyeksportowany do PDF');
+        }
         
+        // ========== EKSPORT DO EXCEL ==========
+        async function exportToExcel() {
+            if (!groupData || mealsData.length === 0) {
+                alert('❌ Brak danych do eksportu');
+                return;
+            }
+            
+            const wb = XLSX.utils.book_new();
+            
+            // ARKUSZ 1: Jadłospis szczegółowy
+            const jadlospisData = [];
+            
+            // Oblicz liczbę dni
+            const dateFirst = new Date(groupData.data_pierwszy_posilek);
+            const dateLast = new Date(groupData.data_ostatni_posilek);
+            const diffDays = Math.ceil((dateLast - dateFirst) / (1000 * 60 * 60 * 24)) + 1;
+            
+            for (let day = 1; day <= diffDays; day++) {
+                const currentDate = new Date(dateFirst);
+                currentDate.setDate(currentDate.getDate() + (day - 1));
+                const dateStr = currentDate.toLocaleDateString('pl-PL');
+                
+                const dayMeals = mealsData.filter(m => m.dayNumber === day);
+                
+                // Grupuj i sortuj
+                const mealsByType = {};
+                dayMeals.forEach(meal => {
+                    if (!mealsByType[meal.mealType]) mealsByType[meal.mealType] = [];
+                    mealsByType[meal.mealType].push(meal);
+                });
+                
+                const sortedTypes = Object.keys(mealsByType).sort((a, b) => {
+                    const timeA = mealsByType[a][0].godzina || '12:00';
+                    const timeB = mealsByType[b][0].godzina || '12:00';
+                    return timeA.localeCompare(timeB);
+                });
+                
+                sortedTypes.forEach(mealType => {
+                    const meals = mealsByType[mealType];
+                    const mealTime = meals[0].godzina || '12:00';
+                    const typeName = getMealTypeName(mealType);
+                    
+                    meals.forEach(meal => {
+                        const dish = allDishes.find(d => d.id === meal.dishId);
+                        const dishName = dish ? dish.nazwa : 'Nieznane danie';
+                        
+                        jadlospisData.push({
+                            'Dzień': day,
+                            'Data': dateStr,
+                            'Typ posiłku': typeName,
+                            'Godzina': mealTime,
+                            'Danie': dishName,
+                            'Porcje': meal.portions
+                        });
+                    });
+                });
+            }
+            
+            const ws1 = XLSX.utils.json_to_sheet(jadlospisData);
+            XLSX.utils.book_append_sheet(wb, ws1, 'Jadłospis');
+            
+            // ARKUSZ 2: Zestawienie dań
+            const dishStats = {};
+            mealsData.forEach(meal => {
+                const dish = allDishes.find(d => d.id === meal.dishId);
+                const dishName = dish ? dish.nazwa : 'Nieznane danie';
+                
+                if (!dishStats[dishName]) {
+                    dishStats[dishName] = {
+                        'Danie': dishName,
+                        'Liczba wystąpień': 0,
+                        'Suma porcji': 0
+                    };
+                }
+                
+                dishStats[dishName]['Liczba wystąpień']++;
+                dishStats[dishName]['Suma porcji'] += meal.portions;
+            });
+            
+            const zestawienieData = Object.values(dishStats);
+            const ws2 = XLSX.utils.json_to_sheet(zestawienieData);
+            XLSX.utils.book_append_sheet(wb, ws2, 'Zestawienie dań');
+            
+            // Zapisz
+            XLSX.writeFile(wb, `jadlospis_${groupData.nazwa.replace(/\s+/g, '_')}.xlsx`);
+            alert('✅ Jadłospis wyeksportowany do Excel');
+        }
+        
+        // Helpery
+        function getMealIcon(mealType) {
+            const icons = {
+                'sniadanie': '🥐',
+                'ii_sniadanie': '🥪',
+                'obiad': '🍽️',
+                'podwieczorek': '🍰',
+                'kolacja': '🍲',
+                'later': '🌙'
+            };
+            return icons[mealType] || '🍴';
+        }
+        
+        function getMealTypeName(mealType) {
+            const names = {
+                'sniadanie': 'I Śniadanie',
+                'ii_sniadanie': 'II Śniadanie',
+                'obiad': 'Obiad',
+                'podwieczorek': 'Podwieczorek',
+                'kolacja': 'Kolacja',
+                'later': 'Later'
+            };
+            return names[mealType] || mealType;
+        }
+        
+        function getTotalPeople() {
+            return (groupData.liczba_uczestnikow || 0) + 
+                   (groupData.liczba_opiekunow || 0) + 
+                   (groupData.liczba_pilotow || 0) + 
+                   (groupData.liczba_kierowcow || 0) + 
+                   (groupData.liczba_kadry || 0);
+        }
     </script>
 </body>
 </html>
