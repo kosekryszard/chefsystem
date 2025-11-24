@@ -495,15 +495,11 @@
                             ${getStatusLabel(group.status)}
                         </span>
                         <div class="action-buttons" onclick="event.stopPropagation()">
-                            <button class="action-btn btn-delete" 
-                                    onclick="event.stopPropagation(); deleteGroup(${group.id})"
-                                    title="Usuń grupę">
-                                🗑️
-                            </button>
-                            
                             <div style="position: relative; display: inline-block;">
-                                <button onclick="toggleStatusMenu(${group.id})" class="btn-secondary">
-                                    📦 Przenieś do... ▼
+                                <button onclick="toggleStatusMenu(${group.id})" 
+                                        class="action-btn btn-secondary"
+                                        title="Przenieś do innego statusu">
+                                    📦
                                 </button>
                                 <div id="statusMenu-${group.id}" class="status-menu" style="display: none;">
                                     <div onclick="changeStatus(${group.id}, 'draft')">📝 Robocze</div>
@@ -513,18 +509,28 @@
                                 </div>
                             </div>
                             
-                            <button class="btn-secondary" onclick="duplicateGroup(${group.id})">
-                                📋 Stwórz podobną
+                            <button class="action-btn btn-secondary" 
+                                    onclick="duplicateGroup(${group.id})"
+                                    title="Stwórz podobną grupę">
+                                📋
                             </button>
                             
-                            <button class="btn-edit" onclick="editGroup(${group.id})">
-                                ✏️ Edytuj
+                            <button class="action-btn btn-edit" 
+                                    onclick="editGroup(${group.id})"
+                                    title="Edytuj parametry grupy">
+                                ✏️
+                            </button>
+                             <button class="action-btn btn-delete" 
+                                    onclick="event.stopPropagation(); deleteGroup(${group.id})"
+                                    title="Usuń grupę">
+                                🗑️
+                            </button>
+                            <button class="action-btn btn-planning" 
+                                    onclick="openGroupPlanning(${group.id})"
+                                    title="Planuj posiłki">
+                                📅
                             </button>
                             
-                            <button class="btn-edit" onclick="openGroupPlanning(${group.id})" 
-                                    style="background: #28a745;">
-                                📅 Planuj posiłki
-                            </button>
                         </div>
                     </div>
                 `;
