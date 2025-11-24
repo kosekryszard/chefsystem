@@ -417,8 +417,8 @@
     </style>
 
     <!-- Biblioteki do eksportu -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -1697,31 +1697,35 @@ function openMoveDishModal(sourceDayNumber, mealType, dishId, portions) {
             const d = new Date(dateStr);
             return d.toLocaleDateString('pl-PL');
         }
-        // ========== EKSPORT DO PDF ==========
+        // ========== EKSPORT DO PDF (z pdfmake) ==========
         async function exportToPDF() {
             if (!groupData || mealsData.length === 0) {
                 alert('❌ Brak danych do eksportu');
                 return;
             }
             
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // Nagłówek
-            doc.setFontSize(18);
-            doc.text(`Jadłospis: ${groupData.nazwa}`, 14, 20);
-            
-            doc.setFontSize(11);
-            doc.text(`Organizator: ${groupData.organizator_nazwa || ''}`, 14, 28);
-            doc.text(`Liczba osób: ${getTotalPeople()}`, 14, 34);
-            doc.text(`Okres: ${groupData.data_pierwszy_posilek} - ${groupData.data_ostatni_posilek}`, 14, 40);
-            
-            let yPos = 50;
-            
             // Oblicz liczbę dni
             const dateFirst = new Date(groupData.data_pierwszy_posilek);
             const dateLast = new Date(groupData.data_ostatni_posilek);
             const diffDays = Math.ceil((dateLast - dateFirst) / (1000 * 60 * 60 * 24)) + 1;
+            
+            const content = [];
+            
+            // Nagłówek
+            content.push({
+                text: `Jadłospis: ${groupData.nazwa}`,
+                style: 'header',
+                margin: [0, 0, 0, 10]
+            });
+            
+            content.push({
+                text: [
+                    { text: `Organizator: ${groupData.organizator_nazwa || ''}\n`, style: 'subheader' },
+                    { text: `Liczba osób: ${getTotalPeople()}\n`, style: 'subheader' },
+                    { text: `Okres: ${groupData.data_pierwszy_posilek} - ${groupData.data_ostatni_posilek}`, style: 'subheader' }
+                ],
+                margin: [0, 0, 0, 20]
+            });
             
             // Dla każdego dnia
             for (let day = 1; day <= diffDays; day++) {
@@ -1732,26 +1736,23 @@ function openMoveDishModal(sourceDayNumber, mealType, dishId, portions) {
                                  'Czwartek', 'Piątek', 'Sobota'][currentDate.getDay()];
                 const dateStr = currentDate.toLocaleDateString('pl-PL');
                 
-                // Sprawdź czy trzeba nową stronę
-                if (yPos > 250) {
-                    doc.addPage();
-                    yPos = 20;
-                }
-                
                 // Nagłówek dnia
-                doc.setFontSize(14);
-                doc.setFont(undefined, 'bold');
-                doc.text(`Dzień ${day} - ${dayName}, ${dateStr}`, 14, yPos);
-                yPos += 8;
+                content.push({
+                    text: `Dzień ${day} - ${dayName}, ${dateStr}`,
+                    style: 'dayHeader',
+                    margin: [0, 10, 0, 5]
+                });
                 
                 // Pobierz posiłki dla tego dnia
                 const dayMeals = mealsData.filter(m => m.dayNumber === day);
                 
                 if (dayMeals.length === 0) {
-                    doc.setFontSize(10);
-                    doc.setFont(undefined, 'normal');
-                    doc.text('Brak zaplanowanych posiłków', 20, yPos);
-                    yPos += 10;
+                    content.push({
+                        text: 'Brak zaplanowanych posiłków',
+                        italics: true,
+                        color: '#666666',
+                        margin: [10, 0, 0, 5]
+                    });
                     continue;
                 }
                 
@@ -1775,36 +1776,59 @@ function openMoveDishModal(sourceDayNumber, mealType, dishId, portions) {
                 sortedTypes.forEach(mealType => {
                     const meals = mealsByType[mealType];
                     const mealTime = meals[0].godzina || '12:00';
-                    
-                    doc.setFontSize(11);
-                    doc.setFont(undefined, 'bold');
-                    
-                    // Ikona + nazwa typu
-                    const icon = getMealIcon(mealType);
                     const typeName = getMealTypeName(mealType);
-                    doc.text(`${icon} ${typeName} - ${mealTime}`, 20, yPos);
-                    yPos += 6;
                     
-                    // Lista dań
-                    doc.setFontSize(10);
-                    doc.setFont(undefined, 'normal');
-                    
-                    meals.forEach(meal => {
-                        const dish = allDishes.find(d => d.id === meal.dishId);
-                        const dishName = dish ? dish.nazwa : 'Nieznane danie';
-                        
-                        doc.text(`  • ${dishName} (${meal.portions} porcji)`, 24, yPos);
-                        yPos += 5;
+                    content.push({
+                        text: `${typeName} - ${mealTime}`,
+                        style: 'mealType',
+                        margin: [10, 3, 0, 2]
                     });
                     
-                    yPos += 3;
+                    // Lista dań
+                    const dishList = meals.map(meal => {
+                        const dish = allDishes.find(d => d.id === meal.dishId);
+                        const dishName = dish ? dish.nazwa : 'Nieznane danie';
+                        return `  • ${dishName} (${meal.portions} porcji)`;
+                    });
+                    
+                    content.push({
+                        ul: dishList,
+                        margin: [20, 0, 0, 3]
+                    });
                 });
-                
-                yPos += 5;
             }
             
-            // Zapisz
-            doc.save(`jadlospis_${groupData.nazwa.replace(/\s+/g, '_')}.pdf`);
+            // Definicja dokumentu
+            const docDefinition = {
+                content: content,
+                styles: {
+                    header: {
+                        fontSize: 18,
+                        bold: true,
+                        color: '#0A1F44'
+                    },
+                    subheader: {
+                        fontSize: 11,
+                        color: '#666666'
+                    },
+                    dayHeader: {
+                        fontSize: 14,
+                        bold: true,
+                        color: '#0A1F44'
+                    },
+                    mealType: {
+                        fontSize: 11,
+                        bold: true,
+                        color: '#D4AF37'
+                    }
+                },
+                defaultStyle: {
+                    font: 'Roboto'
+                }
+            };
+            
+            // Generuj i pobierz
+            pdfMake.createPdf(docDefinition).download(`jadlospis_${groupData.nazwa.replace(/\s+/g, '_')}.pdf`);
             alert('✅ Jadłospis wyeksportowany do PDF');
         }
         
