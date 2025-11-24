@@ -833,7 +833,14 @@
                     dzial: row.dzial || null,
                     wegetarianski: row.wegetarianski === 'true' || row.wegetarianski === '1',
                     weganski: row.weganski === 'true' || row.weganski === '1',
-                    alergeny: row.alergeny ? JSON.parse(row.alergeny) : []
+                    alergeny: (() => {
+        try {
+            return row.alergeny ? JSON.parse(row.alergeny.trim()) : [];
+        } catch (e) {
+            console.warn('Błąd parsowania alergenów:', row.alergeny, e);
+            return [];
+        }
+    })()
                 };
                 
                 // Import/update
