@@ -659,7 +659,7 @@ app.delete('/api/groups/:id', async (req, res) => {
       
       // Sprawdź czy grupa istnieje
       const checkResult = await client.query(
-          'SELECT id FROM grupy WHERE id = $1',
+          'SELECT id FROM groups WHERE id = $1',
           [groupId]
       );
       
@@ -677,7 +677,7 @@ app.delete('/api/groups/:id', async (req, res) => {
       
       // Usuń grupę
       await client.query(
-          'DELETE FROM grupy WHERE id = $1',
+          'DELETE FROM groups WHERE id = $1',
           [groupId]
       );
       
