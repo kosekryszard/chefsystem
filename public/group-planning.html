@@ -586,6 +586,7 @@
         let mealTypeDefaults = {};  // DODANE - domyślne godziny typów posiłków
         let currentAddMealDay = null;  // DODANE - dzień dla modalu dodawania typu
         let copyDishData = null;  // DODANE - dane kopiowanego dania
+        let hasUnsavedChanges = false;
 
         // ========== INICJALIZACJA ==========
         document.addEventListener('DOMContentLoaded', async () => {
@@ -1110,10 +1111,13 @@ const existingMealsOfType = mealsData.filter(m =>
     if (meal) {
         meal.portions = parseInt(newPortions) || 0;
     }
+    markAsChanged()
 }
         
-        function removeDish(dayNumber, mealType, mealId) {
-            if (!confirm('Czy na pewno usunąć to danie?')) return;
+function removeDish(dayNumber, mealType, mealId) {
+            if (!confirm('🗑️ Czy na pewno usunąć to danie?')) {
+                return;
+            }
             
             const index = mealsData.findIndex(m => m.id === mealId);
             
@@ -1123,6 +1127,7 @@ const existingMealsOfType = mealsData.filter(m =>
             
             refreshDayMeals(dayNumber);
             updateStats();
+            markAsChanged();
         }
         
 // Aktualizuj godzinę posiłku
@@ -1139,10 +1144,14 @@ function updateMealTime(dayNumber, mealType, newTime) {
             
             // Odśwież widok (z sortowaniem)
             refreshDayMeals(dayNumber);
+            markAsChanged();
         }
         
         // Usuń cały typ posiłku z dnia
         function removeMealType(dayNumber, mealType) {
+            if (!confirm(`🗑️ Czy na pewno usunąć cały typ posiłku "${getMealTypeName(mealType)}" z tego dnia?`)) {
+                return;
+            }
             const mealNames = {
                 'sniadanie': 'Śniadanie',
                 'ii_sniadanie': 'II Śniadanie',
@@ -1167,6 +1176,7 @@ function updateMealTime(dayNumber, mealType, newTime) {
             
             refreshDayMeals(dayNumber);
             updateStats();
+            markAsChanged();
         }
 
 // Otwórz modal dodawania typu posiłku do dnia
@@ -1365,6 +1375,7 @@ for (let day = 1; day <= diffDays; day++) {
             
             // Pokaż komunikat
             alert(`✅ Skopiowano danie do dnia ${targetDayNumber}`);
+            markAsChanged();
         }
 // Otwórz modal przenoszenia dania (podobny do kopiowania, ale usuwa ze źródła)
 function openMoveDishModal(sourceDayNumber, mealType, dishId, portions) {
@@ -1488,6 +1499,7 @@ function openMoveDishModal(sourceDayNumber, mealType, dishId, portions) {
             
             // Pokaż komunikat
             alert(`✅ Przeniesiono danie do dnia ${targetDayNumber}`);
+            markAsChanged();
         }
 
         // Dodaj typ posiłku do dnia (bez dań)
@@ -1533,6 +1545,7 @@ function openMoveDishModal(sourceDayNumber, mealType, dishId, portions) {
             
             // Zamknij modal
             closeAddMealTypeModal();
+            markAsChanged();
         }
 
         // Przesuń danie w górę (zmniejsz kolejność)
@@ -1601,12 +1614,21 @@ function openMoveDishModal(sourceDayNumber, mealType, dishId, portions) {
             }
         });
         
-        // ========== ZAPIS DO BAZY ==========
-        
-        async function saveAllMeals() {
+        // ========== ZAPIS DO BAZY ========== //
+            async function saveAllMeals() {
             if (mealsData.length === 0) {
                 alert('⚠️ Brak posiłków do zapisania');
                 return;
+            }
+            
+            // Loading state - znajdź przycisk
+            const saveBtn = document.querySelector('button[onclick="saveAllMeals()"]');
+            const originalText = saveBtn ? saveBtn.innerHTML : '';
+            
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '⏳ Zapisywanie...';
+                saveBtn.style.opacity = '0.6';
             }
             
             if (!confirm(`Zapisać ${mealsData.length} posiłków?`)) return;
@@ -1649,7 +1671,21 @@ function openMoveDishModal(sourceDayNumber, mealType, dishId, portions) {
                 }
                 
                 alert('✅ Jadłospis zapisany pomyślnie!');
+                hasUnsavedChanges = false;
                 
+                // Przywróć przycisk
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '✅ Zapisano';
+                    saveBtn.style.opacity = '1';
+                    saveBtn.style.background = '#28a745';
+                    
+                    // Po 2 sekundach wróć do normalnego tekstu
+                    setTimeout(() => {
+                        saveBtn.innerHTML = originalText;
+                    }, 2000);
+                }
+
                 // Przeładuj dane
                 await loadExistingMeals();
                 generateDaysTimeline(); // Odśwież widok
@@ -1657,6 +1693,13 @@ function openMoveDishModal(sourceDayNumber, mealType, dishId, portions) {
             } catch (error) {
                 console.error('Error:', error);
                 alert('❌ Błąd zapisu: ' + error.message);
+                
+                // Przywróć przycisk w przypadku błędu
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.style.opacity = '1';
+                }
             }
         }
         
@@ -1951,6 +1994,25 @@ function openMoveDishModal(sourceDayNumber, mealType, dishId, portions) {
                    (groupData.liczba_pilotow || 0) + 
                    (groupData.liczba_kierowcow || 0) + 
                    (groupData.liczba_kadry || 0);
+        }
+        // Ostrzeżenie przed wyjściem bez zapisu
+        window.addEventListener('beforeunload', (e) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = 'Masz niezapisane zmiany. Czy na pewno chcesz opuścić stronę?';
+                return e.returnValue;
+            }
+        });
+        
+        // Ustaw flagę przy jakiejkolwiek zmianie
+        function markAsChanged() {
+            hasUnsavedChanges = true;
+            // Zmień kolor przycisku "Zapisz"
+            const saveBtn = document.getElementById('saveAllBtn');
+            if (saveBtn) {
+                saveBtn.style.background = '#ffc107';
+                saveBtn.textContent = '⚠️ Zapisz zmiany';
+            }
         }
     </script>
 </body>

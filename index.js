@@ -1045,8 +1045,106 @@ app.get('/api/groups/:groupId/shopping-list', async (req, res) => {
   }
 });
 
-// ========================================
-// KONIEC - Endpointy gotowe!
-// ========================================
+// ===== ALERGENY =====
+app.get('/api/allergens', async (req, res) => {
+  try {
+      // Hardcoded lista 14 alergenów UE (działa bez tabeli w bazie)
+      const allergens = [
+          { id: 1, kod: 'GLUTEN', nazwa: 'Gluten', nazwa_pelna: 'Zboża zawierające gluten', kolejnosc: 1 },
+          { id: 2, kod: 'CRUST', nazwa: 'Skorupiaki', nazwa_pelna: 'Skorupiaki i produkty pochodne', kolejnosc: 2 },
+          { id: 3, kod: 'EGGS', nazwa: 'Jaja', nazwa_pelna: 'Jaja i produkty pochodne', kolejnosc: 3 },
+          { id: 4, kod: 'FISH', nazwa: 'Ryby', nazwa_pelna: 'Ryby i produkty pochodne', kolejnosc: 4 },
+          { id: 5, kod: 'PEANUTS', nazwa: 'Orzeszki ziemne', nazwa_pelna: 'Orzeszki ziemne (arachidowe) i produkty pochodne', kolejnosc: 5 },
+          { id: 6, kod: 'SOY', nazwa: 'Soja', nazwa_pelna: 'Soja i produkty pochodne', kolejnosc: 6 },
+          { id: 7, kod: 'MILK', nazwa: 'Mleko', nazwa_pelna: 'Mleko i produkty pochodne (łącznie z laktozą)', kolejnosc: 7 },
+          { id: 8, kod: 'NUTS', nazwa: 'Orzechy', nazwa_pelna: 'Orzechy', kolejnosc: 8 },
+          { id: 9, kod: 'CELERY', nazwa: 'Seler', nazwa_pelna: 'Seler i produkty pochodne', kolejnosc: 9 },
+          { id: 10, kod: 'MUSTARD', nazwa: 'Gorczyca', nazwa_pelna: 'Gorczyca i produkty pochodne', kolejnosc: 10 },
+          { id: 11, kod: 'SESAME', nazwa: 'Sezam', nazwa_pelna: 'Nasiona sezamu i produkty pochodne', kolejnosc: 11 },
+          { id: 12, kod: 'SO2', nazwa: 'Dwutlenek siarki', nazwa_pelna: 'Dwutlenek siarki i siarczyny', kolejnosc: 12 },
+          { id: 13, kod: 'LUPIN', nazwa: 'Łubin', nazwa_pelna: 'Łubin i produkty pochodne', kolejnosc: 13 },
+          { id: 14, kod: 'MOLLUSCS', nazwa: 'Mięczaki', nazwa_pelna: 'Mięczaki i produkty pochodne', kolejnosc: 14 }
+      ];
+      
+      res.json(allergens);
+  } catch (err) {
+      console.error('Błąd alergenów:', err);
+      res.status(500).json({ error: err.message });
+  }
+});
+
+// ===== SPRAWDZANIE DUPLIKATÓW (dla importu CSV) =====
+app.post('/api/ingredients/check-duplicates', async (req, res) => {
+  try {
+      const { names } = req.body;
+      
+      if (!Array.isArray(names) || names.length === 0) {
+          return res.json({ duplicates: [], existingIds: {} });
+      }
+      
+      // Pobierz istniejące surowce o tych nazwach
+      const { data, error } = await supabase
+          .from('ingredients')
+          .select('id, nazwa')
+          .in('nazwa', names);
+      
+      if (error) {
+          console.error('Błąd sprawdzania duplikatów:', error);
+          return res.status(500).json({ error: error.message });
+      }
+      
+      // Zwróć listę duplikatów i mapę nazwa -> id
+      const duplicates = data.map(item => item.nazwa);
+      const existingIds = {};
+      data.forEach(item => {
+          existingIds[item.nazwa] = item.id;
+      });
+      
+      res.json({ duplicates, existingIds });
+  } catch (err) {
+      console.error('Błąd:', err);
+      res.status(500).json({ error: err.message });
+  }
+});
+
+// ===== EKSPORT CSV =====
+app.get('/api/ingredients/export/csv', async (req, res) => {
+  try {
+      // Pobierz wszystkie składniki
+      const { data: ingredients, error } = await supabase
+          .from('ingredients')
+          .select('*')
+          .order('id');
+      
+      if (error) throw error;
+      
+      // Generuj CSV
+      const headers = 'id,nazwa,typ,grupa,dzial,jm_podstawowa,wegetarianski,weganski,alergeny\n';
+      
+      const rows = ingredients.map(ing => {
+          const alergeny = Array.isArray(ing.alergeny) ? JSON.stringify(ing.alergeny) : '[]';
+          return [
+              ing.id,
+              `"${(ing.nazwa || '').replace(/"/g, '""')}"`, // Escape quotes
+              ing.typ || '',
+              ing.grupa || '',
+              ing.dzial || '',
+              ing.jm_podstawowa || '',
+              ing.wegetarianski ? 'true' : '',
+              ing.weganski ? 'true' : '',
+              alergeny
+          ].join(',');
+      }).join('\n');
+      
+      const csv = '\uFEFF' + headers + rows; // BOM dla polskich znaków
+      
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="surowce_export.csv"`);
+      res.send(csv);
+  } catch (err) {
+      console.error('Błąd eksportu CSV:', err);
+      res.status(500).json({ error: err.message });
+  }
+});
 
 app.listen(3000, () => console.log('Serwer dziaÅ‚a na http://localhost:3000'));
