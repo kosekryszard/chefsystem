@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chefsystent - Planowanie Eventu</title>
+    <link rel="stylesheet" href="chefsystent-brand.css">
+    <link rel="icon" type="image/png" href="piktogram.png">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .content { padding: 30px; }
+        
+        /* Header info eventu */
+        .event-info-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-item label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .info-item .value {
+            font-size: 16px;
+            color: #0A1F44;
+            font-weight: 700;
+        }
+        
+        /* Timeline dni */
+        .days-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        /* Karta dnia */
+        .day-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        /* Header dnia */
+        .day-header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0A1F44 100%);
+            padding: 20px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Sekcje */
+        .sections-container {
+            padding: 20px;
+        }
+        
+        .section-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0A1F44;
+        }
+        
+        /* Zadania */
+        .tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .task-text {
+            flex: 1;
+            font-size: 14px;
+        }
+        
+        .task-text.completed {
+            text-decoration: line-through;
+            color: #999;
+        }
+        
+        /* Przyciski */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #D4AF37;
+            color: #0A1F44;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        /* Sticky actions */
+        .sticky-actions {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            z-index: 100;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0A1F44 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .close {
+            font-size: 28px;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #0A1F44;
+        }
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-logo">
+                <img src="LOGO_chefsystent.png" alt="Chefsystent Logo">
+            </div>
+            <p>System Zarządzania Kuchnią - Planowanie Eventu</p>
+            
+            <nav>
+                <a href="index.html">Surowce</a>
+                <a href="recipes.html">Receptury</a>
+                <a href="dishes.html">Dania</a>
+                <a href="groups.html">Grupy</a>
+                <a href="events.html">← Eventy</a>
+            </nav>
+        </header>
+
+        <div class="content">
+            <!-- Loading -->
+            <div id="loadingState" style="text-align: center; padding: 40px;">
+                Ładowanie danych eventu...
+            </div>
+
+            <!-- Main content -->
+            <div id="mainContent" style="display: none;">
+                
+                <!-- Info eventu -->
+                <div class="event-info-header">
+                    <div class="info-item">
+                        <label>Nazwa eventu</label>
+                        <div class="value" id="eventName">—</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Typ</label>
+                        <div class="value" id="eventType">—</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Lokalizacja</label>
+                        <div class="value" id="eventLocation">—</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Liczba osób</label>
+                        <div class="value" id="eventPeople">—</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Okres</label>
+                        <div class="value" id="eventPeriod">—</div>
+                    </div>
+                </div>
+
+                <!-- Sticky actions -->
+                <div class="sticky-actions">
+                    <button class="btn btn-secondary" onclick="window.location.href='events.html'">
+                        ← Wróć do eventów
+                    </button>
+                    <button class="btn btn-success" onclick="saveAll()">
+                        💾 Zapisz zmiany
+                    </button>
+                </div>
+
+                <!-- Timeline dni -->
+                <div class="days-timeline" id="daysTimeline">
+                    <!-- Dni generowane przez JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Dodaj sekcję -->
+    <div id="sectionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="sectionModalTitle">Dodaj sekcję</h2>
+                <span class="close" onclick="closeSectionModal()">&times;</span>
+            </div>
+            <div style="padding: 20px;">
+                <form id="sectionForm" onsubmit="saveSection(event)">
+                    <input type="hidden" id="sectionDayNum">
+                    <input type="hidden" id="sectionId">
+                    
+                    <div class="form-group">
+                        <label>Nazwa sekcji *</label>
+                        <input type="text" id="sectionName" required placeholder="np. Kolacja, Wyposażenie, Transport">
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" class="btn btn-primary">Zapisz</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeSectionModal()">Anuluj</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Dodaj zadanie -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Dodaj zadanie</h2>
+                <span class="close" onclick="closeTaskModal()">&times;</span>
+            </div>
+            <div style="padding: 20px;">
+                <form id="taskForm" onsubmit="saveTask(event)">
+                    <input type="hidden" id="taskSectionId">
+                    <input type="hidden" id="taskId">
+                    
+                    <div class="form-group">
+                        <label>Opis zadania *</label>
+                        <textarea id="taskDescription" rows="3" required placeholder="Opisz zadanie do wykonania..."></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" class="btn btn-primary">Zapisz</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Anuluj</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Zmienne globalne
+        let eventId = null;
+        let eventData = null;
+        let sectionsData = [];
+        let tasksData = [];
+
+        // Inicjalizacja
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            eventId = urlParams.get('id');
+            
+            if (!eventId) {
+                alert('❌ Brak ID eventu!');
+                window.location.href = 'events.html';
+                return;
+            }
+            
+            await loadEventData();
+            await loadSections();
+            await loadTasks();
+            generateDaysTimeline();
+            
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+        });
+
+        // Ładowanie danych eventu
+        async function loadEventData() {
+            try {
+                const response = await fetch(`/api/events/${eventId}`);
+                if (!response.ok) throw new Error('Błąd pobierania eventu');
+                
+                eventData = await response.json();
+                
+                document.getElementById('eventName').textContent = eventData.nazwa;
+                document.getElementById('eventType').textContent = getEventTypeName(eventData.typ);
+                document.getElementById('eventLocation').textContent = eventData.lokalizacja || '—';
+                
+                const totalPeople = (eventData.liczba_osob_doroslych || 0) +
+                                   (eventData.liczba_dzieci_0_3 || 0) +
+                                   (eventData.liczba_dzieci_4_12 || 0) +
+                                   (eventData.liczba_dzieci_12_18 || 0) +
+                                   (eventData.liczba_osob_18_plus || 0);
+                document.getElementById('eventPeople').textContent = totalPeople ? `${totalPeople} osób` : '—';
+                
+                const dateStart = new Date(eventData.data_rozpoczecia).toLocaleDateString('pl-PL');
+                const dateEnd = new Date(eventData.data_zakonczenia).toLocaleDateString('pl-PL');
+                document.getElementById('eventPeriod').textContent = `${dateStart} – ${dateEnd}`;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd ładowania eventu');
+            }
+        }
+
+        async function loadSections() {
+            try {
+                const response = await fetch(`/api/events/${eventId}/sections`);
+                if (response.ok) {
+                    sectionsData = await response.json();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadTasks() {
+            try {
+                const response = await fetch(`/api/events/${eventId}/tasks`);
+                if (response.ok) {
+                    tasksData = await response.json();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Generowanie timeline dni
+        function generateDaysTimeline() {
+            const timeline = document.getElementById('daysTimeline');
+            timeline.innerHTML = '';
+            
+            const startDate = new Date(eventData.data_rozpoczecia);
+            const endDate = new Date(eventData.data_zakonczenia);
+            
+            let currentDate = new Date(startDate);
+            let dayNum = 1;
+            
+            while (currentDate <= endDate) {
+                const dayCard = createDayCard(dayNum, new Date(currentDate));
+                timeline.appendChild(dayCard);
+                
+                currentDate.setDate(currentDate.getDate() + 1);
+                dayNum++;
+            }
+        }
+
+        function createDayCard(dayNum, date) {
+            const card = document.createElement('div');
+            card.className = 'day-card';
+            
+            const dayName = date.toLocaleDateString('pl-PL', { weekday: 'long' });
+            const dateStr = date.toLocaleDateString('pl-PL');
+            
+            // Pobierz sekcje dla tego dnia
+            const daySections = sectionsData.filter(s => s.dzien_numer === dayNum);
+            
+            card.innerHTML = `
+                <div class="day-header">
+                    <div>
+                        <h3>Dzień ${dayNum} - ${dayName}</h3>
+                        <div>${dateStr}</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openAddSectionModal(${dayNum})">
+                        ➕ Dodaj sekcję
+                    </button>
+                </div>
+                <div class="sections-container" id="day${dayNum}Sections">
+                    ${daySections.length === 0 ? '<p style="color: #999; text-align: center; padding: 20px;">Brak sekcji. Dodaj pierwszą sekcję dla tego dnia.</p>' : ''}
+                    ${daySections.map(section => createSectionCard(section)).join('')}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function createSectionCard(section) {
+            const sectionTasks = tasksData.filter(t => t.section_id === section.id);
+            
+            return `
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-title">${section.nazwa}</div>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn btn-primary" onclick="openAddTaskModal(${section.id})" style="padding: 5px 10px; font-size: 12px;">
+                                ➕ Zadanie
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteSection(${section.id})" style="padding: 5px 10px; font-size: 12px;">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                    <div class="tasks-list">
+                        ${sectionTasks.length === 0 ? '<p style="color: #999; font-size: 12px;">Brak zadań</p>' : ''}
+                        ${sectionTasks.map(task => createTaskItem(task)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function createTaskItem(task) {
+            return `
+                <div class="task-item">
+                    <input type="checkbox" class="task-checkbox" 
+                           ${task.completed ? 'checked' : ''} 
+                           onchange="toggleTask(${task.id}, this.checked)">
+                    <span class="task-text ${task.completed ? 'completed' : ''}">${task.opis}</span>
+                    <button class="btn btn-danger" onclick="deleteTask(${task.id})" style="padding: 5px 10px; font-size: 12px;">
+                        🗑️
+                    </button>
+                </div>
+            `;
+        }
+
+        // Modal sekcji
+        function openAddSectionModal(dayNum) {
+            document.getElementById('sectionModalTitle').textContent = 'Dodaj sekcję';
+            document.getElementById('sectionForm').reset();
+            document.getElementById('sectionDayNum').value = dayNum;
+            document.getElementById('sectionId').value = '';
+            document.getElementById('sectionModal').style.display = 'flex';
+        }
+
+        function closeSectionModal() {
+            document.getElementById('sectionModal').style.display = 'none';
+        }
+
+        async function saveSection(e) {
+            e.preventDefault();
+            
+            const dayNum = parseInt(document.getElementById('sectionDayNum').value);
+            const sectionId = document.getElementById('sectionId').value;
+            const nazwa = document.getElementById('sectionName').value;
+            
+            const data = {
+                dzien_numer: dayNum,
+                nazwa: nazwa
+            };
+            
+            try {
+                const url = sectionId ? `/api/events/${eventId}/sections/${sectionId}` : `/api/events/${eventId}/sections`;
+                const method = sectionId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Błąd zapisu sekcji');
+                
+                await loadSections();
+                generateDaysTimeline();
+                closeSectionModal();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd zapisu sekcji');
+            }
+        }
+
+        async function deleteSection(id) {
+            if (!confirm('Usunąć sekcję wraz ze wszystkimi zadaniami?')) return;
+            
+            try {
+                const response = await fetch(`/api/events/${eventId}/sections/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Błąd usuwania');
+                
+                await loadSections();
+                await loadTasks();
+                generateDaysTimeline();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd usuwania sekcji');
+            }
+        }
+
+        // Modal zadań
+        function openAddTaskModal(sectionId) {
+            document.getElementById('taskForm').reset();
+            document.getElementById('taskSectionId').value = sectionId;
+            document.getElementById('taskId').value = '';
+            document.getElementById('taskModal').style.display = 'flex';
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').style.display = 'none';
+        }
+
+        async function saveTask(e) {
+            e.preventDefault();
+            
+            const sectionId = document.getElementById('taskSectionId').value;
+            const taskId = document.getElementById('taskId').value;
+            const opis = document.getElementById('taskDescription').value;
+            
+            const data = {
+                section_id: parseInt(sectionId),
+                opis: opis,
+                completed: false
+            };
+            
+            try {
+                const url = taskId ? `/api/events/${eventId}/tasks/${taskId}` : `/api/events/${eventId}/tasks`;
+                const method = taskId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Błąd zapisu zadania');
+                
+                await loadTasks();
+                generateDaysTimeline();
+                closeTaskModal();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd zapisu zadania');
+            }
+        }
+
+        async function toggleTask(taskId, completed) {
+            try {
+                const response = await fetch(`/api/events/${eventId}/tasks/${taskId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ completed })
+                });
+                
+                if (!response.ok) throw new Error('Błąd aktualizacji');
+                
+                await loadTasks();
+                generateDaysTimeline();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd aktualizacji zadania');
+            }
+        }
+
+        async function deleteTask(id) {
+            if (!confirm('Usunąć zadanie?')) return;
+            
+            try {
+                const response = await fetch(`/api/events/${eventId}/tasks/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Błąd usuwania');
+                
+                await loadTasks();
+                generateDaysTimeline();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd usuwania zadania');
+            }
+        }
+
+        function saveAll() {
+            alert('✅ Wszystkie zmiany są zapisywane automatycznie!');
+        }
+
+        function getEventTypeName(typ) {
+            const types = {
+                'event': 'Wydarzenie',
+                'catering': 'Catering',
+                'delivery': 'Dostawa'
+            };
+            return types[typ] || typ;
+        }
+
+        // Zamknij modal kliknięciem poza
+        window.onclick = function(event) {
+            const sectionModal = document.getElementById('sectionModal');
+            const taskModal = document.getElementById('taskModal');
+            if (event.target === sectionModal) closeSectionModal();
+            if (event.target === taskModal) closeTaskModal();
+        };
+    </script>
+</body>
+</html>

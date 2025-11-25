@@ -2045,6 +2045,220 @@ app.put('/api/event-tasks/:id/move', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
+// ============================================
+// EVENT PLANNING API ENDPOINTS
+// ============================================
+// Wklej ten kod do index.js po endpointach events
+
+// GET /api/events/:id/sections - Lista sekcji eventu
+app.get('/api/events/:id/sections', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .from('event_sections')
+          .select('*')
+          .eq('event_id', id)
+          .order('dzien_numer', { ascending: true })
+          .order('kolejnosc', { ascending: true });
+      
+      if (error) throw error;
+      
+      res.json(data || []);
+  } catch (error) {
+      console.error('Błąd pobierania sekcji:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/events/:id/sections - Nowa sekcja
+app.post('/api/events/:id/sections', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { dzien_numer, nazwa, kolejnosc } = req.body;
+      
+      const { data, error } = await supabase
+          .from('event_sections')
+          .insert([{
+              event_id: id,
+              dzien_numer,
+              nazwa,
+              kolejnosc: kolejnosc || 1
+          }])
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.status(201).json(data);
+  } catch (error) {
+      console.error('Błąd tworzenia sekcji:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/events/:id/sections/:sectionId - Edycja sekcji
+app.put('/api/events/:id/sections/:sectionId', async (req, res) => {
+  try {
+      const { sectionId } = req.params;
+      const { nazwa, kolejnosc } = req.body;
+      
+      const { data, error } = await supabase
+          .from('event_sections')
+          .update({ nazwa, kolejnosc })
+          .eq('id', sectionId)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Błąd aktualizacji sekcji:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/events/:id/sections/:sectionId - Usuń sekcję
+app.delete('/api/events/:id/sections/:sectionId', async (req, res) => {
+  try {
+      const { sectionId } = req.params;
+      
+      // Usuń zadania w sekcji
+      await supabase
+          .from('event_tasks')
+          .delete()
+          .eq('section_id', sectionId);
+      
+      // Usuń sekcję
+      const { error } = await supabase
+          .from('event_sections')
+          .delete()
+          .eq('id', sectionId);
+      
+      if (error) throw error;
+      
+      res.json({ message: 'Sekcja usunięta' });
+  } catch (error) {
+      console.error('Błąd usuwania sekcji:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/events/:id/tasks - Lista zadań eventu
+app.get('/api/events/:id/tasks', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .from('event_tasks')
+          .select('*')
+          .eq('event_id', id)
+          .order('kolejnosc', { ascending: true });
+      
+      if (error) throw error;
+      
+      res.json(data || []);
+  } catch (error) {
+      console.error('Błąd pobierania zadań:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/events/:id/tasks - Nowe zadanie
+app.post('/api/events/:id/tasks', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { section_id, opis, kolejnosc } = req.body;
+      
+      const { data, error } = await supabase
+          .from('event_tasks')
+          .insert([{
+              event_id: id,
+              section_id,
+              opis,
+              completed: false,
+              kolejnosc: kolejnosc || 1
+          }])
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.status(201).json(data);
+  } catch (error) {
+      console.error('Błąd tworzenia zadania:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/events/:id/tasks/:taskId - Edycja zadania
+app.put('/api/events/:id/tasks/:taskId', async (req, res) => {
+  try {
+      const { taskId } = req.params;
+      const { opis, completed, kolejnosc } = req.body;
+      
+      const updateData = {};
+      if (opis !== undefined) updateData.opis = opis;
+      if (completed !== undefined) updateData.completed = completed;
+      if (kolejnosc !== undefined) updateData.kolejnosc = kolejnosc;
+      
+      const { data, error } = await supabase
+          .from('event_tasks')
+          .update(updateData)
+          .eq('id', taskId)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Błąd aktualizacji zadania:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// PATCH /api/events/:id/tasks/:taskId - Toggle checkbox
+app.patch('/api/events/:id/tasks/:taskId', async (req, res) => {
+  try {
+      const { taskId } = req.params;
+      const { completed } = req.body;
+      
+      const { data, error } = await supabase
+          .from('event_tasks')
+          .update({ completed })
+          .eq('id', taskId)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Błąd toggle zadania:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/events/:id/tasks/:taskId - Usuń zadanie
+app.delete('/api/events/:id/tasks/:taskId', async (req, res) => {
+  try {
+      const { taskId } = req.params;
+      
+      const { error } = await supabase
+          .from('event_tasks')
+          .delete()
+          .eq('id', taskId);
+      
+      if (error) throw error;
+      
+      res.json({ message: 'Zadanie usunięte' });
+  } catch (error) {
+      console.error('Błąd usuwania zadania:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
 
 console.log('✅ Endpointy Events załadowane pomyślnie');
 app.listen(3000, () => console.log('Serwer dziaÅ‚a na http://localhost:3000'));
