@@ -1528,56 +1528,7 @@ app.delete('/api/event-sections/:id', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-// ============================================
-// POST /api/event-sections/:id/dishes - Dodaj danie do sekcji
-// ============================================
-app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
-  try {
-      const { sectionId } = req.params;
-      const { dish_id, liczba_porcji } = req.body;
-      // Pobierz maksymalną kolejność dla tej sekcji
-      const { data: dishes, error: fetchError } = await supabase
-          .from('event_section_dishes')
-          .select('kolejnosc')
-          .eq('event_section_id', sectionId)
-          .order('kolejnosc', { ascending: false })
-          .limit(1);
-      if (fetchError) throw fetchError;
-      const nextKolejnosc = dishes.length > 0 ? dishes[0].kolejnosc + 1 : 0;
-      // Dodaj danie
-      const { data, error } = await supabase
-          .from('event_section_dishes')
-          .insert([{
-              event_section_id: sectionId,
-              dish_id,
-              liczba_porcji: liczba_porcji || 1,
-              kolejnosc: nextKolejnosc
-          }])
-          .select(`
-              *,
-              dishes (
-                  id,
-                  nazwa,
-                  typ
-              )
-          `)
-          .single();
-      if (error) throw error;
-      // TODO: Auto-generowanie zadań z kroków receptury
-      // (implementacja w kolejnym kroku)
-      res.status(201).json({
-        dish: dishData,
-        debug: {
-            componentsCount: components?.length || 0,
-            hasComponents: components && components.length > 0,
-            sectionDataExists: !!sectionData
-        }
-    });
-  } catch (error) {
-      console.error('Błąd dodawania dania:', error);
-      res.status(500).json({ error: error.message });
-  }
-});
+
 // ============================================
 // DELETE /api/event-section-dishes/:id - Usuń danie z sekcji
 // ============================================
