@@ -11,7 +11,7 @@
             background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
         }
         .container {
-            max-width: 1600px;
+            max-width: 1800px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -20,7 +20,7 @@
         }
         .content { padding: 30px; }
         
-        /* Header info eventu */
+        /* Info eventu */
         .event-info-header {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             padding: 20px;
@@ -30,20 +30,42 @@
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
         }
-        .info-item {
-            display: flex;
-            flex-direction: column;
-        }
         .info-item label {
             font-size: 12px;
             color: #666;
-            margin-bottom: 5px;
             font-weight: 600;
         }
         .info-item .value {
             font-size: 16px;
             color: #0A1F44;
             font-weight: 700;
+        }
+        
+        /* Sticky actions */
+        .sticky-actions {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            z-index: 100;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        /* Dzień "Produkcja" */
+        .production-day {
+            background: #fff3cd;
+            border: 3px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .production-day h3 {
+            color: #856404;
+            margin-bottom: 15px;
         }
         
         /* Timeline dni */
@@ -61,7 +83,6 @@
             overflow: hidden;
         }
         
-        /* Header dnia */
         .day-header {
             background: linear-gradient(135deg, #1e3a5f 0%, #0A1F44 100%);
             padding: 20px;
@@ -71,11 +92,31 @@
             align-items: center;
         }
         
-        /* Sekcje */
-        .sections-container {
-            padding: 20px;
+        /* Split view: Sekcje | Zadania */
+        .day-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            background: #e0e0e0;
         }
         
+        .day-split-left,
+        .day-split-right {
+            background: white;
+            padding: 20px;
+            min-height: 200px;
+        }
+        
+        .split-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0A1F44;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #D4AF37;
+        }
+        
+        /* Sekcje */
         .section-card {
             background: #f8f9fa;
             border: 2px solid #e0e0e0;
@@ -88,36 +129,76 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
         
         .section-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
             color: #0A1F44;
+        }
+        
+        .section-meta {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        /* Dania w sekcji */
+        .dishes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .dish-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .dish-name {
+            font-weight: 600;
+            color: #0A1F44;
+        }
+        
+        .dish-portions {
+            color: #666;
+            font-size: 13px;
         }
         
         /* Zadania */
         .tasks-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
         
         .task-item {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 10px;
             padding: 10px;
-            background: white;
-            border-radius: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
             border: 1px solid #e0e0e0;
+        }
+        
+        .task-item.from-recipe {
+            background: #e7f3ff;
+            border-color: #b3d9ff;
         }
         
         .task-checkbox {
             width: 20px;
             height: 20px;
             cursor: pointer;
+            margin-top: 2px;
         }
         
         .task-text {
@@ -128,6 +209,12 @@
         .task-text.completed {
             text-decoration: line-through;
             color: #999;
+        }
+        
+        .task-date {
+            font-size: 11px;
+            color: #666;
+            margin-top: 3px;
         }
         
         /* Przyciski */
@@ -161,23 +248,14 @@
             color: white;
         }
         
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        
-        /* Sticky actions */
-        .sticky-actions {
-            position: sticky;
-            top: 0;
-            background: white;
-            padding: 15px 0;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            z-index: 100;
-            border-bottom: 2px solid #e0e0e0;
         }
         
         /* Modal */
@@ -225,12 +303,31 @@
             color: #0A1F44;
         }
         .form-group input,
+        .form-group select,
         .form-group textarea {
             width: 100%;
             padding: 10px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 14px;
+        }
+        
+        /* Lista dań w modalu */
+        .dishes-modal-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .dish-modal-item {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .dish-modal-item:hover {
+            border-color: #D4AF37;
+            background: #fffef7;
         }
     </style>
 </head>
@@ -289,8 +386,17 @@
                     <button class="btn btn-secondary" onclick="window.location.href='events.html'">
                         ← Wróć do eventów
                     </button>
-                    <button class="btn btn-success" onclick="saveAll()">
-                        💾 Zapisz zmiany
+                    <h2 style="margin: 0;">Plan eventu</h2>
+                </div>
+
+                <!-- Dzień "Produkcja" -->
+                <div class="production-day" id="productionDay">
+                    <h3>📦 Produkcja (przygotowanie przed eventem)</h3>
+                    <div id="productionTasks" class="tasks-list">
+                        <!-- Zadania produkcyjne -->
+                    </div>
+                    <button class="btn btn-primary btn-small" onclick="openAddTaskModal('production')" style="margin-top: 10px;">
+                        ➕ Dodaj zadanie
                     </button>
                 </div>
 
@@ -306,17 +412,48 @@
     <div id="sectionModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="sectionModalTitle">Dodaj sekcję</h2>
+                <h2>Dodaj sekcję</h2>
                 <span class="close" onclick="closeSectionModal()">&times;</span>
             </div>
             <div style="padding: 20px;">
                 <form id="sectionForm" onsubmit="saveSection(event)">
-                    <input type="hidden" id="sectionDayNum">
-                    <input type="hidden" id="sectionId">
+                    <input type="hidden" id="sectionDayId">
                     
                     <div class="form-group">
                         <label>Nazwa sekcji *</label>
-                        <input type="text" id="sectionName" required placeholder="np. Kolacja, Wyposażenie, Transport">
+                        <select id="sectionNazwa" onchange="toggleCustomName()">
+                            <option value="Śniadanie">Śniadanie</option>
+                            <option value="Ciepły posiłek">Ciepły posiłek</option>
+                            <option value="Zimna płyta">Zimna płyta</option>
+                            <option value="custom">Własna nazwa...</option>
+                        </select>
+                        <input type="text" id="sectionNazwaCustom" style="margin-top: 10px; display: none;" placeholder="Wpisz nazwę">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Godzina rozpoczęcia</label>
+                        <input type="time" id="sectionGodzinaStart">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Godzina zakończenia</label>
+                        <input type="time" id="sectionGodzinaKoniec">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Rodzaj serwisu</label>
+                        <select id="sectionSerwis">
+                            <option value="">—</option>
+                            <option value="bufet">Bufet</option>
+                            <option value="bemar">Bemar</option>
+                            <option value="półmiskowo">Półmiskowo</option>
+                            <option value="talerzowo">Talerzowo</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Liczba porcji</label>
+                        <input type="number" id="sectionPorcje" min="0">
                     </div>
                     
                     <div style="display: flex; gap: 10px;">
@@ -324,6 +461,27 @@
                         <button type="button" class="btn btn-secondary" onclick="closeSectionModal()">Anuluj</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Dodaj danie -->
+    <div id="dishModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Dodaj danie do sekcji</h2>
+                <span class="close" onclick="closeDishModal()">&times;</span>
+            </div>
+            <div style="padding: 20px;">
+                <input type="hidden" id="dishSectionId">
+                
+                <input type="text" id="dishSearch" placeholder="🔍 Szukaj dania..." 
+                       style="width: 100%; padding: 10px; margin-bottom: 15px; border: 2px solid #e0e0e0; border-radius: 8px;"
+                       onkeyup="filterDishes()">
+                
+                <div id="dishesList" class="dishes-modal-list">
+                    <!-- Lista dań -->
+                </div>
             </div>
         </div>
     </div>
@@ -337,12 +495,17 @@
             </div>
             <div style="padding: 20px;">
                 <form id="taskForm" onsubmit="saveTask(event)">
-                    <input type="hidden" id="taskSectionId">
-                    <input type="hidden" id="taskId">
+                    <input type="hidden" id="taskDayId">
+                    <input type="hidden" id="taskType">
                     
                     <div class="form-group">
                         <label>Opis zadania *</label>
-                        <textarea id="taskDescription" rows="3" required placeholder="Opisz zadanie do wykonania..."></textarea>
+                        <textarea id="taskNazwa" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group" id="taskDateGroup" style="display: none;">
+                        <label>Data wykonania (opcjonalnie, dla produkcji)</label>
+                        <input type="date" id="taskDataWykonania">
                     </div>
                     
                     <div style="display: flex; gap: 10px;">
@@ -354,14 +517,35 @@
         </div>
     </div>
 
+    <!-- Modal: Przenieś zadanie -->
+    <div id="moveTaskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Przenieś zadanie do innego dnia</h2>
+                <span class="close" onclick="closeMoveTaskModal()">&times;</span>
+            </div>
+            <div style="padding: 20px;">
+                <input type="hidden" id="moveTaskId">
+                <p id="moveTaskInfo" style="margin-bottom: 15px; font-weight: 600;"></p>
+                
+                <div id="moveDaysList" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Lista dni -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Zmienne globalne
+        // ========== ZMIENNE GLOBALNE ==========
         let eventId = null;
         let eventData = null;
+        let eventDays = [];
+        let allDishes = [];
         let sectionsData = [];
         let tasksData = [];
+        let productionDayId = null;
 
-        // Inicjalizacja
+        // ========== INICJALIZACJA ==========
         document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             eventId = urlParams.get('id');
@@ -373,15 +557,18 @@
             }
             
             await loadEventData();
-            await loadSections();
+            await loadDishes();
+            await loadOrCreateDays();
+            await loadSectionsAndDishes();
             await loadTasks();
-            generateDaysTimeline();
+            renderTimeline();
             
             document.getElementById('loadingState').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
         });
 
-        // Ładowanie danych eventu
+        // ========== ŁADOWANIE DANYCH ==========
+        
         async function loadEventData() {
             try {
                 const response = await fetch(`/api/events/${eventId}`);
@@ -410,11 +597,87 @@
             }
         }
 
-        async function loadSections() {
+        async function loadDishes() {
+            try {
+                const response = await fetch('/api/dishes');
+                if (!response.ok) throw new Error('Błąd pobierania dań');
+                
+                allDishes = await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadOrCreateDays() {
+            try {
+                const response = await fetch(`/api/events/${eventId}/days`);
+                eventDays = await response.json();
+                
+                // Jeśli brak dni - utwórz je
+                if (eventDays.length === 0) {
+                    await createEventDays();
+                    const response2 = await fetch(`/api/events/${eventId}/days`);
+                    eventDays = await response2.json();
+                }
+                
+                // Znajdź dzień "Produkcja"
+                const prodDay = eventDays.find(d => d.kolejnosc === -1);
+                if (prodDay) {
+                    productionDayId = prodDay.id;
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function createEventDays() {
+            const startDate = new Date(eventData.data_rozpoczecia);
+            const endDate = new Date(eventData.data_zakonczenia);
+            
+            // Dzień "Produkcja"
+            await fetch(`/api/events/${eventId}/days`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    data: null,
+                    nazwa: 'Produkcja',
+                    kolejnosc: -1
+                })
+            });
+            
+            // Dni eventu
+            let currentDate = new Date(startDate);
+            let dayNum = 0;
+            
+            while (currentDate <= endDate) {
+                const dayName = currentDate.toLocaleDateString('pl-PL', { weekday: 'long' });
+                const dateStr = currentDate.toLocaleDateString('pl-PL');
+                
+                await fetch(`/api/events/${eventId}/days`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        data: currentDate.toISOString().split('T')[0],
+                        nazwa: `${dayName}, ${dateStr}`,
+                        kolejnosc: dayNum
+                    })
+                });
+                
+                currentDate.setDate(currentDate.getDate() + 1);
+                dayNum++;
+            }
+        }
+
+        async function loadSectionsAndDishes() {
             try {
                 const response = await fetch(`/api/events/${eventId}/sections`);
-                if (response.ok) {
-                    sectionsData = await response.json();
+                sectionsData = await response.json();
+                
+                // Dla każdej sekcji pobierz dania
+                for (const section of sectionsData) {
+                    const dishesResp = await fetch(`/api/event-sections/${section.id}/dishes`);
+                    section.dishes = await dishesResp.json();
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -423,83 +686,142 @@
 
         async function loadTasks() {
             try {
-                const response = await fetch(`/api/events/${eventId}/tasks`);
-                if (response.ok) {
-                    tasksData = await response.json();
+                tasksData = [];
+                for (const day of eventDays) {
+                    const response = await fetch(`/api/event-days/${day.id}/tasks`);
+                    const dayTasks = await response.json();
+                    tasksData.push(...dayTasks.map(t => ({...t, day_id: day.id})));
                 }
             } catch (error) {
                 console.error('Error:', error);
             }
         }
 
-        // Generowanie timeline dni
-        function generateDaysTimeline() {
-            const timeline = document.getElementById('daysTimeline');
-            timeline.innerHTML = '';
-            
-            const startDate = new Date(eventData.data_rozpoczecia);
-            const endDate = new Date(eventData.data_zakonczenia);
-            
-            let currentDate = new Date(startDate);
-            let dayNum = 1;
-            
-            while (currentDate <= endDate) {
-                const dayCard = createDayCard(dayNum, new Date(currentDate));
-                timeline.appendChild(dayCard);
-                
-                currentDate.setDate(currentDate.getDate() + 1);
-                dayNum++;
-            }
+        // ========== RENDEROWANIE ==========
+        
+        function renderTimeline() {
+            renderProductionTasks();
+            renderEventDays();
         }
 
-        function createDayCard(dayNum, date) {
-            const card = document.createElement('div');
-            card.className = 'day-card';
+        function renderProductionTasks() {
+            const container = document.getElementById('productionTasks');
+            const prodTasks = tasksData.filter(t => t.event_day_id === productionDayId);
             
-            const dayName = date.toLocaleDateString('pl-PL', { weekday: 'long' });
-            const dateStr = date.toLocaleDateString('pl-PL');
+            // Sortuj po dacie wykonania
+            prodTasks.sort((a, b) => {
+                if (!a.data_wykonania && !b.data_wykonania) return 0;
+                if (!a.data_wykonania) return 1;
+                if (!b.data_wykonania) return -1;
+                return new Date(a.data_wykonania) - new Date(b.data_wykonania);
+            });
             
-            // Pobierz sekcje dla tego dnia
-            const daySections = sectionsData.filter(s => s.dzien_numer === dayNum);
+            if (prodTasks.length === 0) {
+                container.innerHTML = '<p style="color: #666; font-size: 14px;">Brak zadań produkcyjnych</p>';
+                return;
+            }
             
-            card.innerHTML = `
-                <div class="day-header">
-                    <div>
-                        <h3>Dzień ${dayNum} - ${dayName}</h3>
-                        <div>${dateStr}</div>
+            container.innerHTML = prodTasks.map(task => `
+                <div class="task-item ${task.source_type === 'recipe' ? 'from-recipe' : ''}">
+                    <input type="checkbox" class="task-checkbox" 
+                           ${task.zrobione ? 'checked' : ''} 
+                           onchange="toggleTask(${task.id}, this.checked)">
+                    <div style="flex: 1;">
+                        <div class="task-text ${task.zrobione ? 'completed' : ''}">${task.nazwa}</div>
+                        ${task.data_wykonania ? `<div class="task-date">📅 ${new Date(task.data_wykonania).toLocaleDateString('pl-PL')}</div>` : ''}
                     </div>
-                    <button class="btn btn-primary" onclick="openAddSectionModal(${dayNum})">
-                        ➕ Dodaj sekcję
+                    <button class="btn btn-secondary btn-small" onclick="openMoveTaskModal(${task.id})" title="Przenieś">
+                        ↔️
                     </button>
+                    ${task.source_type === 'custom' ? `
+                        <button class="btn btn-danger btn-small" onclick="deleteTask(${task.id})">
+                            🗑️
+                        </button>
+                    ` : ''}
                 </div>
-                <div class="sections-container" id="day${dayNum}Sections">
-                    ${daySections.length === 0 ? '<p style="color: #999; text-align: center; padding: 20px;">Brak sekcji. Dodaj pierwszą sekcję dla tego dnia.</p>' : ''}
-                    ${daySections.map(section => createSectionCard(section)).join('')}
+            `).join('');
+        }
+
+        function renderEventDays() {
+            const timeline = document.getElementById('daysTimeline');
+            const regularDays = eventDays.filter(d => d.kolejnosc >= 0).sort((a, b) => a.kolejnosc - b.kolejnosc);
+            
+            timeline.innerHTML = regularDays.map(day => createDayCard(day)).join('');
+        }
+
+        function createDayCard(day) {
+            const daySections = sectionsData.filter(s => s.event_day_id === day.id);
+            const dayTasks = tasksData.filter(t => t.event_day_id === day.id);
+            
+            return `
+                <div class="day-card">
+                    <div class="day-header">
+                        <h3>Dzień ${day.kolejnosc + 1} - ${day.nazwa}</h3>
+                        <button class="btn btn-primary" onclick="openAddSectionModal(${day.id})">
+                            ➕ Dodaj sekcję
+                        </button>
+                    </div>
+                    <div class="day-split">
+                        <div class="day-split-left">
+                            <div class="split-title">Sekcje i dania</div>
+                            ${daySections.length === 0 ? '<p style="color: #999;">Brak sekcji</p>' : ''}
+                            ${daySections.map(section => createSectionCard(section)).join('')}
+                        </div>
+                        <div class="day-split-right">
+                            <div class="split-title">Zadania</div>
+                            ${dayTasks.length === 0 ? '<p style="color: #999;">Brak zadań</p>' : ''}
+                            <div class="tasks-list">
+                                ${dayTasks.map(task => createTaskItem(task)).join('')}
+                            </div>
+                            <button class="btn btn-primary btn-small" onclick="openAddTaskModal(${day.id})" style="margin-top: 10px;">
+                                ➕ Dodaj zadanie
+                            </button>
+                        </div>
+                    </div>
                 </div>
             `;
-            
-            return card;
         }
 
         function createSectionCard(section) {
-            const sectionTasks = tasksData.filter(t => t.section_id === section.id);
+            const dishes = section.dishes || [];
+            const timeRange = section.godzina_start || section.godzina_koniec ? 
+                `${section.godzina_start || '—'} - ${section.godzina_koniec || '—'}` : '';
             
             return `
                 <div class="section-card">
                     <div class="section-header">
-                        <div class="section-title">${section.nazwa}</div>
+                        <div>
+                            <div class="section-title">${section.nazwa}</div>
+                            ${timeRange || section.rodzaj_serwisu || section.liczba_porcji ? 
+                                `<div class="section-meta">
+                                    ${timeRange ? `🕐 ${timeRange}` : ''}
+                                    ${section.rodzaj_serwisu ? `・${section.rodzaj_serwisu}` : ''}
+                                    ${section.liczba_porcji ? `・${section.liczba_porcji} porcji` : ''}
+                                </div>` : ''
+                            }
+                        </div>
                         <div style="display: flex; gap: 5px;">
-                            <button class="btn btn-primary" onclick="openAddTaskModal(${section.id})" style="padding: 5px 10px; font-size: 12px;">
-                                ➕ Zadanie
+                            <button class="btn btn-primary btn-small" onclick="openAddDishModal(${section.id})">
+                                ➕ Danie
                             </button>
-                            <button class="btn btn-danger" onclick="deleteSection(${section.id})" style="padding: 5px 10px; font-size: 12px;">
+                            <button class="btn btn-danger btn-small" onclick="deleteSection(${section.id})">
                                 🗑️
                             </button>
                         </div>
                     </div>
-                    <div class="tasks-list">
-                        ${sectionTasks.length === 0 ? '<p style="color: #999; font-size: 12px;">Brak zadań</p>' : ''}
-                        ${sectionTasks.map(task => createTaskItem(task)).join('')}
+                    <div class="dishes-list">
+                        ${dishes.length === 0 ? '<p style="color: #999; font-size: 12px;">Brak dań</p>' : ''}
+                        ${dishes.map(dish => `
+                            <div class="dish-item">
+                                <div>
+                                    <div class="dish-name">${dish.dishes.nazwa}</div>
+                                    <div class="dish-portions">${dish.liczba_porcji} porcji</div>
+                                </div>
+                                <button class="btn btn-danger btn-small" onclick="deleteDish(${dish.id})">
+                                    🗑️
+                                </button>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
             `;
@@ -507,24 +829,31 @@
 
         function createTaskItem(task) {
             return `
-                <div class="task-item">
+                <div class="task-item ${task.source_type === 'recipe' ? 'from-recipe' : ''}">
                     <input type="checkbox" class="task-checkbox" 
-                           ${task.completed ? 'checked' : ''} 
+                           ${task.zrobione ? 'checked' : ''} 
                            onchange="toggleTask(${task.id}, this.checked)">
-                    <span class="task-text ${task.completed ? 'completed' : ''}">${task.opis}</span>
-                    <button class="btn btn-danger" onclick="deleteTask(${task.id})" style="padding: 5px 10px; font-size: 12px;">
-                        🗑️
+                    <div style="flex: 1;">
+                        <div class="task-text ${task.zrobione ? 'completed' : ''}">${task.nazwa}</div>
+                    </div>
+                    <button class="btn btn-secondary btn-small" onclick="openMoveTaskModal(${task.id})" title="Przenieś">
+                        ↔️
                     </button>
+                    ${task.source_type === 'custom' ? `
+                        <button class="btn btn-danger btn-small" onclick="deleteTask(${task.id})">
+                            🗑️
+                        </button>
+                    ` : ''}
                 </div>
             `;
         }
 
-        // Modal sekcji
-        function openAddSectionModal(dayNum) {
-            document.getElementById('sectionModalTitle').textContent = 'Dodaj sekcję';
+        // ========== MODALS - SEKCJA ==========
+        
+        function openAddSectionModal(dayId) {
             document.getElementById('sectionForm').reset();
-            document.getElementById('sectionDayNum').value = dayNum;
-            document.getElementById('sectionId').value = '';
+            document.getElementById('sectionDayId').value = dayId;
+            document.getElementById('sectionNazwaCustom').style.display = 'none';
             document.getElementById('sectionModal').style.display = 'flex';
         }
 
@@ -532,34 +861,40 @@
             document.getElementById('sectionModal').style.display = 'none';
         }
 
+        function toggleCustomName() {
+            const select = document.getElementById('sectionNazwa');
+            const customInput = document.getElementById('sectionNazwaCustom');
+            customInput.style.display = select.value === 'custom' ? 'block' : 'none';
+        }
+
         async function saveSection(e) {
             e.preventDefault();
             
-            const dayNum = parseInt(document.getElementById('sectionDayNum').value);
-            const sectionId = document.getElementById('sectionId').value;
-            const nazwa = document.getElementById('sectionName').value;
+            const dayId = document.getElementById('sectionDayId').value;
+            const nazwaSelect = document.getElementById('sectionNazwa').value;
+            const nazwaCustom = document.getElementById('sectionNazwaCustom').value;
             
             const data = {
-                dzien_numer: dayNum,
-                nazwa: nazwa
+                nazwa: nazwaSelect === 'custom' ? nazwaCustom : nazwaSelect,
+                godzina_start: document.getElementById('sectionGodzinaStart').value || null,
+                godzina_koniec: document.getElementById('sectionGodzinaKoniec').value || null,
+                rodzaj_serwisu: document.getElementById('sectionSerwis').value || null,
+                liczba_porcji: parseInt(document.getElementById('sectionPorcje').value) || null,
+                kolejnosc: 1
             };
             
             try {
-                const url = sectionId ? `/api/events/${eventId}/sections/${sectionId}` : `/api/events/${eventId}/sections`;
-                const method = sectionId ? 'PUT' : 'POST';
-                
-                const response = await fetch(url, {
-                    method: method,
+                const response = await fetch(`/api/event-days/${dayId}/sections`, {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
                 
-                if (!response.ok) throw new Error('Błąd zapisu sekcji');
+                if (!response.ok) throw new Error('Błąd zapisu');
                 
-                await loadSections();
-                generateDaysTimeline();
+                await loadSectionsAndDishes();
+                renderTimeline();
                 closeSectionModal();
-                
             } catch (error) {
                 console.error('Error:', error);
                 alert('❌ Błąd zapisu sekcji');
@@ -567,30 +902,117 @@
         }
 
         async function deleteSection(id) {
-            if (!confirm('Usunąć sekcję wraz ze wszystkimi zadaniami?')) return;
+            if (!confirm('Usunąć sekcję wraz z daniami?')) return;
             
             try {
-                const response = await fetch(`/api/events/${eventId}/sections/${id}`, {
+                const response = await fetch(`/api/event-sections/${id}`, {
                     method: 'DELETE'
                 });
                 
                 if (!response.ok) throw new Error('Błąd usuwania');
                 
-                await loadSections();
+                await loadSectionsAndDishes();
                 await loadTasks();
-                generateDaysTimeline();
-                
+                renderTimeline();
             } catch (error) {
                 console.error('Error:', error);
                 alert('❌ Błąd usuwania sekcji');
             }
         }
 
-        // Modal zadań
-        function openAddTaskModal(sectionId) {
+        // ========== MODALS - DANIE ==========
+        
+        function openAddDishModal(sectionId) {
+            document.getElementById('dishSectionId').value = sectionId;
+            document.getElementById('dishSearch').value = '';
+            renderDishesList();
+            document.getElementById('dishModal').style.display = 'flex';
+        }
+
+        function closeDishModal() {
+            document.getElementById('dishModal').style.display = 'none';
+        }
+
+        function renderDishesList() {
+            const list = document.getElementById('dishesList');
+            list.innerHTML = allDishes.map(dish => `
+                <div class="dish-modal-item" onclick="selectDish(${dish.id})">
+                    <div style="font-weight: 600;">${dish.nazwa}</div>
+                    <div style="font-size: 12px; color: #666;">${dish.typ || '—'}</div>
+                </div>
+            `).join('');
+        }
+
+        function filterDishes() {
+            const search = document.getElementById('dishSearch').value.toLowerCase();
+            const filtered = allDishes.filter(d => d.nazwa.toLowerCase().includes(search));
+            
+            const list = document.getElementById('dishesList');
+            list.innerHTML = filtered.map(dish => `
+                <div class="dish-modal-item" onclick="selectDish(${dish.id})">
+                    <div style="font-weight: 600;">${dish.nazwa}</div>
+                    <div style="font-size: 12px; color: #666;">${dish.typ || '—'}</div>
+                </div>
+            `).join('');
+        }
+
+        async function selectDish(dishId) {
+            const sectionId = document.getElementById('dishSectionId').value;
+            const porcje = prompt('Liczba porcji:', '10');
+            if (!porcje) return;
+            
+            try {
+                const response = await fetch(`/api/event-sections/${sectionId}/dishes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        dish_id: dishId,
+                        liczba_porcji: parseInt(porcje)
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Błąd dodawania dania');
+                
+                await loadSectionsAndDishes();
+                await loadTasks(); // Odśwież zadania (mogły się dodać z receptur)
+                renderTimeline();
+                closeDishModal();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd dodawania dania');
+            }
+        }
+
+        async function deleteDish(id) {
+            if (!confirm('Usunąć danie? (zadania z receptur też zostaną usunięte)')) return;
+            
+            try {
+                const response = await fetch(`/api/event-section-dishes/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Błąd usuwania');
+                
+                await loadSectionsAndDishes();
+                await loadTasks();
+                renderTimeline();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd usuwania dania');
+            }
+        }
+
+        // ========== MODALS - ZADANIE ==========
+        
+        function openAddTaskModal(dayId) {
             document.getElementById('taskForm').reset();
-            document.getElementById('taskSectionId').value = sectionId;
-            document.getElementById('taskId').value = '';
+            document.getElementById('taskDayId').value = dayId === 'production' ? productionDayId : dayId;
+            document.getElementById('taskType').value = dayId === 'production' ? 'production' : 'regular';
+            
+            // Pokaż pole daty tylko dla produkcji
+            const dateGroup = document.getElementById('taskDateGroup');
+            dateGroup.style.display = dayId === 'production' ? 'block' : 'none';
+            
             document.getElementById('taskModal').style.display = 'flex';
         }
 
@@ -601,80 +1023,120 @@
         async function saveTask(e) {
             e.preventDefault();
             
-            const sectionId = document.getElementById('taskSectionId').value;
-            const taskId = document.getElementById('taskId').value;
-            const opis = document.getElementById('taskDescription').value;
-            
-            const data = {
-                section_id: parseInt(sectionId),
-                opis: opis,
-                completed: false
-            };
+            const dayId = document.getElementById('taskDayId').value;
+            const nazwa = document.getElementById('taskNazwa').value;
+            const dataWykonania = document.getElementById('taskDataWykonania').value || null;
             
             try {
-                const url = taskId ? `/api/events/${eventId}/tasks/${taskId}` : `/api/events/${eventId}/tasks`;
-                const method = taskId ? 'PUT' : 'POST';
-                
-                const response = await fetch(url, {
-                    method: method,
+                const response = await fetch(`/api/event-days/${dayId}/tasks`, {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify({
+                        nazwa,
+                        data_wykonania: dataWykonania
+                    })
                 });
                 
-                if (!response.ok) throw new Error('Błąd zapisu zadania');
+                if (!response.ok) throw new Error('Błąd zapisu');
                 
                 await loadTasks();
-                generateDaysTimeline();
+                renderTimeline();
                 closeTaskModal();
-                
             } catch (error) {
                 console.error('Error:', error);
                 alert('❌ Błąd zapisu zadania');
             }
         }
 
-        async function toggleTask(taskId, completed) {
+        async function toggleTask(taskId, checked) {
             try {
-                const response = await fetch(`/api/events/${eventId}/tasks/${taskId}`, {
+                await fetch(`/api/event-tasks/${taskId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ completed })
+                    body: JSON.stringify({ zrobione: checked })
                 });
                 
-                if (!response.ok) throw new Error('Błąd aktualizacji');
-                
                 await loadTasks();
-                generateDaysTimeline();
-                
+                renderTimeline();
             } catch (error) {
                 console.error('Error:', error);
                 alert('❌ Błąd aktualizacji zadania');
             }
         }
 
-        async function deleteTask(id) {
+        async function deleteTask(taskId) {
             if (!confirm('Usunąć zadanie?')) return;
             
             try {
-                const response = await fetch(`/api/events/${eventId}/tasks/${id}`, {
+                const response = await fetch(`/api/event-tasks/${taskId}`, {
                     method: 'DELETE'
                 });
                 
-                if (!response.ok) throw new Error('Błąd usuwania');
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error);
+                }
                 
                 await loadTasks();
-                generateDaysTimeline();
-                
+                renderTimeline();
             } catch (error) {
                 console.error('Error:', error);
-                alert('❌ Błąd usuwania zadania');
+                alert('❌ ' + error.message);
             }
         }
 
-        function saveAll() {
-            alert('✅ Wszystkie zmiany są zapisywane automatycznie!');
+        // ========== MODAL - PRZENIEŚ ZADANIE ==========
+        
+        function openMoveTaskModal(taskId) {
+            const task = tasksData.find(t => t.id === taskId);
+            if (!task) return;
+            
+            document.getElementById('moveTaskId').value = taskId;
+            document.getElementById('moveTaskInfo').textContent = `Przenieś: "${task.nazwa}"`;
+            
+            // Lista dni
+            const list = document.getElementById('moveDaysList');
+            const days = [
+                { id: productionDayId, nazwa: '📦 Produkcja' },
+                ...eventDays.filter(d => d.kolejnosc >= 0).map(d => ({
+                    id: d.id,
+                    nazwa: `Dzień ${d.kolejnosc + 1} - ${d.nazwa}`
+                }))
+            ];
+            
+            list.innerHTML = days.map(day => `
+                <button class="btn btn-primary" onclick="moveTaskToDay(${taskId}, ${day.id})" 
+                        ${task.event_day_id === day.id ? 'disabled' : ''}>
+                    ${day.nazwa} ${task.event_day_id === day.id ? '(aktualny)' : ''}
+                </button>
+            `).join('');
+            
+            document.getElementById('moveTaskModal').style.display = 'flex';
         }
 
+        function closeMoveTaskModal() {
+            document.getElementById('moveTaskModal').style.display = 'none';
+        }
+
+        async function moveTaskToDay(taskId, dayId) {
+            try {
+                await fetch(`/api/event-tasks/${taskId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ event_day_id: dayId })
+                });
+                
+                await loadTasks();
+                renderTimeline();
+                closeMoveTaskModal();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd przenoszenia zadania');
+            }
+        }
+
+        // ========== UTILS ==========
+        
         function getEventTypeName(typ) {
             const types = {
                 'event': 'Wydarzenie',
@@ -686,10 +1148,13 @@
 
         // Zamknij modal kliknięciem poza
         window.onclick = function(event) {
-            const sectionModal = document.getElementById('sectionModal');
-            const taskModal = document.getElementById('taskModal');
-            if (event.target === sectionModal) closeSectionModal();
-            if (event.target === taskModal) closeTaskModal();
+            const modals = ['sectionModal', 'dishModal', 'taskModal', 'moveTaskModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
         };
     </script>
 </body>

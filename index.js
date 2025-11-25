@@ -2046,216 +2046,362 @@ app.put('/api/event-tasks/:id/move', async (req, res) => {
   }
 });
 // ============================================
-// EVENT PLANNING API ENDPOINTS
+// EVENT PLANNING API - NOWE (zgodne z ustaleniami)
 // ============================================
-// Wklej ten kod do index.js po endpointach events
+// ZASTĄP stare endpointy event-planning tym kodem
 
-// GET /api/events/:id/sections - Lista sekcji eventu
+// GET /api/events/:id/days - Dni eventu
+app.get('/api/events/:id/days', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .from('event_days')
+          .select('*')
+          .eq('event_id', id)
+          .order('kolejnosc', { ascending: true });
+      
+      if (error) throw error;
+      res.json(data || []);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/events/:id/days - Utwórz dzień
+app.post('/api/events/:id/days', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { data: dayData, nazwa, kolejnosc } = req.body;
+      
+      const { data, error } = await supabase
+          .from('event_days')
+          .insert([{
+              event_id: id,
+              data: dayData,
+              nazwa,
+              kolejnosc
+          }])
+          .select()
+          .single();
+      
+      if (error) throw error;
+      res.status(201).json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/events/:id/sections - Sekcje eventu
 app.get('/api/events/:id/sections', async (req, res) => {
   try {
       const { id } = req.params;
       
+      // Pobierz sekcje z daniami
       const { data, error } = await supabase
           .from('event_sections')
-          .select('*')
-          .eq('event_id', id)
-          .order('dzien_numer', { ascending: true })
+          .select(`
+              *,
+              event_days!inner(event_id)
+          `)
+          .eq('event_days.event_id', id)
           .order('kolejnosc', { ascending: true });
       
       if (error) throw error;
-      
       res.json(data || []);
   } catch (error) {
-      console.error('Błąd pobierania sekcji:', error);
+      console.error('Error:', error);
       res.status(500).json({ error: error.message });
   }
 });
 
-// POST /api/events/:id/sections - Nowa sekcja
-app.post('/api/events/:id/sections', async (req, res) => {
+// POST /api/event-days/:dayId/sections - Dodaj sekcję do dnia
+app.post('/api/event-days/:dayId/sections', async (req, res) => {
   try {
-      const { id } = req.params;
-      const { dzien_numer, nazwa, kolejnosc } = req.body;
+      const { dayId } = req.params;
+      const { nazwa, godzina_start, godzina_koniec, rodzaj_serwisu, liczba_porcji, kolejnosc } = req.body;
       
       const { data, error } = await supabase
           .from('event_sections')
           .insert([{
-              event_id: id,
-              dzien_numer,
+              event_day_id: dayId,
               nazwa,
+              godzina_start,
+              godzina_koniec,
+              rodzaj_serwisu,
+              liczba_porcji,
               kolejnosc: kolejnosc || 1
           }])
           .select()
           .single();
       
       if (error) throw error;
-      
       res.status(201).json(data);
   } catch (error) {
-      console.error('Błąd tworzenia sekcji:', error);
+      console.error('Error:', error);
       res.status(500).json({ error: error.message });
   }
 });
 
-// PUT /api/events/:id/sections/:sectionId - Edycja sekcji
-app.put('/api/events/:id/sections/:sectionId', async (req, res) => {
+// DELETE /api/event-sections/:id - Usuń sekcję
+app.delete('/api/event-sections/:id', async (req, res) => {
   try {
-      const { sectionId } = req.params;
-      const { nazwa, kolejnosc } = req.body;
+      const { id } = req.params;
       
-      const { data, error } = await supabase
-          .from('event_sections')
-          .update({ nazwa, kolejnosc })
-          .eq('id', sectionId)
-          .select()
-          .single();
-      
-      if (error) throw error;
-      
-      res.json(data);
-  } catch (error) {
-      console.error('Błąd aktualizacji sekcji:', error);
-      res.status(500).json({ error: error.message });
-  }
-});
-
-// DELETE /api/events/:id/sections/:sectionId - Usuń sekcję
-app.delete('/api/events/:id/sections/:sectionId', async (req, res) => {
-  try {
-      const { sectionId } = req.params;
-      
-      // Usuń zadania w sekcji
-      await supabase
-          .from('event_tasks')
-          .delete()
-          .eq('section_id', sectionId);
-      
-      // Usuń sekcję
+      // Kaskadowo usuwa też dishes i auto-usunie powiązane zadania z receptur
       const { error } = await supabase
           .from('event_sections')
           .delete()
-          .eq('id', sectionId);
+          .eq('id', id);
       
       if (error) throw error;
-      
       res.json({ message: 'Sekcja usunięta' });
   } catch (error) {
-      console.error('Błąd usuwania sekcji:', error);
+      console.error('Error:', error);
       res.status(500).json({ error: error.message });
   }
 });
 
-// GET /api/events/:id/tasks - Lista zadań eventu
-app.get('/api/events/:id/tasks', async (req, res) => {
+// GET /api/event-sections/:id/dishes - Dania w sekcji
+app.get('/api/event-sections/:id/dishes', async (req, res) => {
   try {
       const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .from('event_section_dishes')
+          .select(`
+              *,
+              dishes(id, nazwa, typ)
+          `)
+          .eq('event_section_id', id)
+          .order('kolejnosc', { ascending: true });
+      
+      if (error) throw error;
+      res.json(data || []);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/event-sections/:sectionId/dishes - Dodaj danie do sekcji
+app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
+  try {
+      const { sectionId } = req.params;
+      const { dish_id, liczba_porcji } = req.body;
+      
+      // Dodaj danie
+      const { data: dishData, error: dishError } = await supabase
+          .from('event_section_dishes')
+          .insert([{
+              event_section_id: sectionId,
+              dish_id,
+              liczba_porcji,
+              kolejnosc: 1
+          }])
+          .select()
+          .single();
+      
+      if (dishError) throw dishError;
+      
+      // Pobierz event_day_id dla tej sekcji
+      const { data: sectionData } = await supabase
+          .from('event_sections')
+          .select('event_day_id')
+          .eq('id', sectionId)
+          .single();
+      
+      if (!sectionData) throw new Error('Sekcja nie znaleziona');
+      
+      // Pobierz receptury z komponentów dania
+      const { data: components } = await supabase
+          .from('dish_components')
+          .select('recipe_id')
+          .eq('dish_id', dish_id)
+          .not('recipe_id', 'is', null);
+      
+      // Dla każdej receptury pobierz kroki i stwórz zadania
+      if (components && components.length > 0) {
+          for (const comp of components) {
+              const { data: recipe } = await supabase
+                  .from('recipes')
+                  .select('id, nazwa, instrukcja')
+                  .eq('id', comp.recipe_id)
+                  .single();
+              
+              if (recipe && recipe.instrukcja && Array.isArray(recipe.instrukcja)) {
+                  // Dla każdego kroku stwórz zadanie z nazwą receptury w nawiasie
+                  const tasks = recipe.instrukcja.map((krok, idx) => ({
+                      event_day_id: sectionData.event_day_id,
+                      nazwa: `${krok.opis} [${recipe.nazwa}]`,
+                      zrobione: false,
+                      source_type: 'recipe',
+                      source_id: recipe.id,
+                      kolejnosc: idx + 1
+                  }));
+                  
+                  await supabase
+                      .from('event_tasks')
+                      .insert(tasks);
+              }
+          }
+      }
+      
+      res.status(201).json(dishData);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/event-section-dishes/:id - Usuń danie z sekcji
+app.delete('/api/event-section-dishes/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      // Pobierz dish_id przed usunięciem
+      const { data: dishData } = await supabase
+          .from('event_section_dishes')
+          .select('dish_id, event_section_id')
+          .eq('id', id)
+          .single();
+      
+      if (dishData) {
+          // Pobierz event_day_id
+          const { data: sectionData } = await supabase
+              .from('event_sections')
+              .select('event_day_id')
+              .eq('id', dishData.event_section_id)
+              .single();
+          
+          // Pobierz recipe_id z komponentów
+          const { data: components } = await supabase
+              .from('dish_components')
+              .select('recipe_id')
+              .eq('dish_id', dishData.dish_id)
+              .not('recipe_id', 'is', null);
+          
+          if (components && components.length > 0 && sectionData) {
+              // Usuń zadania z receptur tego dania
+              const recipeIds = components.map(c => c.recipe_id);
+              await supabase
+                  .from('event_tasks')
+                  .delete()
+                  .eq('event_day_id', sectionData.event_day_id)
+                  .eq('source_type', 'recipe')
+                  .in('source_id', recipeIds);
+          }
+      }
+      
+      // Usuń danie
+      const { error } = await supabase
+          .from('event_section_dishes')
+          .delete()
+          .eq('id', id);
+      
+      if (error) throw error;
+      res.json({ message: 'Danie usunięte' });
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/event-days/:dayId/tasks - Zadania w dniu
+app.get('/api/event-days/:dayId/tasks', async (req, res) => {
+  try {
+      const { dayId } = req.params;
       
       const { data, error } = await supabase
           .from('event_tasks')
           .select('*')
-          .eq('event_id', id)
+          .eq('event_day_id', dayId)
+          .order('data_wykonania', { ascending: true, nullsFirst: false })
           .order('kolejnosc', { ascending: true });
       
       if (error) throw error;
-      
       res.json(data || []);
   } catch (error) {
-      console.error('Błąd pobierania zadań:', error);
+      console.error('Error:', error);
       res.status(500).json({ error: error.message });
   }
 });
 
-// POST /api/events/:id/tasks - Nowe zadanie
-app.post('/api/events/:id/tasks', async (req, res) => {
+// POST /api/event-days/:dayId/tasks - Dodaj własne zadanie
+app.post('/api/event-days/:dayId/tasks', async (req, res) => {
   try {
-      const { id } = req.params;
-      const { section_id, opis, kolejnosc } = req.body;
+      const { dayId } = req.params;
+      const { nazwa, data_wykonania } = req.body;
       
       const { data, error } = await supabase
           .from('event_tasks')
           .insert([{
-              event_id: id,
-              section_id,
-              opis,
-              completed: false,
-              kolejnosc: kolejnosc || 1
+              event_day_id: dayId,
+              nazwa,
+              zrobione: false,
+              data_wykonania,
+              source_type: 'custom',
+              kolejnosc: 1
           }])
           .select()
           .single();
       
       if (error) throw error;
-      
       res.status(201).json(data);
   } catch (error) {
-      console.error('Błąd tworzenia zadania:', error);
+      console.error('Error:', error);
       res.status(500).json({ error: error.message });
   }
 });
 
-// PUT /api/events/:id/tasks/:taskId - Edycja zadania
-app.put('/api/events/:id/tasks/:taskId', async (req, res) => {
+// PATCH /api/event-tasks/:id - Toggle zadanie lub przenieś
+app.patch('/api/event-tasks/:id', async (req, res) => {
   try {
-      const { taskId } = req.params;
-      const { opis, completed, kolejnosc } = req.body;
-      
-      const updateData = {};
-      if (opis !== undefined) updateData.opis = opis;
-      if (completed !== undefined) updateData.completed = completed;
-      if (kolejnosc !== undefined) updateData.kolejnosc = kolejnosc;
+      const { id } = req.params;
+      const updates = req.body; // { zrobione, event_day_id, data_wykonania }
       
       const { data, error } = await supabase
           .from('event_tasks')
-          .update(updateData)
-          .eq('id', taskId)
+          .update(updates)
+          .eq('id', id)
           .select()
           .single();
       
       if (error) throw error;
-      
       res.json(data);
   } catch (error) {
-      console.error('Błąd aktualizacji zadania:', error);
+      console.error('Error:', error);
       res.status(500).json({ error: error.message });
   }
 });
 
-// PATCH /api/events/:id/tasks/:taskId - Toggle checkbox
-app.patch('/api/events/:id/tasks/:taskId', async (req, res) => {
+// DELETE /api/event-tasks/:id - Usuń zadanie
+app.delete('/api/event-tasks/:id', async (req, res) => {
   try {
-      const { taskId } = req.params;
-      const { completed } = req.body;
+      const { id } = req.params;
       
-      const { data, error } = await supabase
+      // Tylko custom tasks można usuwać
+      const { data: task } = await supabase
           .from('event_tasks')
-          .update({ completed })
-          .eq('id', taskId)
-          .select()
+          .select('source_type')
+          .eq('id', id)
           .single();
       
-      if (error) throw error;
-      
-      res.json(data);
-  } catch (error) {
-      console.error('Błąd toggle zadania:', error);
-      res.status(500).json({ error: error.message });
-  }
-});
-
-// DELETE /api/events/:id/tasks/:taskId - Usuń zadanie
-app.delete('/api/events/:id/tasks/:taskId', async (req, res) => {
-  try {
-      const { taskId } = req.params;
+      if (task && task.source_type !== 'custom') {
+          return res.status(400).json({ error: 'Nie można usunąć zadania z receptury. Usuń danie aby usunąć jego zadania.' });
+      }
       
       const { error } = await supabase
           .from('event_tasks')
           .delete()
-          .eq('id', taskId);
+          .eq('id', id);
       
       if (error) throw error;
-      
       res.json({ message: 'Zadanie usunięte' });
   } catch (error) {
-      console.error('Błąd usuwania zadania:', error);
+      console.error('Error:', error);
       res.status(500).json({ error: error.message });
   }
 });
