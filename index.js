@@ -1205,7 +1205,7 @@ app.get('/api/events/:id', async (req, res) => {
                           dishes (
                               id,
                               nazwa,
-                              typ,
+                              typ
                           )
                       )
                   ),
@@ -1559,7 +1559,7 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
               dishes (
                   id,
                   nazwa,
-                  typ,
+                  typ
               )
           `)
           .single();
