@@ -1878,6 +1878,7 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
           .eq('dish_id', dish_id)
           .not('recipe_id', 'is', null);
       // Dla każdej receptury pobierz kroki i stwórz zadania
+      console.log('📦 Components found:', components);
       if (components && components.length > 0) {
           for (const comp of components) {
               const { data: recipe } = await supabase
@@ -1885,6 +1886,8 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
                   .select('id, nazwa, instrukcja')
                   .eq('id', comp.recipe_id)
                   .single();
+                  console.log('📝 Recipe:', recipe);
+                  console.log('📋 Instrukcja:', recipe?.instrukcja);
               if (recipe && recipe.instrukcja && Array.isArray(recipe.instrukcja)) {
                   // Dla każdego kroku stwórz zadanie z nazwą receptury w nawiasie
                   const tasks = recipe.instrukcja.map((krok, idx) => {
