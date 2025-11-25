@@ -1887,14 +1887,18 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
                   .single();
               if (recipe && recipe.instrukcja && Array.isArray(recipe.instrukcja)) {
                   // Dla każdego kroku stwórz zadanie z nazwą receptury w nawiasie
-                  const tasks = recipe.instrukcja.map((krok, idx) => ({
-                      event_day_id: sectionData.event_day_id,
-                      nazwa: `${krok.opis} [${recipe.nazwa}]`,
-                      zrobione: false,
-                      source_type: 'recipe',
-                      source_id: recipe.id,
-                      kolejnosc: idx + 1
-                  }));
+                  const tasks = recipe.instrukcja.map((krok, idx) => {
+                    // Obsługa obu formatów: {"krok":1,"opis":"..."} lub "..."
+                    const opis = typeof krok === 'string' ? krok : krok.opis;
+                    return {
+                        event_day_id: sectionData.event_day_id,
+                        nazwa: `${opis} [${recipe.nazwa}]`,
+                        zrobione: false,
+                        source_type: 'recipe',
+                        source_id: recipe.id,
+                        kolejnosc: idx + 1
+                    };
+                });
                   await supabase
                       .from('event_tasks')
                       .insert(tasks);
