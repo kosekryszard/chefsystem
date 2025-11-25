@@ -1938,11 +1938,24 @@ app.delete('/api/event-section-dishes/:id', async (req, res) => {
               .eq('id', dishData.event_section_id)
               .single();
           // Pobierz recipe_id z komponentów
-          const { data: components } = await supabase
-              .from('dish_components')
-              .select('recipe_id')
-              .eq('dish_id', dishData.dish_id)
-              .not('recipe_id', 'is', null);
+          const { data: components, error: compError } = await supabase
+    .from('dish_components')
+    .select('recipe_id')
+    .eq('dish_id', dish_id)
+    .not('recipe_id', 'is', null);
+
+if (compError) {
+    console.error('Components error:', compError);
+    throw new Error('Błąd pobierania komponentów: ' + compError.message);
+}
+
+if (!components || components.length === 0) {
+    // Zwróć info że brak komponentów
+    return res.status(201).json({
+        ...dishData,
+        warning: 'Danie dodane, ale nie ma komponentów z recepturami'
+    });
+}
           if (components && components.length > 0 && sectionData) {
               // Usuń zadania z receptur tego dania
               const recipeIds = components.map(c => c.recipe_id);
