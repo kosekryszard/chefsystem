@@ -2050,4 +2050,4 @@ app.delete('/api/event-tasks/:id', async (req, res) => {
   }
 });
 console.log('✅ Endpointy Events załadowane pomyślnie');
-app.listen(3000, () => console.log('Serwer dziaÅ‚a na http://localhost:3000'));
+app.listen(3000, () => console.log('Serwer dziaÅ‚a na http://localhost:3000'));"// debug timestamp: $(date)" 
