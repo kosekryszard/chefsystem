@@ -1216,7 +1216,6 @@ app.get('/api/events/:id', async (req, res) => {
                       data_wykonania,
                       source_type,
                       source_id,
-                      source_dish_id,
                       kolejnosc
                   )
               )
@@ -1578,51 +1577,54 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
 app.delete('/api/event-section-dishes/:id', async (req, res) => {
   try {
       const { id } = req.params;
-      // Pobierz source_dish_id przed usunięciem
-      const { data: dishData, error: fetchError } = await supabase
+      
+      // Pobierz dish_id i section przed usunięciem
+      const { data: dishData } = await supabase
           .from('event_section_dishes')
-          .select('event_section_id, dish_id, event_sections(event_day_id)')
+          .select('dish_id, event_section_id')
           .eq('id', id)
           .single();
-      if (fetchError) throw fetchError;
-      // Usuń danie
-      const { error: deleteError } = await supabase
-          .from('event_section_dishes')
-          .delete()
-          .eq('id', id);
-      if (deleteError) throw deleteError;
-      // Usuń powiązane zadania z receptury tego dania
-      // (we wszystkich dniach eventu!)
-      const eventDayId = dishData.event_sections.event_day_id;
-      // Pobierz event_id z day_id
-      const { data: dayData, error: dayError } = await supabase
-          .from('event_days')
-          .select('event_id')
-          .eq('id', eventDayId)
-          .single();
-      if (!dayError && dayData) {
-          // Pobierz wszystkie dni tego eventu
-          const { data: allDays, error: daysError } = await supabase
-              .from('event_days')
-              .select('id')
-              .eq('event_id', dayData.event_id);
-          if (!daysError && allDays) {
-              const dayIds = allDays.map(d => d.id);
-              // Usuń zadania z receptury tego dania we wszystkich dniach
-              const { error: tasksError } = await supabase
-                  .from('event_tasks')
-                  .delete()
-                  .in('event_day_id', dayIds)
-                  .eq('source_type', 'recipe')
-                  .eq('source_dish_id', dishData.dish_id);
-              if (tasksError) {
-                  console.error('Błąd usuwania zadań:', tasksError);
+      
+      if (dishData) {
+          // Pobierz event_day_id
+          const { data: sectionData } = await supabase
+              .from('event_sections')
+              .select('event_day_id')
+              .eq('id', dishData.event_section_id)
+              .single();
+          
+          if (sectionData) {
+              // Pobierz recipe_id z komponentów
+              const { data: components } = await supabase
+                  .from('dish_components')
+                  .select('recipe_id')
+                  .eq('dish_id', dishData.dish_id)
+                  .not('recipe_id', 'is', null);
+              
+              if (components && components.length > 0) {
+                  // Usuń zadania z receptur tego dania (tylko w tym dniu)
+                  const recipeIds = components.map(c => c.recipe_id);
+                  await supabase
+                      .from('event_tasks')
+                      .delete()
+                      .eq('event_day_id', sectionData.event_day_id)
+                      .eq('source_type', 'recipe')
+                      .in('source_id', recipeIds);
               }
           }
       }
-      res.json({ message: 'Danie usunięte pomyślnie' });
+      
+      // Usuń danie
+      const { error } = await supabase
+          .from('event_section_dishes')
+          .delete()
+          .eq('id', id);
+      
+      if (error) throw error;
+      
+      res.json({ message: 'Danie usunięte' });
   } catch (error) {
-      console.error('Błąd usuwania dania:', error);
+      console.error('Error:', error);
       res.status(500).json({ error: error.message });
   }
 });
