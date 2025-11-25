@@ -1,14 +1,12 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
-
 const multer = require('multer');
 const Papa = require('papaparse');
 const { exportRecipesToCSV } = require('./export-recipes-csv');
 const { exportDishesToCSV } = require('./export-dishes-csv');
 const { importRecipesFromCSV } = require('./import-recipes-csv');
 const { importDishesFromCSV } = require('./import-dishes-csv');
-
 const app = express();
 app.use(express.json());
 app.use((req, res, next) => {
@@ -18,35 +16,29 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
-
 // Inicjalizacja Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
-
 // Konfiguracja uploadu plików
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 } // max 10MB
 });
-
 // Test endpoint
 app.get('/', (req, res) => {
   res.send('ChefSystent API v1.0 - connected to database!');
 });
-
 // GET wszystkie surowce
 app.get('/api/ingredients', async (req, res) => {
   const { data, error } = await supabase
     .from('ingredients')
     .select('*')
     .order('nazwa');
-  
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
-
 // GET jeden surowiec po ID
 app.get('/api/ingredients/:id', async (req, res) => {
   const { data, error } = await supabase
@@ -54,11 +46,9 @@ app.get('/api/ingredients/:id', async (req, res) => {
     .select('*')
     .eq('id', req.params.id)
     .single();
-  
   if (error) return res.status(404).json({ error: 'Nie znaleziono surowca' });
   res.json(data);
 });
-
 // POST nowy surowiec
 app.post('/api/ingredients', async (req, res) => {
   const { data, error } = await supabase
@@ -66,11 +56,9 @@ app.post('/api/ingredients', async (req, res) => {
     .insert([req.body])
     .select()
     .single();
-  
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
 });
-
 // PUT edycja surowca
 app.put('/api/ingredients/:id', async (req, res) => {
   const { data, error } = await supabase
@@ -79,37 +67,30 @@ app.put('/api/ingredients/:id', async (req, res) => {
     .eq('id', req.params.id)
     .select()
     .single();
-  
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
 });
-
 // DELETE usuniÄ™cie surowca
 app.delete('/api/ingredients/:id', async (req, res) => {
   const { error } = await supabase
     .from('ingredients')
     .delete()
     .eq('id', req.params.id);
-  
   if (error) return res.status(400).json({ error: error.message });
   res.json({ message: 'Surowiec usuniÄ™ty' });
 });
-
 // ========================================
 // RECEPTURY (RECIPES)
 // ========================================
-
 // GET wszystkie receptury
 app.get('/api/recipes', async (req, res) => {
   const { data, error } = await supabase
     .from('recipes')
     .select('*')
     .order('nazwa');
-  
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
-
 // GET receptura po ID (ze skÅ‚adnikami)
 app.get('/api/recipes/:id', async (req, res) => {
   // Pobierz recepturÄ™
@@ -118,9 +99,7 @@ app.get('/api/recipes/:id', async (req, res) => {
     .select('*')
     .eq('id', req.params.id)
     .single();
-  
   if (recipeError) return res.status(404).json({ error: 'Nie znaleziono receptury' });
-  
   // Pobierz skÅ‚adniki
   const { data: ingredients, error: ingError } = await supabase
     .from('recipe_ingredients')
@@ -138,30 +117,23 @@ app.get('/api/recipes/:id', async (req, res) => {
     `)
     .eq('recipe_id', req.params.id)
     .order('kolejnosc');
-  
   if (ingError) return res.status(500).json({ error: ingError.message });
-  
   res.json({ ...recipe, skladniki: ingredients });
 });
-
 // POST nowa receptura
 app.post('/api/recipes', async (req, res) => {
   const { skladniki, instrukcja, ...recipeData } = req.body;
-  
   // Dodaj instrukcję do danych receptury
   if (instrukcja) {
     recipeData.instrukcja = instrukcja;
   }
-  
   // Dodaj recepturÄ™
   const { data: recipe, error: recipeError } = await supabase
     .from('recipes')
     .insert([recipeData])
     .select()
     .single();
-  
   if (recipeError) return res.status(400).json({ error: recipeError.message });
-  
   // Dodaj skÅ‚adniki jeÅ›li sÄ…
   if (skladniki && skladniki.length > 0) {
     const ingredientsData = skladniki.map((s, idx) => ({
@@ -171,26 +143,20 @@ app.post('/api/recipes', async (req, res) => {
       jm: s.jm,
       kolejnosc: idx + 1
     }));
-    
     const { error: ingError } = await supabase
       .from('recipe_ingredients')
       .insert(ingredientsData);
-    
     if (ingError) return res.status(400).json({ error: ingError.message });
   }
-  
   res.status(201).json(recipe);
 });
-
 // PUT edycja receptury
 app.put('/api/recipes/:id', async (req, res) => {
   const { skladniki, instrukcja, ...recipeData } = req.body;
-  
   // Dodaj instrukcję do danych receptury
   if (instrukcja !== undefined) {
     recipeData.instrukcja = instrukcja;
   }
-  
   // Aktualizuj recepturÄ™
   const { data: recipe, error: recipeError } = await supabase
     .from('recipes')
@@ -198,16 +164,13 @@ app.put('/api/recipes/:id', async (req, res) => {
     .eq('id', req.params.id)
     .select()
     .single();
-  
   if (recipeError) return res.status(400).json({ error: recipeError.message });
-  
   // JeÅ›li sÄ… nowe skÅ‚adniki, usuÅ„ stare i dodaj nowe
   if (skladniki) {
     await supabase
       .from('recipe_ingredients')
       .delete()
       .eq('recipe_id', req.params.id);
-    
     if (skladniki.length > 0) {
       const ingredientsData = skladniki.map((s, idx) => ({
         recipe_id: recipe.id,
@@ -216,42 +179,34 @@ app.put('/api/recipes/:id', async (req, res) => {
         jm: s.jm,
         kolejnosc: idx + 1
       }));
-      
       await supabase
         .from('recipe_ingredients')
         .insert(ingredientsData);
     }
   }
-  
   res.json(recipe);
 });
-
 // DELETE receptura
 app.delete('/api/recipes/:id', async (req, res) => {
   const { error } = await supabase
     .from('recipes')
     .delete()
     .eq('id', req.params.id);
-  
   if (error) return res.status(400).json({ error: error.message });
   res.json({ message: 'Receptura usuniÄ™ta' });
 });
-
 // ========================================
 // KONWERSJE JEDNOSTEK
 // ========================================
-
 // GET wszystkie konwersje dla surowca
 app.get('/api/ingredients/:id/conversions', async (req, res) => {
   const { data, error } = await supabase
     .from('ingredient_conversions')
     .select('*')
     .eq('ingredient_id', req.params.id);
-  
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
-
 // POST nowa konwersja
 app.post('/api/conversions', async (req, res) => {
   const { data, error } = await supabase
@@ -259,26 +214,21 @@ app.post('/api/conversions', async (req, res) => {
     .insert([req.body])
     .select()
     .single();
-  
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
 });
-
 // DELETE konwersja
 app.delete('/api/conversions/:id', async (req, res) => {
   const { error } = await supabase
     .from('ingredient_conversions')
     .delete()
     .eq('id', req.params.id);
-  
   if (error) return res.status(400).json({ error: error.message });
   res.json({ message: 'Konwersja usunięta' });
 });
-
 // ========================================
 // ZAMIENNIKI
 // ========================================
-
 // GET wszystkie zamienniki dla surowca
 app.get('/api/ingredients/:id/substitutes', async (req, res) => {
   const { data, error } = await supabase
@@ -296,11 +246,9 @@ app.get('/api/ingredients/:id/substitutes', async (req, res) => {
       )
     `)
     .eq('ingredient_id', req.params.id);
-  
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
-
 // POST nowy zamiennik
 app.post('/api/substitutes', async (req, res) => {
   const { data, error } = await supabase
@@ -308,37 +256,30 @@ app.post('/api/substitutes', async (req, res) => {
     .insert([req.body])
     .select()
     .single();
-  
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
 });
-
 // DELETE zamiennik
 app.delete('/api/substitutes/:id', async (req, res) => {
   const { error } = await supabase
     .from('ingredient_substitutes')
     .delete()
     .eq('id', req.params.id);
-  
   if (error) return res.status(400).json({ error: error.message });
   res.json({ message: 'Zamiennik usunięty' });
 });
-
 // ========================================
 // DANIA ZŁOŻONE (DISHES)
 // ========================================
-
 // GET wszystkie dania
 app.get('/api/dishes', async (req, res) => {
   const { data, error } = await supabase
     .from('dishes')
     .select('*')
     .order('nazwa');
-  
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
-
 // GET jedno danie po ID (z recepturami)
 app.get('/api/dishes/:id', async (req, res) => {
   // Pobierz danie
@@ -347,9 +288,7 @@ app.get('/api/dishes/:id', async (req, res) => {
     .select('*')
     .eq('id', req.params.id)
     .single();
-  
   if (dishError) return res.status(404).json({ error: 'Nie znaleziono dania' });
-  
   // Pobierz komponenty (receptury)
   const { data: components, error: compError } = await supabase
     .from('dish_components')
@@ -369,25 +308,19 @@ app.get('/api/dishes/:id', async (req, res) => {
     `)
     .eq('dish_id', req.params.id)
     .order('kolejnosc');
-  
   if (compError) return res.status(500).json({ error: compError.message });
-  
   res.json({ ...dish, komponenty: components });
 });
-
 // POST nowe danie
 app.post('/api/dishes', async (req, res) => {
   const { komponenty, ...dishData } = req.body;
-  
   // Dodaj danie
   const { data: dish, error: dishError } = await supabase
     .from('dishes')
     .insert([dishData])
     .select()
     .single();
-  
   if (dishError) return res.status(400).json({ error: dishError.message });
-  
   // Dodaj komponenty jeśli są
   if (komponenty && komponenty.length > 0) {
     const componentsData = komponenty.map((k, idx) => ({
@@ -398,21 +331,16 @@ app.post('/api/dishes', async (req, res) => {
       kategoria: k.kategoria || 'glowne',
       kolejnosc: idx + 1
     }));
-    
     const { error: compError } = await supabase
       .from('dish_components')
       .insert(componentsData);
-    
     if (compError) return res.status(400).json({ error: compError.message });
   }
-  
   res.status(201).json(dish);
 });
-
 // PUT edycja dania
 app.put('/api/dishes/:id', async (req, res) => {
   const { komponenty, ...dishData } = req.body;
-  
   // Aktualizuj danie
   const { data: dish, error: dishError } = await supabase
     .from('dishes')
@@ -420,16 +348,13 @@ app.put('/api/dishes/:id', async (req, res) => {
     .eq('id', req.params.id)
     .select()
     .single();
-  
   if (dishError) return res.status(400).json({ error: dishError.message });
-  
   // Jeśli są nowe komponenty, usuń stare i dodaj nowe
   if (komponenty) {
     await supabase
       .from('dish_components')
       .delete()
       .eq('dish_id', req.params.id);
-    
     if (komponenty.length > 0) {
       const componentsData = komponenty.map((k, idx) => ({
         dish_id: dish.id,
@@ -439,44 +364,35 @@ app.put('/api/dishes/:id', async (req, res) => {
         kategoria: k.kategoria || 'glowne',
         kolejnosc: idx + 1
       }));
-      
       await supabase
         .from('dish_components')
         .insert(componentsData);
     }
   }
-  
   res.json(dish);
 });
-
 // DELETE danie
 app.delete('/api/dishes/:id', async (req, res) => {
   const { error } = await supabase
     .from('dishes')
     .delete()
     .eq('id', req.params.id);
-  
   if (error) return res.status(400).json({ error: error.message });
   res.json({ message: 'Danie usunięte' });
 });
-
 // ========================================
 // IMPORT/EXPORT
 // ========================================
-
 // Eksport surowców do CSV
 app.get('/api/ingredients/export/csv', async (req, res) => {
   const { data, error } = await supabase
     .from('ingredients')
     .select('*')
     .order('nazwa');
-  
   if (error) return res.status(500).json({ error: error.message });
-  
   // Generuj CSV
   const headers = ['id', 'nazwa', 'typ', 'grupa', 'dzial', 'jm_podstawowa', 'wegetarianski', 'weganski', 'alergeny'];
   let csv = headers.join(',') + '\n';
-  
   data.forEach(row => {
     const values = headers.map(h => {
       if (h === 'alergeny') return JSON.stringify(row[h] || []);
@@ -484,35 +400,26 @@ app.get('/api/ingredients/export/csv', async (req, res) => {
     });
     csv += values.join(',') + '\n';
   });
-  
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
 res.setHeader('Content-Disposition', 'attachment; filename=surowce_export.csv');
 res.send('\uFEFF' + csv);
 });
-
 // ========================================
 // EKSPORT/IMPORT RECEPTUR I DAŃ
 // ========================================
-
 // Eksport receptur do CSV
 app.get('/api/recipes/export/csv', exportRecipesToCSV);
-
 // Eksport dań do CSV
 app.get('/api/dishes/export/csv', exportDishesToCSV);
-
 // Import receptur z CSV
 app.post('/api/recipes/import/csv', upload.single('file'), importRecipesFromCSV);
-
 // Import dań z CSV
 app.post('/api/dishes/import/csv', upload.single('file'), importDishesFromCSV);
-
 // ========================================
 // MODUŁ JADŁOSPISÓW - Backend API
 // Dodaj te endpointy do index.js
 // ========================================
-
 // ========== SZABLONY SCHEMATÓW ==========
-
 // GET - pobierz wszystkie szablony
 app.get('/api/meal-templates', async (req, res) => {
   try {
@@ -520,14 +427,12 @@ app.get('/api/meal-templates', async (req, res) => {
       .from('meal_templates')
       .select('*')
       .order('nazwa');
-    
     if (error) throw error;
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // GET - pobierz jeden szablon po ID
 app.get('/api/meal-templates/:id', async (req, res) => {
   try {
@@ -536,51 +441,43 @@ app.get('/api/meal-templates/:id', async (req, res) => {
       .select('*')
       .eq('id', req.params.id)
       .single();
-    
     if (error) throw error;
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // POST - utwórz nowy szablon
 app.post('/api/meal-templates', async (req, res) => {
   try {
     const { nazwa, klient, opis, struktura } = req.body;
-    
     const { data, error } = await supabase
       .from('meal_templates')
       .insert([{ nazwa, klient, opis, struktura }])
       .select()
       .single();
-    
     if (error) throw error;
     res.status(201).json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // PUT - aktualizuj szablon
 app.put('/api/meal-templates/:id', async (req, res) => {
   try {
     const { nazwa, klient, opis, struktura } = req.body;
-    
     const { data, error } = await supabase
       .from('meal_templates')
       .update({ nazwa, klient, opis, struktura })
       .eq('id', req.params.id)
       .select()
       .single();
-    
     if (error) throw error;
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // DELETE - usuń szablon
 app.delete('/api/meal-templates/:id', async (req, res) => {
   try {
@@ -588,39 +485,31 @@ app.delete('/api/meal-templates/:id', async (req, res) => {
       .from('meal_templates')
       .delete()
       .eq('id', req.params.id);
-    
     if (error) throw error;
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // ========== GRUPY ==========
-
 // GET - pobierz wszystkie grupy
 app.get('/api/groups', async (req, res) => {
   try {
     const { status } = req.query; // opcjonalny filtr po statusie
-    
     let query = supabase
       .from('groups')
       .select('*, meal_templates(nazwa)')
       .order('data_pierwszy_posilek', { ascending: false });
-    
     if (status) {
       query = query.eq('status', status);
     }
-    
     const { data, error } = await query;
-    
     if (error) throw error;
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // GET - pobierz jedną grupę po ID (z pełnymi danymi)
 app.get('/api/groups/:id', async (req, res) => {
   try {
@@ -629,9 +518,7 @@ app.get('/api/groups/:id', async (req, res) => {
       .select('*, meal_templates(nazwa, struktura)')
       .eq('id', req.params.id)
       .single();
-    
     if (groupError) throw groupError;
-    
     // Pobierz posiłki dla tej grupy
     const { data: meals, error: mealsError } = await supabase
       .from('group_meals')
@@ -639,58 +526,46 @@ app.get('/api/groups/:id', async (req, res) => {
       .eq('group_id', req.params.id)
       .order('dzien_numer')
       .order('typ_posilku');
-    
     if (mealsError) throw mealsError;
-    
     // Dodaj posiłki do grupy
     group.meals = meals;
-    
     res.json(group);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // Usuń grupę i wszystkie powiązane posiłki
 app.delete('/api/groups/:id', async (req, res) => {
   try {
       const groupId = req.params.id;
-      
       // Sprawdź czy grupa istnieje
       const { data: group, error: checkError } = await supabase
           .from('groups')
           .select('id')
           .eq('id', groupId)
           .single();
-      
       if (checkError || !group) {
           return res.status(404).json({ error: 'Grupa nie znaleziona' });
       }
-      
       // Usuń wszystkie posiłki grupy
       const { error: mealsError } = await supabase
           .from('group_meals')
           .delete()
           .eq('group_id', groupId);
-      
       if (mealsError) {
           console.error('Error deleting meals:', mealsError);
           throw mealsError;
       }
-      
       // Usuń grupę
       const { error: deleteError } = await supabase
           .from('groups')
           .delete()
           .eq('id', groupId);
-      
       if (deleteError) {
           console.error('Error deleting group:', deleteError);
           throw deleteError;
       }
-      
       res.json({ message: 'Grupa usunięta pomyślnie' });
-      
   } catch (error) {
       console.error('Error deleting group:', error);
       console.error('Error details:', error.message);
@@ -700,7 +575,6 @@ app.delete('/api/groups/:id', async (req, res) => {
       });
   }
 });
-
 // POST - utwórz nową grupę
 app.post('/api/groups', async (req, res) => {
   try {
@@ -722,7 +596,6 @@ app.post('/api/groups', async (req, res) => {
       meal_types,  // DODANE
       status
     } = req.body;
-    
     const { data, error } = await supabase
       .from('groups')
       .insert([{
@@ -745,14 +618,12 @@ app.post('/api/groups', async (req, res) => {
       }])
       .select()
       .single();
-    
     if (error) throw error;
     res.status(201).json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // PUT - aktualizuj grupę
 app.put('/api/groups/:id', async (req, res) => {
   try {
@@ -774,7 +645,6 @@ app.put('/api/groups/:id', async (req, res) => {
       meal_types,  // DODANE
       status
     } = req.body;
-    
     const { data, error } = await supabase
     .from('groups')
     .update({
@@ -798,14 +668,12 @@ app.put('/api/groups/:id', async (req, res) => {
       .eq('id', req.params.id)
       .select()
       .single();
-    
     if (error) throw error;
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // DELETE - usuń grupę
 app.delete('/api/groups/:id', async (req, res) => {
   try {
@@ -814,16 +682,13 @@ app.delete('/api/groups/:id', async (req, res) => {
       .from('groups')
       .delete()
       .eq('id', req.params.id);
-    
     if (error) throw error;
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // ========== POSIŁKI W GRUPIE ==========
-
 // GET - pobierz posiłki dla grupy
 app.get('/api/groups/:groupId/meals', async (req, res) => {
   try {
@@ -834,19 +699,16 @@ app.get('/api/groups/:groupId/meals', async (req, res) => {
       .order('dzien_numer')
       .order('typ_posilku')
       .order('kolejnosc'); // DODANE
-    
     if (error) throw error;
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // POST - dodaj posiłek do grupy
 app.post('/api/groups/:groupId/meals', async (req, res) => {
   try {
     const { dzien_numer, data, typ_posilku, dish_id, liczba_porcji, uwagi, kolejnosc } = req.body;
-    
     const { data: meal, error } = await supabase
       .from('group_meals')
       .insert([{
@@ -861,19 +723,16 @@ app.post('/api/groups/:groupId/meals', async (req, res) => {
       }])
       .select('*, dishes(id, nazwa, typ)')
       .single();
-    
     if (error) throw error;
     res.status(201).json(meal);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // PUT - aktualizuj posiłek
 app.put('/api/group-meals/:id', async (req, res) => {
   try {
     const { dzien_numer, data, typ_posilku, dish_id, liczba_porcji, uwagi, kolejnosc } = req.body;
-    
     const { data: meal, error } = await supabase
       .from('group_meals')
       .update({
@@ -888,14 +747,12 @@ app.put('/api/group-meals/:id', async (req, res) => {
       .eq('id', req.params.id)
       .select('*, dishes(id, nazwa, typ)')
       .single();
-    
     if (error) throw error;
     res.json(meal);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // DELETE - usuń posiłek
 app.delete('/api/group-meals/:id', async (req, res) => {
   try {
@@ -903,14 +760,12 @@ app.delete('/api/group-meals/:id', async (req, res) => {
       .from('group_meals')
       .delete()
       .eq('id', req.params.id);
-    
     if (error) throw error;
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // GET - domyślne godziny typów posiłków dla grupy
 app.get('/api/groups/:groupId/meal-type-defaults', async (req, res) => {
   try {
@@ -918,19 +773,16 @@ app.get('/api/groups/:groupId/meal-type-defaults', async (req, res) => {
       .from('group_meal_type_defaults')
       .select('*')
       .eq('group_id', req.params.groupId);
-    
     if (error) throw error;
     res.json(data || []);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 // POST - ustaw domyślną godzinę dla typu posiłku w grupie
 app.post('/api/groups/:groupId/meal-type-defaults', async (req, res) => {
   try {
     const { typ_posilku, domyslna_godzina } = req.body;
-    
     const { data, error } = await supabase
       .from('group_meal_type_defaults')
       .upsert({
@@ -942,7 +794,6 @@ app.post('/api/groups/:groupId/meal-type-defaults', async (req, res) => {
       })
       .select()
       .single();
-    
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -950,7 +801,6 @@ app.post('/api/groups/:groupId/meal-type-defaults', async (req, res) => {
   }
 });
 // ========== GENEROWANIE LISTY ZAKUPÓW ==========
-
 // GET - wygeneruj listę zakupów dla grupy
 app.get('/api/groups/:groupId/shopping-list', async (req, res) => {
   try {
@@ -960,16 +810,13 @@ app.get('/api/groups/:groupId/shopping-list', async (req, res) => {
       .select('*')
       .eq('id', req.params.groupId)
       .single();
-    
     if (groupError) throw groupError;
-    
     // Oblicz łączną liczbę osób
     const liczbaOsob = (group.liczba_uczestnikow || 0) + 
                        (group.liczba_opiekunow || 0) + 
                        (group.liczba_pilotow || 0) + 
                        (group.liczba_kierowcow || 0) + 
                        (group.liczba_kadry || 0);
-    
     // Pobierz wszystkie posiłki z componentami
     const { data: meals, error: mealsError } = await supabase
       .from('group_meals')
@@ -996,15 +843,11 @@ app.get('/api/groups/:groupId/shopping-list', async (req, res) => {
         )
       `)
       .eq('group_id', req.params.groupId);
-    
     if (mealsError) throw mealsError;
-    
     // Agreguj składniki
     const skladniki = {};
-    
     meals.forEach(meal => {
       const porcje = meal.liczba_porcji || liczbaOsob;
-      
       if (meal.dishes && meal.dishes.dish_components) {
         meal.dishes.dish_components.forEach(component => {
           if (component.recipes && component.recipes.recipe_ingredients) {
@@ -1012,7 +855,6 @@ app.get('/api/groups/:groupId/shopping-list', async (req, res) => {
               const key = ri.ingredient_id;
               const nazwa = ri.ingredients?.nazwa || 'Nieznany';
               const ilosc = (ri.ilosc || 0) * porcje;
-              
               if (!skladniki[key]) {
                 skladniki[key] = {
                   nazwa,
@@ -1020,19 +862,16 @@ app.get('/api/groups/:groupId/shopping-list', async (req, res) => {
                   jm: ri.jm
                 };
               }
-              
               skladniki[key].ilosc += ilosc;
             });
           }
         });
       }
     });
-    
     // Konwertuj do array i posortuj
     const lista = Object.values(skladniki).sort((a, b) => 
       a.nazwa.localeCompare(b.nazwa, 'pl')
     );
-    
     res.json({
       group_id: req.params.groupId,
       group_nazwa: group.nazwa,
@@ -1044,7 +883,6 @@ app.get('/api/groups/:groupId/shopping-list', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 // ===== ALERGENY =====
 app.get('/api/allergens', async (req, res) => {
   try {
@@ -1065,48 +903,40 @@ app.get('/api/allergens', async (req, res) => {
           { id: 13, kod: 'LUPIN', nazwa: 'Łubin', nazwa_pelna: 'Łubin i produkty pochodne', kolejnosc: 13 },
           { id: 14, kod: 'MOLLUSCS', nazwa: 'Mięczaki', nazwa_pelna: 'Mięczaki i produkty pochodne', kolejnosc: 14 }
       ];
-      
       res.json(allergens);
   } catch (err) {
       console.error('Błąd alergenów:', err);
       res.status(500).json({ error: err.message });
   }
 });
-
 // ===== SPRAWDZANIE DUPLIKATÓW (dla importu CSV) =====
 app.post('/api/ingredients/check-duplicates', async (req, res) => {
   try {
       const { names } = req.body;
-      
       if (!Array.isArray(names) || names.length === 0) {
           return res.json({ duplicates: [], existingIds: {} });
       }
-      
       // Pobierz istniejące surowce o tych nazwach
       const { data, error } = await supabase
           .from('ingredients')
           .select('id, nazwa')
           .in('nazwa', names);
-      
       if (error) {
           console.error('Błąd sprawdzania duplikatów:', error);
           return res.status(500).json({ error: error.message });
       }
-      
       // Zwróć listę duplikatów i mapę nazwa -> id
       const duplicates = data.map(item => item.nazwa);
       const existingIds = {};
       data.forEach(item => {
           existingIds[item.nazwa] = item.id;
       });
-      
       res.json({ duplicates, existingIds });
   } catch (err) {
       console.error('Błąd:', err);
       res.status(500).json({ error: err.message });
   }
 });
-
 // ===== EKSPORT CSV =====
 app.get('/api/ingredients/export/csv', async (req, res) => {
   try {
@@ -1115,12 +945,9 @@ app.get('/api/ingredients/export/csv', async (req, res) => {
           .from('ingredients')
           .select('*')
           .order('id');
-      
       if (error) throw error;
-      
       // Generuj CSV
       const headers = 'id,nazwa,typ,grupa,dzial,jm_podstawowa,wegetarianski,weganski,alergeny\n';
-      
       const rows = ingredients.map(ing => {
           const alergeny = Array.isArray(ing.alergeny) ? JSON.stringify(ing.alergeny) : '[]';
           return [
@@ -1135,9 +962,7 @@ app.get('/api/ingredients/export/csv', async (req, res) => {
               alergeny
           ].join(',');
       }).join('\n');
-      
       const csv = '\uFEFF' + headers + rows; // BOM dla polskich znaków
-      
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="surowce_export.csv"`);
       res.send(csv);
@@ -1150,117 +975,93 @@ app.get('/api/ingredients/export/csv', async (req, res) => {
 // EVENTS API ENDPOINTS
 // ============================================
 // Wklej ten kod do index.js po endpointach groups
-
 // GET /api/events - Lista eventów z filtrowaniem
 app.get('/api/events', async (req, res) => {
   try {
       const { status } = req.query;
-      
       let query = supabase
           .from('events')
           .select('*')
           .order('data_rozpoczecia', { ascending: false });
-      
       // Filtrowanie po statusie
       if (status && status !== 'wszystkie') {
           query = query.eq('status', status);
       }
-      
       const { data, error } = await query;
-      
       if (error) throw error;
-      
       res.json(data || []);
   } catch (error) {
       console.error('Błąd pobierania eventów:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // GET /api/events/:id - Szczegóły eventu
 app.get('/api/events/:id', async (req, res) => {
   try {
       const { id } = req.params;
-      
       const { data, error } = await supabase
           .from('events')
           .select('*')
           .eq('id', id)
           .single();
-      
       if (error) throw error;
-      
       if (!data) {
           return res.status(404).json({ error: 'Event nie znaleziony' });
       }
-      
       res.json(data);
   } catch (error) {
       console.error('Błąd pobierania eventu:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // POST /api/events - Nowy event
 app.post('/api/events', async (req, res) => {
   try {
       const eventData = req.body;
-      
       // Dodaj timestamp
       eventData.created_at = new Date().toISOString();
       eventData.updated_at = new Date().toISOString();
-      
       // Domyślny status jeśli nie podano
       if (!eventData.status) {
           eventData.status = 'roboczy';
       }
-      
       const { data, error } = await supabase
           .from('events')
           .insert([eventData])
           .select()
           .single();
-      
       if (error) throw error;
-      
       res.status(201).json(data);
   } catch (error) {
       console.error('Błąd tworzenia eventu:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // PUT /api/events/:id - Edycja eventu
 app.put('/api/events/:id', async (req, res) => {
   try {
       const { id } = req.params;
       const eventData = req.body;
-      
       // Aktualizuj timestamp
       eventData.updated_at = new Date().toISOString();
-      
       const { data, error } = await supabase
           .from('events')
           .update(eventData)
           .eq('id', id)
           .select()
           .single();
-      
       if (error) throw error;
-      
       res.json(data);
   } catch (error) {
       console.error('Błąd aktualizacji eventu:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // PATCH /api/events/:id/status - Zmiana statusu
 app.patch('/api/events/:id/status', async (req, res) => {
   try {
       const { id } = req.params;
       const { status } = req.body;
-      
       const { data, error } = await supabase
           .from('events')
           .update({ 
@@ -1270,30 +1071,24 @@ app.patch('/api/events/:id/status', async (req, res) => {
           .eq('id', id)
           .select()
           .single();
-      
       if (error) throw error;
-      
       res.json(data);
   } catch (error) {
       console.error('Błąd zmiany statusu:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // POST /api/events/:id/duplicate - Duplikuj event
 app.post('/api/events/:id/duplicate', async (req, res) => {
   try {
       const { id } = req.params;
-      
       // Pobierz oryginalny event
       const { data: originalEvent, error: fetchError } = await supabase
           .from('events')
           .select('*')
           .eq('id', id)
           .single();
-      
       if (fetchError) throw fetchError;
-      
       // Przygotuj dane kopii
       const duplicateData = {
           ...originalEvent,
@@ -1302,54 +1097,43 @@ app.post('/api/events/:id/duplicate', async (req, res) => {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
       };
-      
       delete duplicateData.id; // Usuń ID oryginalnego eventu
-      
       // Utwórz kopię
       const { data: newEvent, error: insertError } = await supabase
           .from('events')
           .insert([duplicateData])
           .select()
           .single();
-      
       if (insertError) throw insertError;
-      
       res.status(201).json(newEvent);
   } catch (error) {
       console.error('Błąd duplikacji eventu:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // DELETE /api/events/:id - Usuń event
 app.delete('/api/events/:id', async (req, res) => {
   try {
       const { id } = req.params;
-      
       // TODO: W przyszłości dodać kaskadowe usuwanie powiązanych rekordów
       // (dni eventów, sekcje, zadania itp.)
-      
       const { error } = await supabase
           .from('events')
           .delete()
           .eq('id', id);
-      
       if (error) throw error;
-      
       res.json({ message: 'Event usunięty pomyślnie' });
   } catch (error) {
       console.error('Błąd usuwania eventu:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // GET /api/events - Lista eventów z filtrowaniem
 // ============================================
 app.get('/api/events', async (req, res) => {
   try {
       const { status } = req.query;
-      
       let query = supabase
           .from('events')
           .select(`
@@ -1362,51 +1146,40 @@ app.get('/api/events', async (req, res) => {
               )
           `)
           .order('data_rozpoczecia', { ascending: false });
-      
       // Filtrowanie po statusie
       if (status && status !== 'wszystkie') {
           query = query.eq('status', status);
       }
-      
       const { data, error } = await query;
-      
       if (error) throw error;
-      
       // Auto-archiwizacja eventów (końcowa data > 1 dzień w przeszłości)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
       for (const event of data) {
           const endDate = new Date(event.data_zakonczenia);
           endDate.setHours(0, 0, 0, 0);
-          
           const diffDays = Math.floor((today - endDate) / (1000 * 60 * 60 * 24));
-          
           // Jeśli różnica > 1 dzień i status nie jest archiwum
           if (diffDays > 1 && event.status !== 'archiwum') {
               await supabase
                   .from('events')
                   .update({ status: 'archiwum' })
                   .eq('id', event.id);
-              
               event.status = 'archiwum'; // Aktualizuj w odpowiedzi
           }
       }
-      
       res.json(data);
   } catch (error) {
       console.error('Błąd pobierania eventów:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // GET /api/events/:id - Szczegóły eventu
 // ============================================
 app.get('/api/events/:id', async (req, res) => {
   try {
       const { id } = req.params;
-      
       const { data, error } = await supabase
           .from('events')
           .select(`
@@ -1433,7 +1206,6 @@ app.get('/api/events/:id', async (req, res) => {
                               id,
                               nazwa,
                               typ,
-                              dieta
                           )
                       )
                   ),
@@ -1451,16 +1223,13 @@ app.get('/api/events/:id', async (req, res) => {
           `)
           .eq('id', id)
           .single();
-      
       if (error) throw error;
-      
       res.json(data);
   } catch (error) {
       console.error('Błąd pobierania eventu:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // POST /api/events - Nowy event
 // ============================================
@@ -1480,14 +1249,12 @@ app.post('/api/events', async (req, res) => {
           notatki,
           status
       } = req.body;
-      
       // Walidacja dat
       if (new Date(data_rozpoczecia) > new Date(data_zakonczenia)) {
           return res.status(400).json({ 
               error: 'Data rozpoczęcia nie może być późniejsza niż data zakończenia' 
           });
       }
-      
       // Tworzenie eventu
       const { data: newEvent, error: eventError } = await supabase
           .from('events')
@@ -1507,12 +1274,9 @@ app.post('/api/events', async (req, res) => {
           }])
           .select()
           .single();
-      
       if (eventError) throw eventError;
-      
       // Automatyczne tworzenie dni eventu
       const days = [];
-      
       // Dzień -1: "Produkcja" (bez daty)
       days.push({
           event_id: newEvent.id,
@@ -1520,14 +1284,11 @@ app.post('/api/events', async (req, res) => {
           nazwa: 'Produkcja',
           kolejnosc: -1
       });
-      
       // Dni eventu (od data_rozpoczecia do data_zakonczenia)
       const startDate = new Date(data_rozpoczecia);
       const endDate = new Date(data_zakonczenia);
-      
       let currentDate = new Date(startDate);
       let dayIndex = 0;
-      
       while (currentDate <= endDate) {
           const dayName = currentDate.toLocaleDateString('pl-PL', { 
               weekday: 'long',
@@ -1535,32 +1296,26 @@ app.post('/api/events', async (req, res) => {
               month: '2-digit',
               day: '2-digit'
           });
-          
           days.push({
               event_id: newEvent.id,
               data: currentDate.toISOString().split('T')[0],
               nazwa: dayName.charAt(0).toUpperCase() + dayName.slice(1),
               kolejnosc: dayIndex
           });
-          
           currentDate.setDate(currentDate.getDate() + 1);
           dayIndex++;
       }
-      
       // Wstawianie dni
       const { error: daysError } = await supabase
           .from('event_days')
           .insert(days);
-      
       if (daysError) throw daysError;
-      
       res.status(201).json(newEvent);
   } catch (error) {
       console.error('Błąd tworzenia eventu:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // PUT /api/events/:id - Edycja eventu
 // ============================================
@@ -1568,7 +1323,6 @@ app.put('/api/events/:id', async (req, res) => {
   try {
       const { id } = req.params;
       const updateData = req.body;
-      
       // Walidacja dat
       if (updateData.data_rozpoczecia && updateData.data_zakonczenia) {
           if (new Date(updateData.data_rozpoczecia) > new Date(updateData.data_zakonczenia)) {
@@ -1577,52 +1331,43 @@ app.put('/api/events/:id', async (req, res) => {
               });
           }
       }
-      
       const { data, error } = await supabase
           .from('events')
           .update(updateData)
           .eq('id', id)
           .select()
           .single();
-      
       if (error) throw error;
-      
       res.json(data);
   } catch (error) {
       console.error('Błąd edycji eventu:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // DELETE /api/events/:id - Usunięcie eventu
 // ============================================
 app.delete('/api/events/:id', async (req, res) => {
   try {
       const { id } = req.params;
-      
       // CASCADE delete obsłuży powiązane dni, sekcje, dania i zadania
       const { error } = await supabase
           .from('events')
           .delete()
           .eq('id', id);
-      
       if (error) throw error;
-      
       res.json({ message: 'Event usunięty pomyślnie' });
   } catch (error) {
       console.error('Błąd usuwania eventu:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // POST /api/events/:id/duplicate - Duplikacja eventu
 // ============================================
 app.post('/api/events/:id/duplicate', async (req, res) => {
   try {
       const { id } = req.params;
-      
       // Pobierz event z pełnymi danymi
       const { data: originalEvent, error: fetchError } = await supabase
           .from('events')
@@ -1643,9 +1388,7 @@ app.post('/api/events/:id/duplicate', async (req, res) => {
           `)
           .eq('id', id)
           .single();
-      
       if (fetchError) throw fetchError;
-      
       // Utwórz kopię eventu
       const { data: newEvent, error: eventError } = await supabase
           .from('events')
@@ -1665,9 +1408,7 @@ app.post('/api/events/:id/duplicate', async (req, res) => {
           }])
           .select()
           .single();
-      
       if (eventError) throw eventError;
-      
       // Kopiuj dni
       for (const day of originalEvent.event_days) {
           const { data: newDay, error: dayError } = await supabase
@@ -1680,9 +1421,7 @@ app.post('/api/events/:id/duplicate', async (req, res) => {
               }])
               .select()
               .single();
-          
           if (dayError) throw dayError;
-          
           // Kopiuj sekcje
           for (const section of day.event_sections) {
               const { data: newSection, error: sectionError } = await supabase
@@ -1698,9 +1437,7 @@ app.post('/api/events/:id/duplicate', async (req, res) => {
                   }])
                   .select()
                   .single();
-              
               if (sectionError) throw sectionError;
-              
               // Kopiuj dania w sekcji
               for (const dish of section.event_section_dishes) {
                   const { error: dishError } = await supabase
@@ -1711,11 +1448,9 @@ app.post('/api/events/:id/duplicate', async (req, res) => {
                           liczba_porcji: dish.liczba_porcji,
                           kolejnosc: dish.kolejnosc
                       }]);
-                  
                   if (dishError) throw dishError;
               }
           }
-          
           // Kopiuj zadania (tylko custom, recipe regenerują się automatycznie)
           for (const task of day.event_tasks) {
               if (task.source_type === 'custom') {
@@ -1729,19 +1464,16 @@ app.post('/api/events/:id/duplicate', async (req, res) => {
                           source_type: 'custom',
                           kolejnosc: task.kolejnosc
                       }]);
-                  
                   if (taskError) throw taskError;
               }
           }
       }
-      
       res.status(201).json(newEvent);
   } catch (error) {
       console.error('Błąd duplikacji eventu:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // POST /api/events/:id/sections - Dodaj sekcję w dniu
 // ============================================
@@ -1749,7 +1481,6 @@ app.post('/api/events/:eventId/days/:dayId/sections', async (req, res) => {
   try {
       const { eventId, dayId } = req.params;
       const { nazwa, godzina_start, godzina_koniec, rodzaj_serwisu, liczba_porcji } = req.body;
-      
       // Pobierz maksymalną kolejność dla tego dnia
       const { data: sections, error: fetchError } = await supabase
           .from('event_sections')
@@ -1757,11 +1488,8 @@ app.post('/api/events/:eventId/days/:dayId/sections', async (req, res) => {
           .eq('event_day_id', dayId)
           .order('kolejnosc', { ascending: false })
           .limit(1);
-      
       if (fetchError) throw fetchError;
-      
       const nextKolejnosc = sections.length > 0 ? sections[0].kolejnosc + 1 : 0;
-      
       // Dodaj sekcję
       const { data, error } = await supabase
           .from('event_sections')
@@ -1776,38 +1504,31 @@ app.post('/api/events/:eventId/days/:dayId/sections', async (req, res) => {
           }])
           .select()
           .single();
-      
       if (error) throw error;
-      
       res.status(201).json(data);
   } catch (error) {
       console.error('Błąd dodawania sekcji:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // DELETE /api/event-sections/:id - Usuń sekcję
 // ============================================
 app.delete('/api/event-sections/:id', async (req, res) => {
   try {
       const { id } = req.params;
-      
       // CASCADE delete obsłuży powiązane dania
       const { error } = await supabase
           .from('event_sections')
           .delete()
           .eq('id', id);
-      
       if (error) throw error;
-      
       res.json({ message: 'Sekcja usunięta pomyślnie' });
   } catch (error) {
       console.error('Błąd usuwania sekcji:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // POST /api/event-sections/:id/dishes - Dodaj danie do sekcji
 // ============================================
@@ -1815,7 +1536,6 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
   try {
       const { sectionId } = req.params;
       const { dish_id, liczba_porcji } = req.body;
-      
       // Pobierz maksymalną kolejność dla tej sekcji
       const { data: dishes, error: fetchError } = await supabase
           .from('event_section_dishes')
@@ -1823,11 +1543,8 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
           .eq('event_section_id', sectionId)
           .order('kolejnosc', { ascending: false })
           .limit(1);
-      
       if (fetchError) throw fetchError;
-      
       const nextKolejnosc = dishes.length > 0 ? dishes[0].kolejnosc + 1 : 0;
-      
       // Dodaj danie
       const { data, error } = await supabase
           .from('event_section_dishes')
@@ -1843,68 +1560,54 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
                   id,
                   nazwa,
                   typ,
-                  dieta
               )
           `)
           .single();
-      
       if (error) throw error;
-      
       // TODO: Auto-generowanie zadań z kroków receptury
       // (implementacja w kolejnym kroku)
-      
       res.status(201).json(data);
   } catch (error) {
       console.error('Błąd dodawania dania:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // DELETE /api/event-section-dishes/:id - Usuń danie z sekcji
 // ============================================
 app.delete('/api/event-section-dishes/:id', async (req, res) => {
   try {
       const { id } = req.params;
-      
       // Pobierz source_dish_id przed usunięciem
       const { data: dishData, error: fetchError } = await supabase
           .from('event_section_dishes')
           .select('event_section_id, dish_id, event_sections(event_day_id)')
           .eq('id', id)
           .single();
-      
       if (fetchError) throw fetchError;
-      
       // Usuń danie
       const { error: deleteError } = await supabase
           .from('event_section_dishes')
           .delete()
           .eq('id', id);
-      
       if (deleteError) throw deleteError;
-      
       // Usuń powiązane zadania z receptury tego dania
       // (we wszystkich dniach eventu!)
       const eventDayId = dishData.event_sections.event_day_id;
-      
       // Pobierz event_id z day_id
       const { data: dayData, error: dayError } = await supabase
           .from('event_days')
           .select('event_id')
           .eq('id', eventDayId)
           .single();
-      
       if (!dayError && dayData) {
           // Pobierz wszystkie dni tego eventu
           const { data: allDays, error: daysError } = await supabase
               .from('event_days')
               .select('id')
               .eq('event_id', dayData.event_id);
-          
           if (!daysError && allDays) {
               const dayIds = allDays.map(d => d.id);
-              
               // Usuń zadania z receptury tego dania we wszystkich dniach
               const { error: tasksError } = await supabase
                   .from('event_tasks')
@@ -1912,27 +1615,23 @@ app.delete('/api/event-section-dishes/:id', async (req, res) => {
                   .in('event_day_id', dayIds)
                   .eq('source_type', 'recipe')
                   .eq('source_dish_id', dishData.dish_id);
-              
               if (tasksError) {
                   console.error('Błąd usuwania zadań:', tasksError);
               }
           }
       }
-      
       res.json({ message: 'Danie usunięte pomyślnie' });
   } catch (error) {
       console.error('Błąd usuwania dania:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // POST /api/event-tasks - Dodaj zadanie
 // ============================================
 app.post('/api/event-tasks', async (req, res) => {
   try {
       const { event_day_id, nazwa, data_wykonania, source_type } = req.body;
-      
       // Pobierz maksymalną kolejność dla tego dnia
       const { data: tasks, error: fetchError } = await supabase
           .from('event_tasks')
@@ -1940,11 +1639,8 @@ app.post('/api/event-tasks', async (req, res) => {
           .eq('event_day_id', event_day_id)
           .order('kolejnosc', { ascending: false })
           .limit(1);
-      
       if (fetchError) throw fetchError;
-      
       const nextKolejnosc = tasks.length > 0 ? tasks[0].kolejnosc + 1 : 0;
-      
       // Dodaj zadanie
       const { data, error } = await supabase
           .from('event_tasks')
@@ -1958,16 +1654,13 @@ app.post('/api/event-tasks', async (req, res) => {
           }])
           .select()
           .single();
-      
       if (error) throw error;
-      
       res.status(201).json(data);
   } catch (error) {
       console.error('Błąd dodawania zadania:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // PUT /api/event-tasks/:id - Aktualizuj zadanie (toggle zrobione)
 // ============================================
@@ -1975,44 +1668,36 @@ app.put('/api/event-tasks/:id', async (req, res) => {
   try {
       const { id } = req.params;
       const updateData = req.body;
-      
       const { data, error } = await supabase
           .from('event_tasks')
           .update(updateData)
           .eq('id', id)
           .select()
           .single();
-      
       if (error) throw error;
-      
       res.json(data);
   } catch (error) {
       console.error('Błąd aktualizacji zadania:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // DELETE /api/event-tasks/:id - Usuń zadanie
 // ============================================
 app.delete('/api/event-tasks/:id', async (req, res) => {
   try {
       const { id } = req.params;
-      
       const { error } = await supabase
           .from('event_tasks')
           .delete()
           .eq('id', id);
-      
       if (error) throw error;
-      
       res.json({ message: 'Zadanie usunięte pomyślnie' });
   } catch (error) {
       console.error('Błąd usuwania zadania:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // ============================================
 // PUT /api/event-tasks/:id/move - Przenieś zadanie między dniami
 // ============================================
@@ -2020,25 +1705,20 @@ app.put('/api/event-tasks/:id/move', async (req, res) => {
   try {
       const { id } = req.params;
       const { new_day_id, new_data_wykonania } = req.body;
-      
       const updateData = {
           event_day_id: new_day_id
       };
-      
       // Jeśli to dzień "Produkcja", dodaj/zaktualizuj data_wykonania
       if (new_data_wykonania) {
           updateData.data_wykonania = new_data_wykonania;
       }
-      
       const { data, error } = await supabase
           .from('event_tasks')
           .update(updateData)
           .eq('id', id)
           .select()
           .single();
-      
       if (error) throw error;
-      
       res.json(data);
   } catch (error) {
       console.error('Błąd przenoszenia zadania:', error);
@@ -2049,18 +1729,15 @@ app.put('/api/event-tasks/:id/move', async (req, res) => {
 // EVENT PLANNING API - NOWE (zgodne z ustaleniami)
 // ============================================
 // ZASTĄP stare endpointy event-planning tym kodem
-
 // GET /api/events/:id/days - Dni eventu
 app.get('/api/events/:id/days', async (req, res) => {
   try {
       const { id } = req.params;
-      
       const { data, error } = await supabase
           .from('event_days')
           .select('*')
           .eq('event_id', id)
           .order('kolejnosc', { ascending: true });
-      
       if (error) throw error;
       res.json(data || []);
   } catch (error) {
@@ -2068,13 +1745,11 @@ app.get('/api/events/:id/days', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
 // POST /api/events/:id/days - Utwórz dzień
 app.post('/api/events/:id/days', async (req, res) => {
   try {
       const { id } = req.params;
       const { data: dayData, nazwa, kolejnosc } = req.body;
-      
       const { data, error } = await supabase
           .from('event_days')
           .insert([{
@@ -2085,7 +1760,6 @@ app.post('/api/events/:id/days', async (req, res) => {
           }])
           .select()
           .single();
-      
       if (error) throw error;
       res.status(201).json(data);
   } catch (error) {
@@ -2093,12 +1767,10 @@ app.post('/api/events/:id/days', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
 // GET /api/events/:id/sections - Sekcje eventu
 app.get('/api/events/:id/sections', async (req, res) => {
   try {
       const { id } = req.params;
-      
       // Pobierz sekcje z daniami
       const { data, error } = await supabase
           .from('event_sections')
@@ -2108,7 +1780,6 @@ app.get('/api/events/:id/sections', async (req, res) => {
           `)
           .eq('event_days.event_id', id)
           .order('kolejnosc', { ascending: true });
-      
       if (error) throw error;
       res.json(data || []);
   } catch (error) {
@@ -2116,13 +1787,11 @@ app.get('/api/events/:id/sections', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
 // POST /api/event-days/:dayId/sections - Dodaj sekcję do dnia
 app.post('/api/event-days/:dayId/sections', async (req, res) => {
   try {
       const { dayId } = req.params;
       const { nazwa, godzina_start, godzina_koniec, rodzaj_serwisu, liczba_porcji, kolejnosc } = req.body;
-      
       const { data, error } = await supabase
           .from('event_sections')
           .insert([{
@@ -2136,7 +1805,6 @@ app.post('/api/event-days/:dayId/sections', async (req, res) => {
           }])
           .select()
           .single();
-      
       if (error) throw error;
       res.status(201).json(data);
   } catch (error) {
@@ -2144,18 +1812,15 @@ app.post('/api/event-days/:dayId/sections', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
 // DELETE /api/event-sections/:id - Usuń sekcję
 app.delete('/api/event-sections/:id', async (req, res) => {
   try {
       const { id } = req.params;
-      
       // Kaskadowo usuwa też dishes i auto-usunie powiązane zadania z receptur
       const { error } = await supabase
           .from('event_sections')
           .delete()
           .eq('id', id);
-      
       if (error) throw error;
       res.json({ message: 'Sekcja usunięta' });
   } catch (error) {
@@ -2163,12 +1828,10 @@ app.delete('/api/event-sections/:id', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
 // GET /api/event-sections/:id/dishes - Dania w sekcji
 app.get('/api/event-sections/:id/dishes', async (req, res) => {
   try {
       const { id } = req.params;
-      
       const { data, error } = await supabase
           .from('event_section_dishes')
           .select(`
@@ -2177,7 +1840,6 @@ app.get('/api/event-sections/:id/dishes', async (req, res) => {
           `)
           .eq('event_section_id', id)
           .order('kolejnosc', { ascending: true });
-      
       if (error) throw error;
       res.json(data || []);
   } catch (error) {
@@ -2185,13 +1847,11 @@ app.get('/api/event-sections/:id/dishes', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
 // POST /api/event-sections/:sectionId/dishes - Dodaj danie do sekcji
 app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
   try {
       const { sectionId } = req.params;
       const { dish_id, liczba_porcji } = req.body;
-      
       // Dodaj danie
       const { data: dishData, error: dishError } = await supabase
           .from('event_section_dishes')
@@ -2203,25 +1863,20 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
           }])
           .select()
           .single();
-      
       if (dishError) throw dishError;
-      
       // Pobierz event_day_id dla tej sekcji
       const { data: sectionData } = await supabase
           .from('event_sections')
           .select('event_day_id')
           .eq('id', sectionId)
           .single();
-      
       if (!sectionData) throw new Error('Sekcja nie znaleziona');
-      
       // Pobierz receptury z komponentów dania
       const { data: components } = await supabase
           .from('dish_components')
           .select('recipe_id')
           .eq('dish_id', dish_id)
           .not('recipe_id', 'is', null);
-      
       // Dla każdej receptury pobierz kroki i stwórz zadania
       if (components && components.length > 0) {
           for (const comp of components) {
@@ -2230,7 +1885,6 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
                   .select('id, nazwa, instrukcja')
                   .eq('id', comp.recipe_id)
                   .single();
-              
               if (recipe && recipe.instrukcja && Array.isArray(recipe.instrukcja)) {
                   // Dla każdego kroku stwórz zadanie z nazwą receptury w nawiasie
                   const tasks = recipe.instrukcja.map((krok, idx) => ({
@@ -2241,33 +1895,28 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
                       source_id: recipe.id,
                       kolejnosc: idx + 1
                   }));
-                  
                   await supabase
                       .from('event_tasks')
                       .insert(tasks);
               }
           }
       }
-      
       res.status(201).json(dishData);
   } catch (error) {
       console.error('Error:', error);
       res.status(500).json({ error: error.message });
   }
 });
-
 // DELETE /api/event-section-dishes/:id - Usuń danie z sekcji
 app.delete('/api/event-section-dishes/:id', async (req, res) => {
   try {
       const { id } = req.params;
-      
       // Pobierz dish_id przed usunięciem
       const { data: dishData } = await supabase
           .from('event_section_dishes')
           .select('dish_id, event_section_id')
           .eq('id', id)
           .single();
-      
       if (dishData) {
           // Pobierz event_day_id
           const { data: sectionData } = await supabase
@@ -2275,14 +1924,12 @@ app.delete('/api/event-section-dishes/:id', async (req, res) => {
               .select('event_day_id')
               .eq('id', dishData.event_section_id)
               .single();
-          
           // Pobierz recipe_id z komponentów
           const { data: components } = await supabase
               .from('dish_components')
               .select('recipe_id')
               .eq('dish_id', dishData.dish_id)
               .not('recipe_id', 'is', null);
-          
           if (components && components.length > 0 && sectionData) {
               // Usuń zadania z receptur tego dania
               const recipeIds = components.map(c => c.recipe_id);
@@ -2294,13 +1941,11 @@ app.delete('/api/event-section-dishes/:id', async (req, res) => {
                   .in('source_id', recipeIds);
           }
       }
-      
       // Usuń danie
       const { error } = await supabase
           .from('event_section_dishes')
           .delete()
           .eq('id', id);
-      
       if (error) throw error;
       res.json({ message: 'Danie usunięte' });
   } catch (error) {
@@ -2308,19 +1953,16 @@ app.delete('/api/event-section-dishes/:id', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
 // GET /api/event-days/:dayId/tasks - Zadania w dniu
 app.get('/api/event-days/:dayId/tasks', async (req, res) => {
   try {
       const { dayId } = req.params;
-      
       const { data, error } = await supabase
           .from('event_tasks')
           .select('*')
           .eq('event_day_id', dayId)
           .order('data_wykonania', { ascending: true, nullsFirst: false })
           .order('kolejnosc', { ascending: true });
-      
       if (error) throw error;
       res.json(data || []);
   } catch (error) {
@@ -2328,13 +1970,11 @@ app.get('/api/event-days/:dayId/tasks', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
 // POST /api/event-days/:dayId/tasks - Dodaj własne zadanie
 app.post('/api/event-days/:dayId/tasks', async (req, res) => {
   try {
       const { dayId } = req.params;
       const { nazwa, data_wykonania } = req.body;
-      
       const { data, error } = await supabase
           .from('event_tasks')
           .insert([{
@@ -2347,7 +1987,6 @@ app.post('/api/event-days/:dayId/tasks', async (req, res) => {
           }])
           .select()
           .single();
-      
       if (error) throw error;
       res.status(201).json(data);
   } catch (error) {
@@ -2355,20 +1994,17 @@ app.post('/api/event-days/:dayId/tasks', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
 // PATCH /api/event-tasks/:id - Toggle zadanie lub przenieś
 app.patch('/api/event-tasks/:id', async (req, res) => {
   try {
       const { id } = req.params;
       const updates = req.body; // { zrobione, event_day_id, data_wykonania }
-      
       const { data, error } = await supabase
           .from('event_tasks')
           .update(updates)
           .eq('id', id)
           .select()
           .single();
-      
       if (error) throw error;
       res.json(data);
   } catch (error) {
@@ -2376,28 +2012,23 @@ app.patch('/api/event-tasks/:id', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
 // DELETE /api/event-tasks/:id - Usuń zadanie
 app.delete('/api/event-tasks/:id', async (req, res) => {
   try {
       const { id } = req.params;
-      
       // Tylko custom tasks można usuwać
       const { data: task } = await supabase
           .from('event_tasks')
           .select('source_type')
           .eq('id', id)
           .single();
-      
       if (task && task.source_type !== 'custom') {
           return res.status(400).json({ error: 'Nie można usunąć zadania z receptury. Usuń danie aby usunąć jego zadania.' });
       }
-      
       const { error } = await supabase
           .from('event_tasks')
           .delete()
           .eq('id', id);
-      
       if (error) throw error;
       res.json({ message: 'Zadanie usunięte' });
   } catch (error) {
@@ -2405,6 +2036,5 @@ app.delete('/api/event-tasks/:id', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
 console.log('✅ Endpointy Events załadowane pomyślnie');
 app.listen(3000, () => console.log('Serwer dziaÅ‚a na http://localhost:3000'));
