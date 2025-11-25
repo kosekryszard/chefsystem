@@ -1565,7 +1565,14 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
       if (error) throw error;
       // TODO: Auto-generowanie zadań z kroków receptury
       // (implementacja w kolejnym kroku)
-      res.status(201).json(data);
+      res.status(201).json({
+        dish: dishData,
+        debug: {
+            componentsCount: components?.length || 0,
+            hasComponents: components && components.length > 0,
+            sectionDataExists: !!sectionData
+        }
+    });
   } catch (error) {
       console.error('Błąd dodawania dania:', error);
       res.status(500).json({ error: error.message });
