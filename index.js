@@ -1908,7 +1908,13 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
               }
           }
       }
-      res.status(201).json(dishData);
+      res.status(201).json({
+        dish: dishData,
+        debug: {
+            componentsCount: components?.length || 0,
+            components: components
+        }
+    });
   } catch (error) {
       console.error('Error:', error);
       res.status(500).json({ error: error.message });
