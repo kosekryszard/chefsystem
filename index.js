@@ -1922,9 +1922,17 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
                         kolejnosc: idx + 1
                     };
                 });
-                  await supabase
-                      .from('event_tasks')
-                      .insert(tasks);
+                const { data: insertedTasks, error: insertError } = await supabase
+                .from('event_tasks')
+                .insert(tasks)
+                .select();
+            
+            if (insertError) {
+                console.error('Tasks insert error:', insertError);
+                throw new Error('Błąd tworzenia zadań: ' + insertError.message);
+            }
+            
+            console.log('✅ Created tasks:', insertedTasks?.length || 0);
               }
           }
       }
