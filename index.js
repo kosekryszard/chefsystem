@@ -1952,12 +1952,14 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
 app.delete('/api/event-section-dishes/:id', async (req, res) => {
   try {
       const { id } = req.params;
-      // Pobierz dish_id przed usunięciem
+      
+      // Pobierz dish_id i section_id przed usunięciem
       const { data: dishData } = await supabase
           .from('event_section_dishes')
           .select('dish_id, event_section_id')
           .eq('id', id)
           .single();
+      
       if (dishData) {
           // Pobierz event_day_id
           const { data: sectionData } = await supabase
@@ -1965,25 +1967,14 @@ app.delete('/api/event-section-dishes/:id', async (req, res) => {
               .select('event_day_id')
               .eq('id', dishData.event_section_id)
               .single();
+          
           // Pobierz recipe_id z komponentów
-          const { data: components, error: compError } = await supabase
-    .from('dish_components')
-    .select('recipe_id')
-    .eq('dish_id', dish_id)
-    .not('recipe_id', 'is', null);
-
-if (compError) {
-    console.error('Components error:', compError);
-    throw new Error('Błąd pobierania komponentów: ' + compError.message);
-}
-
-if (!components || components.length === 0) {
-    // Zwróć info że brak komponentów
-    return res.status(201).json({
-        ...dishData,
-        warning: 'Danie dodane, ale nie ma komponentów z recepturami'
-    });
-}
+          const { data: components } = await supabase
+              .from('dish_components')
+              .select('recipe_id')
+              .eq('dish_id', dishData.dish_id)
+              .not('recipe_id', 'is', null);
+          
           if (components && components.length > 0 && sectionData) {
               // Usuń zadania z receptur tego dania
               const recipeIds = components.map(c => c.recipe_id);
@@ -1995,12 +1986,15 @@ if (!components || components.length === 0) {
                   .in('source_id', recipeIds);
           }
       }
+      
       // Usuń danie
       const { error } = await supabase
           .from('event_section_dishes')
           .delete()
           .eq('id', id);
+      
       if (error) throw error;
+      
       res.json({ message: 'Danie usunięte' });
   } catch (error) {
       console.error('Error:', error);
