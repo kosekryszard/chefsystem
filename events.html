@@ -162,9 +162,12 @@
         }
 
         /* Menu statusów */
+        .btn-status {
+            position: relative; /* Rodzic musi być relative */
+        }
         .status-menu {
             position: absolute;
-            top: 100%;
+            bottom: 100%; /* Wyświetl NAD przyciskiem */
             left: 0;
             background: white;
             border: 2px solid #0A1F44;
@@ -172,7 +175,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             z-index: 1000;
             min-width: 180px;
-            margin-top: 5px;
+            margin-bottom: 5px;
         }
         .status-menu div {
             padding: 12px 16px;
@@ -690,9 +693,8 @@
                 <div onclick="changeStatus(${eventId}, 'archiwum')">📦 Archiwum</div>
             `;
             
-            // Pozycjonowanie menu
+            // Pozycjonowanie menu (pozycję ustala CSS)
             const btn = e.target.closest('.btn-status');
-            btn.style.position = 'relative';
             btn.appendChild(menu);
             
             // Zamknij menu po kliknięciu poza
@@ -706,8 +708,8 @@
 
         async function changeStatus(eventId, newStatus) {
             try {
-                const response = await fetch(`/api/events/${eventId}`, {
-                    method: 'PUT',
+                const response = await fetch(`/api/events/${eventId}/status`, {
+                    method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: newStatus })
                 });

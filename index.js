@@ -1146,6 +1146,202 @@ app.get('/api/ingredients/export/csv', async (req, res) => {
       res.status(500).json({ error: err.message });
   }
 });
+// ============================================
+// EVENTS API ENDPOINTS
+// ============================================
+// Wklej ten kod do index.js po endpointach groups
+
+// GET /api/events - Lista eventów z filtrowaniem
+app.get('/api/events', async (req, res) => {
+  try {
+      const { status } = req.query;
+      
+      let query = supabase
+          .from('events')
+          .select('*')
+          .order('data_rozpoczecia', { ascending: false });
+      
+      // Filtrowanie po statusie
+      if (status && status !== 'wszystkie') {
+          query = query.eq('status', status);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      res.json(data || []);
+  } catch (error) {
+      console.error('Błąd pobierania eventów:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/events/:id - Szczegóły eventu
+app.get('/api/events/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .from('events')
+          .select('*')
+          .eq('id', id)
+          .single();
+      
+      if (error) throw error;
+      
+      if (!data) {
+          return res.status(404).json({ error: 'Event nie znaleziony' });
+      }
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Błąd pobierania eventu:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/events - Nowy event
+app.post('/api/events', async (req, res) => {
+  try {
+      const eventData = req.body;
+      
+      // Dodaj timestamp
+      eventData.created_at = new Date().toISOString();
+      eventData.updated_at = new Date().toISOString();
+      
+      // Domyślny status jeśli nie podano
+      if (!eventData.status) {
+          eventData.status = 'roboczy';
+      }
+      
+      const { data, error } = await supabase
+          .from('events')
+          .insert([eventData])
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.status(201).json(data);
+  } catch (error) {
+      console.error('Błąd tworzenia eventu:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/events/:id - Edycja eventu
+app.put('/api/events/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const eventData = req.body;
+      
+      // Aktualizuj timestamp
+      eventData.updated_at = new Date().toISOString();
+      
+      const { data, error } = await supabase
+          .from('events')
+          .update(eventData)
+          .eq('id', id)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Błąd aktualizacji eventu:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// PATCH /api/events/:id/status - Zmiana statusu
+app.patch('/api/events/:id/status', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      const { data, error } = await supabase
+          .from('events')
+          .update({ 
+              status,
+              updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Błąd zmiany statusu:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/events/:id/duplicate - Duplikuj event
+app.post('/api/events/:id/duplicate', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      // Pobierz oryginalny event
+      const { data: originalEvent, error: fetchError } = await supabase
+          .from('events')
+          .select('*')
+          .eq('id', id)
+          .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Przygotuj dane kopii
+      const duplicateData = {
+          ...originalEvent,
+          nazwa: `${originalEvent.nazwa} (Kopia)`,
+          status: 'roboczy',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+      };
+      
+      delete duplicateData.id; // Usuń ID oryginalnego eventu
+      
+      // Utwórz kopię
+      const { data: newEvent, error: insertError } = await supabase
+          .from('events')
+          .insert([duplicateData])
+          .select()
+          .single();
+      
+      if (insertError) throw insertError;
+      
+      res.status(201).json(newEvent);
+  } catch (error) {
+      console.error('Błąd duplikacji eventu:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/events/:id - Usuń event
+app.delete('/api/events/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      // TODO: W przyszłości dodać kaskadowe usuwanie powiązanych rekordów
+      // (dni eventów, sekcje, zadania itp.)
+      
+      const { error } = await supabase
+          .from('events')
+          .delete()
+          .eq('id', id);
+      
+      if (error) throw error;
+      
+      res.json({ message: 'Event usunięty pomyślnie' });
+  } catch (error) {
+      console.error('Błąd usuwania eventu:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
 
 // ============================================
 // GET /api/events - Lista eventów z filtrowaniem
