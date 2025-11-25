@@ -1881,79 +1881,67 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
           .not('recipe_id', 'is', null);
       // Dla każdej receptury pobierz kroki i stwórz zadania
       console.log('📦 Components found:', components);
-      // DEBUG - sprawdź co mamy
-return res.status(201).json({
-  dish: dishData,
-  debug: {
-      sectionData,
-      componentsCount: components?.length || 0,
-      components
-  }
-});
       if (components && components.length > 0) {
           for (const comp of components) {
-            const { data: recipe, error: recipeError } = await supabase
-            .from('recipes')
-            .select('id, nazwa, instrukcja')
-            .eq('id', comp.recipe_id)
-            .single();
-        
-        if (recipeError) {
-            console.error('Recipe error:', recipeError);
-            continue; // Pomiń tę recepturę i idź dalej
-        }
-        
-        if (!recipe) {
-            console.error('Recipe not found:', comp.recipe_id);
-            continue;
-        }
-        
-        if (!recipe.instrukcja || !Array.isArray(recipe.instrukcja)) {
-            console.error('Recipe has no instrukcja or wrong format:', recipe);
-            continue;
-        }
-        
-        if (recipe.instrukcja.length === 0) {
-            console.error('Recipe instrukcja is empty:', recipe);
-            continue;
-        }
-                  console.log('📝 Recipe:', recipe);
-                  console.log('📋 Instrukcja:', recipe?.instrukcja);
-              if (recipe && recipe.instrukcja && Array.isArray(recipe.instrukcja)) {
-                  // Dla każdego kroku stwórz zadanie z nazwą receptury w nawiasie
-                  const tasks = recipe.instrukcja.map((krok, idx) => {
-                    // Obsługa obu formatów: {"krok":1,"opis":"..."} lub "..."
-                    const opis = typeof krok === 'string' ? krok : krok.opis;
-                    return {
-                        event_day_id: sectionData.event_day_id,
-                        nazwa: `${opis} [${recipe.nazwa}]`,
-                        zrobione: false,
-                        source_type: 'recipe',
-                        source_id: recipe.id,
-                        kolejnosc: idx + 1
-                    };
-                });
-                const { data: insertedTasks, error: insertError } = await supabase
-                .from('event_tasks')
-                .insert(tasks)
-                .select();
-            
-            if (insertError) {
-                console.error('Tasks insert error:', insertError);
-                throw new Error('Błąd tworzenia zadań: ' + insertError.message);
-            }
-            
-            console.log('✅ Created tasks:', insertedTasks?.length || 0);
+              const { data: recipe, error: recipeError } = await supabase
+                  .from('recipes')
+                  .select('id, nazwa, instrukcja')
+                  .eq('id', comp.recipe_id)
+                  .single();
+              
+              if (recipeError) {
+                  console.error('Recipe error:', recipeError);
+                  continue;
               }
+              
+              if (!recipe) {
+                  console.error('Recipe not found:', comp.recipe_id);
+                  continue;
+              }
+              
+              if (!recipe.instrukcja || !Array.isArray(recipe.instrukcja)) {
+                  console.error('Recipe has no instrukcja or wrong format:', recipe);
+                  continue;
+              }
+              
+              if (recipe.instrukcja.length === 0) {
+                  console.error('Recipe instrukcja is empty:', recipe);
+                  continue;
+              }
+              
+              console.log('📝 Recipe:', recipe);
+              console.log('📋 Instrukcja:', recipe?.instrukcja);
+              
+              // Dla każdego kroku stwórz zadanie
+              const tasks = recipe.instrukcja.map((krok, idx) => {
+                  const opis = typeof krok === 'string' ? krok : krok.opis;
+                  return {
+                      event_day_id: sectionData.event_day_id,
+                      nazwa: `${opis} [${recipe.nazwa}]`,
+                      zrobione: false,
+                      source_type: 'recipe',
+                      source_id: recipe.id,
+                      kolejnosc: idx + 1
+                  };
+              });
+              
+              // WSTAW ZADANIA
+              const { data: insertedTasks, error: insertError } = await supabase
+                  .from('event_tasks')
+                  .insert(tasks)
+                  .select();
+              
+              if (insertError) {
+                  console.error('Tasks insert error:', insertError);
+                  throw new Error('Błąd tworzenia zadań: ' + insertError.message);
+              }
+              
+              console.log('✅ Created tasks:', insertedTasks?.length || 0);
           }
       }
-      res.status(201).json({
-        dish: dishData,
-        debug: {
-            componentsCount: components?.length || 0,
-            components: components
-        }
-    });
+      
+      res.status(201).json(dishData);
+      
   } catch (error) {
       console.error('Error:', error);
       res.status(500).json({ error: error.message });
