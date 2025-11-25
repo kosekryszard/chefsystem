@@ -1881,6 +1881,15 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
           .not('recipe_id', 'is', null);
       // Dla każdej receptury pobierz kroki i stwórz zadania
       console.log('📦 Components found:', components);
+      // DEBUG - sprawdź co mamy
+return res.status(201).json({
+  dish: dishData,
+  debug: {
+      sectionData,
+      componentsCount: components?.length || 0,
+      components
+  }
+});
       if (components && components.length > 0) {
           for (const comp of components) {
             const { data: recipe, error: recipeError } = await supabase
