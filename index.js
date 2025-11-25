@@ -1881,11 +1881,31 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
       console.log('📦 Components found:', components);
       if (components && components.length > 0) {
           for (const comp of components) {
-              const { data: recipe } = await supabase
-                  .from('recipes')
-                  .select('id, nazwa, instrukcja')
-                  .eq('id', comp.recipe_id)
-                  .single();
+            const { data: recipe, error: recipeError } = await supabase
+            .from('recipes')
+            .select('id, nazwa, instrukcja')
+            .eq('id', comp.recipe_id)
+            .single();
+        
+        if (recipeError) {
+            console.error('Recipe error:', recipeError);
+            continue; // Pomiń tę recepturę i idź dalej
+        }
+        
+        if (!recipe) {
+            console.error('Recipe not found:', comp.recipe_id);
+            continue;
+        }
+        
+        if (!recipe.instrukcja || !Array.isArray(recipe.instrukcja)) {
+            console.error('Recipe has no instrukcja or wrong format:', recipe);
+            continue;
+        }
+        
+        if (recipe.instrukcja.length === 0) {
+            console.error('Recipe instrukcja is empty:', recipe);
+            continue;
+        }
                   console.log('📝 Recipe:', recipe);
                   console.log('📋 Instrukcja:', recipe?.instrukcja);
               if (recipe && recipe.instrukcja && Array.isArray(recipe.instrukcja)) {
