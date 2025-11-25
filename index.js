@@ -1943,10 +1943,9 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
                   throw new Error('Błąd tworzenia zadań: ' + insertError.message);
               }
               
-              console.log('✅ Created tasks:', insertedTasks?.length || 0);
-              
-              // DEBUG - wymuszony error z info
-              throw new Error(`DEBUG: Created ${insertedTasks?.length || 0} tasks for recipe ${recipe.id}`);
+              // Zapisz info o utworzonych zadaniach
+              if (!dishData.debug) dishData.debug = {};
+              dishData.debug.tasksCreated = (dishData.debug.tasksCreated || 0) + (insertedTasks?.length || 0);
           }
       }
       
