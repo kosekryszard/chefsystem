@@ -549,19 +549,22 @@
         }
         
         async function loadSections() {
-            try {
-                const response = await fetch(`/api/menu-cards/${menuCardId}/sections`);
-                sectionsData = await response.json();
-                
-                // Dla każdej sekcji pobierz dania
-                for (const section of sectionsData) {
-                    const dishesResp = await fetch(`/api/menu-sections/${section.id}/dishes`);
-                    section.dishes = await dishesResp.json();
-                }
-            } catch (error) {
-                console.error('Error:', error);
-            }
+    try {
+        const response = await fetch(`/api/menu-cards/${menuCardId}/sections`);
+        sectionsData = await response.json();
+        
+        console.log('sectionsData:', sectionsData); // DEBUG
+        
+        // Dla każdej sekcji pobierz dania
+        for (const section of sectionsData) {
+            const dishesResp = await fetch(`/api/menu-sections/${section.id}/dishes`);
+            section.dishes = await dishesResp.json();
+            console.log(`Section ${section.id} dishes:`, section.dishes); // DEBUG
         }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
         
         async function loadDishes() {
             try {
