@@ -2389,15 +2389,20 @@ app.get('/api/menu-sections/:id/dishes', async (req, res) => {
       // Pobierz szczegóły dań
       const result = [];
       for (const menuDish of menuDishes || []) {
-          const { data: dish } = await supabase
+          const { data: dish, error: dishError } = await supabase
               .from('dishes')
               .select('id, nazwa, nazwa_w_karcie, opis')
               .eq('id', menuDish.dish_id)
               .single();
           
+          if (dishError) {
+              console.error('Dish fetch error:', dishError);
+              continue;
+          }
+          
           result.push({
               ...menuDish,
-              dishes: dish
+              dishes: dish || null
           });
       }
       
