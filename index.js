@@ -2080,6 +2080,367 @@ app.put('/api/event-sections/:id', async (req, res) => {
   }
 });
 console.log('✅ Endpointy Events załadowane pomyślnie');
+// ============================================
+// MENU CARDS - Karty menu/jadłospisy
+// ============================================
 
+// GET /api/menu-cards - Lista kart
+app.get('/api/menu-cards', async (req, res) => {
+  try {
+      const { status } = req.query;
+      
+      let query = supabase
+          .from('menu_cards')
+          .select('*')
+          .order('created_at', { ascending: false });
+      
+      if (status && status !== 'wszystkie') {
+          query = query.eq('status', status);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/menu-cards/:id - Szczegóły karty
+app.get('/api/menu-cards/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .from('menu_cards')
+          .select('*')
+          .eq('id', id)
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/menu-cards - Dodaj kartę
+app.post('/api/menu-cards', async (req, res) => {
+  try {
+      const { nazwa, lokal, status, data_od, data_do } = req.body;
+      
+      const { data, error } = await supabase
+          .from('menu_cards')
+          .insert([{ nazwa, lokal, status, data_od, data_do }])
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.status(201).json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/menu-cards/:id - Edytuj kartę
+app.put('/api/menu-cards/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { nazwa, lokal, status, data_od, data_do } = req.body;
+      
+      const { data, error } = await supabase
+          .from('menu_cards')
+          .update({ nazwa, lokal, status, data_od, data_do })
+          .eq('id', id)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/menu-cards/:id - Usuń kartę
+app.delete('/api/menu-cards/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { error } = await supabase
+          .from('menu_cards')
+          .delete()
+          .eq('id', id);
+      
+      if (error) throw error;
+      
+      res.json({ message: 'Karta usunięta' });
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/menu-cards/:id/duplicate - Duplikuj kartę
+app.post('/api/menu-cards/:id/duplicate', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      // Pobierz oryginalną kartę
+      const { data: original, error: fetchError } = await supabase
+          .from('menu_cards')
+          .select('*')
+          .eq('id', id)
+          .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Utwórz kopię
+      const { data: newCard, error: insertError } = await supabase
+          .from('menu_cards')
+          .insert([{
+              nazwa: `${original.nazwa} (kopia)`,
+              lokal: original.lokal,
+              status: 'robocza',
+              data_od: original.data_od,
+              data_do: original.data_do
+          }])
+          .select()
+          .single();
+      
+      if (insertError) throw insertError;
+      
+      // Kopiuj sekcje
+      const { data: sections } = await supabase
+          .from('menu_sections')
+          .select('*')
+          .eq('menu_card_id', id)
+          .order('kolejnosc');
+      
+      if (sections && sections.length > 0) {
+          for (const section of sections) {
+              const { data: newSection } = await supabase
+                  .from('menu_sections')
+                  .insert([{
+                      menu_card_id: newCard.id,
+                      tytul: section.tytul,
+                      show_descriptions: section.show_descriptions,
+                      kolejnosc: section.kolejnosc
+                  }])
+                  .select()
+                  .single();
+              
+              // Kopiuj dania sekcji
+              const { data: dishes } = await supabase
+                  .from('menu_section_dishes')
+                  .select('*')
+                  .eq('menu_section_id', section.id)
+                  .order('kolejnosc');
+              
+              if (dishes && dishes.length > 0 && newSection) {
+                  const dishesData = dishes.map(d => ({
+                      menu_section_id: newSection.id,
+                      dish_id: d.dish_id,
+                      cena: d.cena,
+                      kolejnosc: d.kolejnosc
+                  }));
+                  
+                  await supabase
+                      .from('menu_section_dishes')
+                      .insert(dishesData);
+              }
+          }
+      }
+      
+      res.status(201).json(newCard);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/menu-cards/:id/sections - Sekcje karty z daniami
+app.get('/api/menu-cards/:id/sections', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data: sections, error } = await supabase
+          .from('menu_sections')
+          .select('*')
+          .eq('menu_card_id', id)
+          .order('kolejnosc');
+      
+      if (error) throw error;
+      
+      // Dla każdej sekcji pobierz dania
+      for (const section of sections) {
+          const { data: dishes } = await supabase
+              .from('menu_section_dishes')
+              .select(`
+                  *,
+                  dishes (
+                      id,
+                      nazwa,
+                      nazwa_w_karcie,
+                      opis
+                  )
+              `)
+              .eq('menu_section_id', section.id)
+              .order('kolejnosc');
+          
+          section.dishes = dishes || [];
+      }
+      
+      res.json(sections);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/menu-cards/:id/sections - Dodaj sekcję
+app.post('/api/menu-cards/:id/sections', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { tytul, show_descriptions } = req.body;
+      
+      const { data, error } = await supabase
+          .from('menu_sections')
+          .insert([{
+              menu_card_id: id,
+              tytul: tytul || null,
+              show_descriptions: show_descriptions || false,
+              kolejnosc: 0
+          }])
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.status(201).json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/menu-sections/:id - Edytuj sekcję
+app.put('/api/menu-sections/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { tytul, show_descriptions } = req.body;
+      
+      const { data, error } = await supabase
+          .from('menu_sections')
+          .update({ tytul, show_descriptions })
+          .eq('id', id)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/menu-sections/:id - Usuń sekcję
+app.delete('/api/menu-sections/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { error } = await supabase
+          .from('menu_sections')
+          .delete()
+          .eq('id', id);
+      
+      if (error) throw error;
+      
+      res.json({ message: 'Sekcja usunięta' });
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/menu-sections/:id/dishes - Dodaj danie do sekcji
+app.post('/api/menu-sections/:id/dishes', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { dish_id, cena } = req.body;
+      
+      const { data, error } = await supabase
+          .from('menu_section_dishes')
+          .insert([{
+              menu_section_id: id,
+              dish_id,
+              cena: cena || null,
+              kolejnosc: 0
+          }])
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.status(201).json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// PATCH /api/menu-section-dishes/:id - Edytuj cenę dania
+app.patch('/api/menu-section-dishes/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { cena } = req.body;
+      
+      const { data, error } = await supabase
+          .from('menu_section_dishes')
+          .update({ cena })
+          .eq('id', id)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/menu-section-dishes/:id - Usuń danie z sekcji
+app.delete('/api/menu-section-dishes/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { error } = await supabase
+          .from('menu_section_dishes')
+          .delete()
+          .eq('id', id);
+      
+      if (error) throw error;
+      
+      res.json({ message: 'Danie usunięte' });
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+console.log('✅ Endpointy Menu Cards załadowane pomyślnie');
 // Start serwera
 app.listen(3000, () => console.log('Serwer działa na http://localhost:3000'));
