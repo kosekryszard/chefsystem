@@ -2283,21 +2283,29 @@ app.get('/api/menu-cards/:id/sections', async (req, res) => {
       
       // Dla każdej sekcji pobierz dania
       for (const section of sections) {
-          const { data: dishes } = await supabase
+          // Najpierw pobierz menu_section_dishes
+          const { data: menuDishes } = await supabase
               .from('menu_section_dishes')
-              .select(`
-                  *,
-                  dishes (
-                      id,
-                      nazwa,
-                      nazwa_w_karcie,
-                      opis
-                  )
-              `)
+              .select('*')
               .eq('menu_section_id', section.id)
               .order('kolejnosc');
           
-          section.dishes = dishes || [];
+          // Dla każdego menu_dish pobierz szczegóły dania
+          section.dishes = [];
+          for (const menuDish of menuDishes || []) {
+              const { data: dish } = await supabase
+                  .from('dishes')
+                  .select('id, nazwa, nazwa_w_karcie, opis')
+                  .eq('id', menuDish.dish_id)
+                  .single();
+              
+              if (dish) {
+                  section.dishes.push({
+                      ...menuDish,
+                      dishes: dish
+                  });
+              }
+          }
       }
       
       res.json(sections);
@@ -2306,7 +2314,6 @@ app.get('/api/menu-cards/:id/sections', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
 // POST /api/menu-cards/:id/sections - Dodaj sekcję
 app.post('/api/menu-cards/:id/sections', async (req, res) => {
   try {
