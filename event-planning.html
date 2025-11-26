@@ -438,6 +438,7 @@
             </div>
             <div style="padding: 20px;">
                 <form id="sectionForm" onsubmit="saveSection(event)">
+                    <input type="hidden" id="sectionId">
                     <input type="hidden" id="sectionDayId">
                     
                     <div class="form-group">
@@ -834,23 +835,20 @@
 </button>
                         </div>
                     </div>
-                    <div class="dishes-list">
-                        ${dishes.length === 0 ? '<p style="color: #999; font-size: 12px;">Brak dań</p>' : ''}
-                        ${dishes.map(dish => `
-                            <div class="dish-item">
-                                <div>
-                                    <div class="dish-name">${dish.dishes.nazwa}</div>
-                                    <div class="dish-portions">${dish.liczba_porcji} porcji</div>
-                                </div>
-                              <button class="btn btn-secondary btn-small" onclick="editDish(${dish.id})" title="Edytuj porcje">
-    ✏️
-</button>
-<button class="btn btn-danger btn-small" onclick="deleteDish(${dish.id})">
-    🗑️
-</button>
-                            </div>
-                        `).join('')}
-                    </div>
+                    <div class="dish-item">
+    <div>
+        <div class="dish-name">${dish.dishes.nazwa}</div>
+        <div class="dish-portions">${dish.liczba_porcji} porcji</div>
+    </div>
+    <div style="display: flex; gap: 5px;">
+        <button class="btn btn-secondary btn-small" onclick="editDish(${dish.id})" title="Edytuj porcje">
+            ✏️
+        </button>
+        <button class="btn btn-danger btn-small" onclick="deleteDish(${dish.id})">
+            🗑️
+        </button>
+    </div>
+</div>
                 </div>
             `;
         }
@@ -880,8 +878,10 @@
         
         function openAddSectionModal(dayId) {
             document.getElementById('sectionForm').reset();
+            document.getElementById('sectionId').value = ''; // Reset ID
             document.getElementById('sectionDayId').value = dayId;
             document.getElementById('sectionNazwaCustom').style.display = 'none';
+            document.querySelector('#sectionModal h2').textContent = 'Dodaj sekcję';
             document.getElementById('sectionModal').style.display = 'flex';
         }
 
@@ -896,38 +896,49 @@
         }
 
         async function saveSection(e) {
-            e.preventDefault();
-            
-            const dayId = document.getElementById('sectionDayId').value;
-            const nazwaSelect = document.getElementById('sectionNazwa').value;
-            const nazwaCustom = document.getElementById('sectionNazwaCustom').value;
-            
-            const data = {
-                nazwa: nazwaSelect === 'custom' ? nazwaCustom : nazwaSelect,
-                godzina_start: document.getElementById('sectionGodzinaStart').value || null,
-                godzina_koniec: document.getElementById('sectionGodzinaKoniec').value || null,
-                rodzaj_serwisu: document.getElementById('sectionSerwis').value || null,
-                liczba_porcji: parseInt(document.getElementById('sectionPorcje').value) || null,
-                kolejnosc: 1
-            };
-            
-            try {
-                const response = await fetch(`/api/event-days/${dayId}/sections`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                if (!response.ok) throw new Error('Błąd zapisu');
-                
-                await loadSectionsAndDishes();
-                renderTimeline();
-                closeSectionModal();
-            } catch (error) {
-                console.error('Error:', error);
-                alert('❌ Błąd zapisu sekcji');
-            }
+    e.preventDefault();
+    
+    const sectionId = document.getElementById('sectionId').value;
+    const dayId = document.getElementById('sectionDayId').value;
+    const nazwaSelect = document.getElementById('sectionNazwa').value;
+    const nazwaCustom = document.getElementById('sectionNazwaCustom').value;
+    
+    const data = {
+        nazwa: nazwaSelect === 'custom' ? nazwaCustom : nazwaSelect,
+        godzina_start: document.getElementById('sectionGodzinaStart').value || null,
+        godzina_koniec: document.getElementById('sectionGodzinaKoniec').value || null,
+        rodzaj_serwisu: document.getElementById('sectionSerwis').value || null,
+        liczba_porcji: parseInt(document.getElementById('sectionPorcje').value) || null,
+        kolejnosc: 1
+    };
+    
+    try {
+        let response;
+        if (sectionId) {
+            // Edycja
+            response = await fetch(`/api/event-sections/${sectionId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        } else {
+            // Dodawanie
+            response = await fetch(`/api/event-days/${dayId}/sections`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
         }
+        
+        if (!response.ok) throw new Error('Błąd zapisywania sekcji');
+        
+        closeSectionModal();
+        await loadEventData();
+    } catch (error) {
+        console.error(error);
+        alert('❌ Błąd zapisywania sekcji');
+    }
+}
 
         async function deleteSection(id) {
             if (!confirm('Usunąć sekcję wraz z daniami?')) return;
@@ -1506,18 +1517,34 @@ document.addEventListener('click', (e) => {
     }
 });
 // Edycja sekcji
+// Edycja sekcji
 async function editSection(sectionId) {
     const section = sectionsData.find(s => s.id === sectionId);
     if (!section) return;
     
     document.getElementById('sectionId').value = section.id;
-    document.getElementById('sectionNazwa').value = section.nazwa;
-    document.getElementById('sectionStart').value = section.godzina_start || '';
-    document.getElementById('sectionEnd').value = section.godzina_koniec || '';
+    document.getElementById('sectionDayId').value = section.event_day_id;
+    
+    // Ustaw nazwę
+    const nazwaSelect = document.getElementById('sectionNazwa');
+    const customInput = document.getElementById('sectionNazwaCustom');
+    const presetNames = ['Śniadanie', 'Ciepły posiłek', 'Zimna płyta'];
+    
+    if (presetNames.includes(section.nazwa)) {
+        nazwaSelect.value = section.nazwa;
+        customInput.style.display = 'none';
+    } else {
+        nazwaSelect.value = 'custom';
+        customInput.value = section.nazwa;
+        customInput.style.display = 'block';
+    }
+    
+    document.getElementById('sectionGodzinaStart').value = section.godzina_start || '';
+    document.getElementById('sectionGodzinaKoniec').value = section.godzina_koniec || '';
     document.getElementById('sectionSerwis').value = section.rodzaj_serwisu || '';
     document.getElementById('sectionPorcje').value = section.liczba_porcji || '';
     
-    document.getElementById('sectionModalTitle').textContent = 'Edytuj sekcję';
+    document.querySelector('#sectionModal h2').textContent = 'Edytuj sekcję';
     document.getElementById('sectionModal').style.display = 'flex';
 }
 

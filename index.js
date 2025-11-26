@@ -2058,6 +2058,27 @@ app.patch('/api/event-section-dishes/:id', async (req, res) => {
   }
 });
 
+// PUT /api/event-sections/:id - Edytuj sekcję
+app.put('/api/event-sections/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { nazwa, godzina_start, godzina_koniec, rodzaj_serwisu, liczba_porcji } = req.body;
+      
+      const { data, error } = await supabase
+          .from('event_sections')
+          .update({ nazwa, godzina_start, godzina_koniec, rodzaj_serwisu, liczba_porcji })
+          .eq('id', id)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
 console.log('✅ Endpointy Events załadowane pomyślnie');
 
 // Start serwera
