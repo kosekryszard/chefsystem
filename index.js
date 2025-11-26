@@ -2373,7 +2373,33 @@ app.delete('/api/menu-sections/:id', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
+// GET /api/menu-sections/:id/dishes - Dania w sekcji
+app.get('/api/menu-sections/:id/dishes', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .from('menu_section_dishes')
+          .select(`
+              *,
+              dishes (
+                  id,
+                  nazwa,
+                  nazwa_w_karcie,
+                  opis
+              )
+          `)
+          .eq('menu_section_id', id)
+          .order('kolejnosc');
+      
+      if (error) throw error;
+      
+      res.json(data || []);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
 // POST /api/menu-sections/:id/dishes - Dodaj danie do sekcji
 app.post('/api/menu-sections/:id/dishes', async (req, res) => {
   try {

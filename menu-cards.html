@@ -165,18 +165,18 @@
 
         /* Dropdown status */
         .status-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            margin-top: 5px;
-            background: white;
-            border: 2px solid #D4AF37;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            display: none;
-            z-index: 1000;
-            min-width: 150px;
-        }
+    position: absolute;
+    bottom: 100%;  /* Zmień z top: 100% */
+    right: 0;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    z-index: 1000;
+    min-width: 150px;
+    margin-bottom: 5px;  /* Dodaj */
+}
+        
         .status-dropdown.show {
             display: block;
         }
