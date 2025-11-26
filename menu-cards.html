@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chefsystent - Karty Menu</title>
+    <link rel="stylesheet" href="chefsystent-brand.css">
+    <link rel="icon" type="image/png" href="piktogram.png">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .content { padding: 30px; }
+        
+        /* Karty menu */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .menu-card {
+            background: white;
+            border: 2px solid #f0f0f0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        .menu-card:hover {
+            border-color: #D4AF37;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+            transform: translateY(-3px);
+        }
+        .menu-card h3 {
+            color: #0A1F44;
+            margin-bottom: 10px;
+        }
+        .card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .card-info-row {
+            display: flex;
+            gap: 10px;
+        }
+        .card-info-row strong {
+            min-width: 100px;
+            color: #0A1F44;
+        }
+        .card-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .status-stała { background: #e8f5e9; color: #388e3c; }
+        .status-sezonowa { background: #fff3e0; color: #e65100; }
+        .status-eventowa { background: #e3f2fd; color: #1976d2; }
+        .status-robocza { background: #f0f0f0; color: #666; }
+        .status-archiwalna { background: #ffebee; color: #c62828; }
+        
+        /* Przyciski akcji */
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .action-btn {
+            flex: 0 0 auto;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        .btn-plan {
+            background: #28a745;
+            color: white;
+        }
+        .btn-plan:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        
+        .btn-edit {
+            background: #17A2B8;
+            color: white;
+        }
+        .btn-edit:hover { 
+            background: #138496;
+            transform: translateY(-2px);
+        }
+        
+        .btn-duplicate {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-duplicate:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .btn-status {
+            background: #1a3a6b;
+            color: white;
+            position: relative;
+        }
+        .btn-status:hover {
+            background: #0A1F44;
+            transform: translateY(-2px);
+        }
+        
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-delete:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        /* Filtry */
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 8px 20px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .filter-btn:hover {
+            border-color: #D4AF37;
+        }
+        .filter-btn.active {
+            background: #D4AF37;
+            color: white;
+            border-color: #D4AF37;
+        }
+
+        /* Dropdown status */
+        .status-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 5px;
+            background: white;
+            border: 2px solid #D4AF37;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 1000;
+            min-width: 150px;
+        }
+        .status-dropdown.show {
+            display: block;
+        }
+        .status-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 13px;
+        }
+        .status-option:hover {
+            background: #f8f9fa;
+        }
+        .status-option:first-child {
+            border-radius: 6px 6px 0 0;
+        }
+        .status-option:last-child {
+            border-radius: 0 0 6px 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-logo">
+                <img src="LOGO_chefsystent.png" alt="Chefsystent Logo">
+            </div>
+            <p>System Zarządzania Kuchnią - Karty Menu</p>
+            
+            <nav>
+                <a href="index.html">Surowce</a>
+                <a href="recipes.html">Receptury</a>
+                <a href="dishes.html">Dania</a>
+                <a href="groups.html">Grupy</a>
+                <a href="events.html">Eventy</a>
+                <a href="menu-cards.html" class="active">Karty Menu →</a>
+            </nav>
+        </header>
+
+        <div class="content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Lista kart menu</h2>
+                <button class="btn btn-primary" onclick="openAddModal()">
+                    ➕ Dodaj kartę
+                </button>
+            </div>
+
+            <!-- Filtry -->
+            <div class="filters">
+                <button class="filter-btn active" data-status="wszystkie" onclick="filterCards('wszystkie')">Wszystkie</button>
+                <button class="filter-btn" data-status="stała" onclick="filterCards('stała')">Stałe</button>
+                <button class="filter-btn" data-status="sezonowa" onclick="filterCards('sezonowa')">Sezonowe</button>
+                <button class="filter-btn" data-status="eventowa" onclick="filterCards('eventowa')">Eventowe</button>
+                <button class="filter-btn" data-status="robocza" onclick="filterCards('robocza')">Robocze</button>
+                <button class="filter-btn" data-status="archiwalna" onclick="filterCards('archiwalna')">Archiwalne</button>
+            </div>
+
+            <!-- Lista kart -->
+            <div id="cardsGrid" class="cards-grid">
+                <p style="text-align: center; color: #999;">Ładowanie kart menu...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal dodawania/edycji karty -->
+    <div id="cardModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Dodaj kartę menu</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div style="padding: 20px;">
+                <form id="cardForm" onsubmit="saveCard(event)">
+                    <input type="hidden" id="cardId">
+
+                    <div class="form-group">
+                        <label>Nazwa karty *</label>
+                        <input type="text" id="cardNazwa" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Lokal *</label>
+                        <select id="cardLokal" required>
+                            <option value="">-- Wybierz lokal --</option>
+                            <option value="Szczelinka">Szczelinka</option>
+                            <option value="Pasterka">Pasterka</option>
+                            <option value="Stolove">Stolove</option>
+                            <option value="Szczeliniec">Szczeliniec</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select id="cardStatus" required>
+                            <option value="stała">Stała</option>
+                            <option value="sezonowa">Sezonowa</option>
+                            <option value="eventowa">Eventowa</option>
+                            <option value="robocza">Robocza</option>
+                            <option value="archiwalna">Archiwalna</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Data obowiązywania od *</label>
+                        <input type="date" id="cardDataOd" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Data obowiązywania do</label>
+                        <input type="date" id="cardDataDo">
+                        <small style="color: #666;">Pozostaw puste dla karty bezterminowej</small>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary">Zapisz</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFilter = 'wszystkie';
+        let allCards = [];
+
+        // Załaduj karty przy starcie
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCards();
+        });
+
+        // Załaduj karty
+        async function loadCards() {
+            try {
+                const url = currentFilter === 'wszystkie' 
+                    ? '/api/menu-cards' 
+                    : `/api/menu-cards?status=${currentFilter}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Błąd pobierania kart');
+                
+                allCards = await response.json();
+                renderCards();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('cardsGrid').innerHTML = 
+                    '<p style="text-align: center; color: #dc3545;">❌ Błąd ładowania kart menu</p>';
+            }
+        }
+
+        // Renderuj karty
+        function renderCards() {
+            const grid = document.getElementById('cardsGrid');
+            
+            if (allCards.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: #999;">Brak kart menu do wyświetlenia</p>';
+                return;
+            }
+
+            grid.innerHTML = allCards.map(card => {
+                const dataOd = new Date(card.data_od).toLocaleDateString('pl-PL');
+                const dataDo = card.data_do ? new Date(card.data_do).toLocaleDateString('pl-PL') : '∞';
+                
+                return `
+                    <div class="menu-card">
+                        <h3>${card.nazwa}</h3>
+                        <div class="card-info">
+                            <div class="card-info-row">
+                                <strong>Lokal:</strong>
+                                <span>${card.lokal}</span>
+                            </div>
+                            <div class="card-info-row">
+                                <strong>Obowiązuje:</strong>
+                                <span>${dataOd} - ${dataDo}</span>
+                            </div>
+                        </div>
+                        <span class="card-status status-${card.status}">${card.status}</span>
+                        
+                        <div class="action-buttons">
+                            <button class="action-btn btn-plan" onclick="openPlanning(${card.id})">
+                                📋 Planuj
+                            </button>
+                            <button class="action-btn btn-edit" onclick="editCard(${card.id})">
+                                ✏️ Edytuj
+                            </button>
+                            <button class="action-btn btn-duplicate" onclick="duplicateCard(${card.id})">
+                                📋 Duplikuj
+                            </button>
+                            <div style="position: relative;">
+                                <button class="action-btn btn-status" onclick="toggleStatusDropdown(event, ${card.id})">
+                                    🔄 Status
+                                </button>
+                                <div class="status-dropdown" id="statusDropdown${card.id}">
+                                    <div class="status-option" onclick="changeStatus(${card.id}, 'stała')">Stała</div>
+                                    <div class="status-option" onclick="changeStatus(${card.id}, 'sezonowa')">Sezonowa</div>
+                                    <div class="status-option" onclick="changeStatus(${card.id}, 'eventowa')">Eventowa</div>
+                                    <div class="status-option" onclick="changeStatus(${card.id}, 'robocza')">Robocza</div>
+                                    <div class="status-option" onclick="changeStatus(${card.id}, 'archiwalna')">Archiwalna</div>
+                                </div>
+                            </div>
+                            <button class="action-btn btn-delete" onclick="deleteCard(${card.id}, '${card.nazwa}')">
+                                🗑️ Usuń
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Filtruj karty
+        function filterCards(status) {
+            currentFilter = status;
+            
+            // Aktualizuj przyciski
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.status === status);
+            });
+            
+            loadCards();
+        }
+
+        // Otwórz modal dodawania
+        function openAddModal() {
+            document.getElementById('cardForm').reset();
+            document.getElementById('cardId').value = '';
+            document.getElementById('modalTitle').textContent = 'Dodaj kartę menu';
+            document.getElementById('cardModal').style.display = 'flex';
+        }
+
+        // Zamknij modal
+        function closeModal() {
+            document.getElementById('cardModal').style.display = 'none';
+        }
+
+        // Zapisz kartę
+        async function saveCard(e) {
+            e.preventDefault();
+            
+            const cardId = document.getElementById('cardId').value;
+            const data = {
+                nazwa: document.getElementById('cardNazwa').value,
+                lokal: document.getElementById('cardLokal').value,
+                status: document.getElementById('cardStatus').value,
+                data_od: document.getElementById('cardDataOd').value,
+                data_do: document.getElementById('cardDataDo').value || null
+            };
+            
+            try {
+                const url = cardId ? `/api/menu-cards/${cardId}` : '/api/menu-cards';
+                const method = cardId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Błąd zapisywania karty');
+                
+                closeModal();
+                await loadCards();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd zapisywania karty');
+            }
+        }
+
+        // Edytuj kartę
+        async function editCard(id) {
+            const card = allCards.find(c => c.id === id);
+            if (!card) return;
+            
+            document.getElementById('cardId').value = card.id;
+            document.getElementById('cardNazwa').value = card.nazwa;
+            document.getElementById('cardLokal').value = card.lokal;
+            document.getElementById('cardStatus').value = card.status;
+            document.getElementById('cardDataOd').value = card.data_od;
+            document.getElementById('cardDataDo').value = card.data_do || '';
+            
+            document.getElementById('modalTitle').textContent = 'Edytuj kartę menu';
+            document.getElementById('cardModal').style.display = 'flex';
+        }
+
+        // Duplikuj kartę
+        async function duplicateCard(id) {
+            if (!confirm('Czy na pewno skopiować tę kartę menu?')) return;
+            
+            try {
+                const response = await fetch(`/api/menu-cards/${id}/duplicate`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) throw new Error('Błąd duplikacji');
+                
+                await loadCards();
+                alert('✅ Karta skopiowana pomyślnie');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd kopiowania karty');
+            }
+        }
+
+        // Toggle dropdown statusu
+        function toggleStatusDropdown(event, id) {
+            event.stopPropagation();
+            
+            // Zamknij wszystkie inne dropdowny
+            document.querySelectorAll('.status-dropdown').forEach(dd => {
+                if (dd.id !== `statusDropdown${id}`) {
+                    dd.classList.remove('show');
+                }
+            });
+            
+            // Toggle tego dropdownu
+            const dropdown = document.getElementById(`statusDropdown${id}`);
+            dropdown.classList.toggle('show');
+        }
+
+        // Zmień status
+        async function changeStatus(id, newStatus) {
+            const card = allCards.find(c => c.id === id);
+            if (!card) return;
+            
+            try {
+                const response = await fetch(`/api/menu-cards/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nazwa: card.nazwa,
+                        lokal: card.lokal,
+                        status: newStatus,
+                        data_od: card.data_od,
+                        data_do: card.data_do
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Błąd zmiany statusu');
+                
+                // Zamknij dropdown
+                document.getElementById(`statusDropdown${id}`).classList.remove('show');
+                
+                await loadCards();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd zmiany statusu');
+            }
+        }
+
+        // Usuń kartę
+        async function deleteCard(id, nazwa) {
+            if (!confirm(`Czy na pewno usunąć kartę "${nazwa}"?\n\nUWAGA: Zostaną usunięte wszystkie sekcje i dania tej karty.`)) return;
+            
+            try {
+                const response = await fetch(`/api/menu-cards/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Błąd usuwania');
+                
+                await loadCards();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Błąd usuwania karty');
+            }
+        }
+
+        // Otwórz planowanie
+        function openPlanning(id) {
+            window.location.href = `menu-planning.html?id=${id}`;
+        }
+
+        // Zamknij dropdown przy kliknięciu poza
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.status-dropdown').forEach(dd => {
+                dd.classList.remove('show');
+            });
+        });
+
+        // Zamknij modal kliknięciem poza
+        window.onclick = function(event) {
+            const modal = document.getElementById('cardModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+    </script>
+</body>
+</html>
