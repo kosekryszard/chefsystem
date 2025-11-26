@@ -2378,23 +2378,30 @@ app.get('/api/menu-sections/:id/dishes', async (req, res) => {
   try {
       const { id } = req.params;
       
-      const { data, error } = await supabase
+      const { data: menuDishes, error } = await supabase
           .from('menu_section_dishes')
-          .select(`
-              *,
-              dishes (
-                  id,
-                  nazwa,
-                  nazwa_w_karcie,
-                  opis
-              )
-          `)
+          .select('*')
           .eq('menu_section_id', id)
           .order('kolejnosc');
       
       if (error) throw error;
       
-      res.json(data || []);
+      // Pobierz szczegóły dań
+      const result = [];
+      for (const menuDish of menuDishes || []) {
+          const { data: dish } = await supabase
+              .from('dishes')
+              .select('id, nazwa, nazwa_w_karcie, opis')
+              .eq('id', menuDish.dish_id)
+              .single();
+          
+          result.push({
+              ...menuDish,
+              dishes: dish
+          });
+      }
+      
+      res.json(result);
   } catch (error) {
       console.error('Error:', error);
       res.status(500).json({ error: error.message });
