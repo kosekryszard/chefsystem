@@ -330,6 +330,9 @@
             background: #fffef7;
         }
     </style>
+    <!-- Biblioteki do eksportu -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 </head>
 <body>
     <div class="container">
@@ -1193,6 +1196,306 @@ document.addEventListener('click', (e) => {
     const menu = document.getElementById('pdfMenu');
     const button = e.target.closest('button');
     if (menu.style.display === 'block' && !button?.textContent?.includes('Generuj PDF')) {
+        menu.style.display = 'none';
+    }
+});
+// ========== PDF EXPORT ==========
+
+function togglePdfMenu() {
+    const menu = document.getElementById('pdfMenu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+function generatePDF(type) {
+    togglePdfMenu();
+    
+    if (type === 'menu') exportMenuPDF();
+    else if (type === 'tasks') exportTasksPDF();
+    else if (type === 'complete') exportCompletePDF();
+}
+
+// Eksport jadłospisu
+function exportMenuPDF() {
+    const content = [];
+    
+    // Nagłówek
+    content.push({
+        text: eventData.nazwa,
+        style: 'header',
+        alignment: 'center',
+        margin: [0, 0, 0, 10]
+    });
+    
+    const dateStart = new Date(eventData.data_rozpoczecia).toLocaleDateString('pl-PL');
+    const dateEnd = new Date(eventData.data_zakonczenia).toLocaleDateString('pl-PL');
+    
+    content.push({
+        text: `${dateStart} – ${dateEnd}`,
+        alignment: 'center',
+        margin: [0, 0, 0, 5]
+    });
+    
+    content.push({
+        text: `Liczba osób: ${eventData.liczba_osob_doroslych || 0} dorosłych, ` +
+              `${eventData.liczba_dzieci_0_3 || 0} dzieci 0-3, ` +
+              `${eventData.liczba_dzieci_4_12 || 0} dzieci 4-12, ` +
+              `${eventData.liczba_dzieci_12_18 || 0} dzieci 12-18`,
+        alignment: 'center',
+        fontSize: 9,
+        color: '#666',
+        margin: [0, 0, 0, 20]
+    });
+    
+    // Dni (bez Produkcji)
+    eventDays.filter(d => d.kolejnosc >= 0).forEach(day => {
+        const daySections = sectionsData.filter(s => s.event_day_id === day.id);
+        
+        if (daySections.length === 0) return;
+        
+        content.push({
+            text: day.nazwa,
+            style: 'dayHeader',
+            margin: [0, 15, 0, 10]
+        });
+        
+        daySections.forEach(section => {
+            const dishes = section.dishes || [];
+            const timeRange = section.godzina_start || section.godzina_koniec
+                ? `${section.godzina_start || '—'} - ${section.godzina_koniec || '—'}`
+                : '';
+            
+            content.push({
+                text: section.nazwa,
+                style: 'sectionName',
+                margin: [0, 5, 0, 3]
+            });
+            
+            if (timeRange || section.rodzaj_serwisu || section.liczba_porcji) {
+                content.push({
+                    text: [
+                        timeRange ? `🕐 ${timeRange}  ` : '',
+                        section.rodzaj_serwisu ? `${section.rodzaj_serwisu}  ` : '',
+                        section.liczba_porcji ? `${section.liczba_porcji} porcji` : ''
+                    ].filter(Boolean).join(''),
+                    fontSize: 9,
+                    color: '#666',
+                    margin: [0, 0, 0, 5]
+                });
+            }
+            
+            if (dishes.length > 0) {
+                content.push({
+                    ul: dishes.map(d => `${d.dishes.nazwa} (${d.liczba_porcji} porcji)`),
+                    margin: [10, 0, 0, 10]
+                });
+            }
+        });
+    });
+    
+    const docDefinition = {
+        content,
+        styles: {
+            header: { fontSize: 18, bold: true, color: '#0A1F44' },
+            dayHeader: { fontSize: 14, bold: true, color: '#0A1F44' },
+            sectionName: { fontSize: 11, bold: true, color: '#1e3a5f' }
+        },
+        defaultStyle: { font: 'Roboto' }
+    };
+    
+    pdfMake.createPdf(docDefinition).download(`${eventData.nazwa}-jadlospis.pdf`);
+}
+
+// Eksport zadań
+function exportTasksPDF() {
+    const content = [];
+    
+    content.push({
+        text: `${eventData.nazwa} - ZADANIA`,
+        style: 'header',
+        alignment: 'center',
+        margin: [0, 0, 0, 20]
+    });
+    
+    eventDays.forEach(day => {
+        const dayTasks = tasksData.filter(t => t.event_day_id === day.id);
+        
+        if (dayTasks.length === 0) return;
+        
+        // Sortuj zadania
+        dayTasks.sort((a, b) => {
+            if (a.data_wykonania && b.data_wykonania) {
+                return new Date(a.data_wykonania) - new Date(b.data_wykonania);
+            }
+            if (a.data_wykonania) return -1;
+            if (b.data_wykonania) return 1;
+            return a.kolejnosc - b.kolejnosc;
+        });
+        
+        content.push({
+            text: day.nazwa,
+            style: 'dayHeader',
+            margin: [0, 15, 0, 10]
+        });
+        
+        content.push({
+            ol: dayTasks.map(task => {
+                let text = task.nazwa;
+                if (task.data_wykonania) {
+                    const date = new Date(task.data_wykonania).toLocaleDateString('pl-PL');
+                    text += `  (${date})`;
+                }
+                return text;
+            }),
+            margin: [10, 0, 0, 10]
+        });
+    });
+    
+    const docDefinition = {
+        content,
+        styles: {
+            header: { fontSize: 18, bold: true, color: '#0A1F44' },
+            dayHeader: { fontSize: 14, bold: true, color: '#0A1F44' }
+        },
+        defaultStyle: { font: 'Roboto' }
+    };
+    
+    pdfMake.createPdf(docDefinition).download(`${eventData.nazwa}-zadania.pdf`);
+}
+
+// Eksport kompletny
+function exportCompletePDF() {
+    const content = [];
+    
+    // Nagłówek
+    content.push({
+        text: eventData.nazwa,
+        style: 'header',
+        alignment: 'center',
+        margin: [0, 0, 0, 10]
+    });
+    
+    const dateStart = new Date(eventData.data_rozpoczecia).toLocaleDateString('pl-PL');
+    const dateEnd = new Date(eventData.data_zakonczenia).toLocaleDateString('pl-PL');
+    
+    content.push({
+        text: `${dateStart} – ${dateEnd}`,
+        alignment: 'center',
+        margin: [0, 0, 0, 5]
+    });
+    
+    content.push({
+        text: `Liczba osób: ${eventData.liczba_osob_doroslych || 0} dorosłych, ` +
+              `${eventData.liczba_dzieci_0_3 || 0} dzieci 0-3, ` +
+              `${eventData.liczba_dzieci_4_12 || 0} dzieci 4-12, ` +
+              `${eventData.liczba_dzieci_12_18 || 0} dzieci 12-18`,
+        alignment: 'center',
+        fontSize: 9,
+        color: '#666',
+        margin: [0, 0, 0, 20]
+    });
+    
+    // Dni
+    eventDays.forEach(day => {
+        const daySections = sectionsData.filter(s => s.event_day_id === day.id);
+        const dayTasks = tasksData.filter(t => t.event_day_id === day.id).sort((a, b) => {
+            if (a.data_wykonania && b.data_wykonania) {
+                return new Date(a.data_wykonania) - new Date(b.data_wykonania);
+            }
+            if (a.data_wykonania) return -1;
+            if (b.data_wykonania) return 1;
+            return a.kolejnosc - b.kolejnosc;
+        });
+        
+        content.push({
+            text: day.nazwa,
+            style: 'dayHeader',
+            margin: [0, 15, 0, 10],
+            pageBreak: day.kolejnosc > 0 ? 'before' : undefined
+        });
+        
+        // Sekcje
+        if (daySections.length > 0) {
+            content.push({
+                text: 'JADŁOSPIS',
+                style: 'subHeader',
+                margin: [0, 5, 0, 5]
+            });
+            
+            daySections.forEach(section => {
+                const dishes = section.dishes || [];
+                const timeRange = section.godzina_start || section.godzina_koniec
+                    ? `${section.godzina_start || '—'} - ${section.godzina_koniec || '—'}`
+                    : '';
+                
+                content.push({
+                    text: section.nazwa,
+                    style: 'sectionName',
+                    margin: [0, 5, 0, 3]
+                });
+                
+                if (timeRange || section.rodzaj_serwisu || section.liczba_porcji) {
+                    content.push({
+                        text: [
+                            timeRange ? `🕐 ${timeRange}  ` : '',
+                            section.rodzaj_serwisu ? `${section.rodzaj_serwisu}  ` : '',
+                            section.liczba_porcji ? `${section.liczba_porcji} porcji` : ''
+                        ].filter(Boolean).join(''),
+                        fontSize: 9,
+                        color: '#666',
+                        margin: [0, 0, 0, 5]
+                    });
+                }
+                
+                if (dishes.length > 0) {
+                    content.push({
+                        ul: dishes.map(d => `${d.dishes.nazwa} (${d.liczba_porcji} porcji)`),
+                        margin: [10, 0, 0, 10]
+                    });
+                }
+            });
+        }
+        
+        // Zadania
+        if (dayTasks.length > 0) {
+            content.push({
+                text: 'ZADANIA',
+                style: 'subHeader',
+                margin: [0, 15, 0, 5]
+            });
+            
+            content.push({
+                ol: dayTasks.map(task => {
+                    let text = task.nazwa;
+                    if (task.data_wykonania) {
+                        const date = new Date(task.data_wykonania).toLocaleDateString('pl-PL');
+                        text += `  (${date})`;
+                    }
+                    return text;
+                }),
+                margin: [10, 0, 0, 10]
+            });
+        }
+    });
+    
+    const docDefinition = {
+        content,
+        styles: {
+            header: { fontSize: 18, bold: true, color: '#0A1F44' },
+            dayHeader: { fontSize: 14, bold: true, color: '#0A1F44' },
+            subHeader: { fontSize: 12, bold: true, color: '#1e3a5f' },
+            sectionName: { fontSize: 11, bold: true, color: '#1e3a5f' }
+        },
+        defaultStyle: { font: 'Roboto' }
+    };
+    
+    pdfMake.createPdf(docDefinition).download(`${eventData.nazwa}-komplet.pdf`);
+}
+
+// Zamknij menu kliknięciem poza
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('pdfMenu');
+    const button = e.target.closest('button');
+    if (menu && menu.style.display === 'block' && !button?.textContent?.includes('Generuj PDF')) {
         menu.style.display = 'none';
     }
 });
