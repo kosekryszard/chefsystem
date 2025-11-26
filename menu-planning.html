@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chefsystent - Planer Karty Menu</title>
+    <link rel="stylesheet" href="chefsystent-brand.css">
+    <link rel="icon" type="image/png" href="piktogram.png">
+    
+    <!-- pdfmake dla eksportu PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .content { padding: 30px; }
+        
+        /* Header info */
+        .menu-info-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .info-item label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+        .info-item .value {
+            font-size: 16px;
+            color: #0A1F44;
+            font-weight: 700;
+        }
+        
+        /* Sticky actions */
+        .sticky-actions {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            z-index: 100;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        /* Sekcje */
+        .sections-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .section-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .section-card:hover {
+            border-color: #D4AF37;
+            box-shadow: 0 3px 10px rgba(212, 175, 55, 0.15);
+        }
+        
+        .section-header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0A1F44 100%);
+            padding: 15px 20px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .section-no-title {
+            font-style: italic;
+            opacity: 0.7;
+        }
+        .section-header-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .section-body {
+            padding: 20px;
+        }
+        
+        .section-show-desc {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+        .section-show-desc input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        /* Dania */
+        .dishes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .dish-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s;
+        }
+        .dish-item:hover {
+            background: #fff;
+            border-color: #D4AF37;
+            transform: translateX(5px);
+        }
+        .dish-info {
+            flex: 1;
+        }
+        .dish-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0A1F44;
+        }
+        .dish-price {
+            font-size: 14px;
+            color: #28a745;
+            font-weight: 700;
+            margin-top: 3px;
+        }
+        .dish-desc {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        .dish-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .empty-section {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-style: italic;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+        }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 {
+            color: #0A1F44;
+            margin: 0;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .close-modal:hover { color: #333; }
+        
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #0A1F44;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #D4AF37;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        /* Buttony */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        }
+        .btn-primary {
+            background: #D4AF37;
+            color: white;
+        }
+        .btn-primary:hover { background: #b8941f; }
+        .btn-secondary {
+            background: #17A2B8;
+            color: white;
+        }
+        .btn-secondary:hover { background: #138496; }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover { background: #218838; }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover { background: #c82333; }
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-cancel:hover { background: #5a6268; }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        /* PDF Dropdown */
+        .pdf-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .pdf-menu {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 101;
+            min-width: 180px;
+            margin-bottom: 5px;
+        }
+        .pdf-menu.active { display: block; }
+        .pdf-menu button {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .pdf-menu button:hover {
+            background: #f8f9fa;
+        }
+        .pdf-menu button:first-child {
+            border-radius: 6px 6px 0 0;
+        }
+        .pdf-menu button:last-child {
+            border-radius: 0 0 6px 6px;
+        }
+        
+        /* Dish preview w modalu */
+        .dish-preview {
+            margin-top: 10px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        .dish-preview p {
+            margin: 0;
+            font-size: 13px;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <!-- Header z info o karcie -->
+            <div class="menu-info-header">
+                <div class="info-item">
+                    <label>Nazwa karty</label>
+                    <div class="value" id="menuNazwa">—</div>
+                </div>
+                <div class="info-item">
+                    <label>Lokal</label>
+                    <div class="value" id="menuLokal">—</div>
+                </div>
+                <div class="info-item">
+                    <label>Status</label>
+                    <div class="value" id="menuStatus">—</div>
+                </div>
+                <div class="info-item">
+                    <label>Ważność</label>
+                    <div class="value" id="menuWaznosc">—</div>
+                </div>
+            </div>
+            
+            <!-- Sticky actions -->
+            <div class="sticky-actions">
+                <button class="btn btn-secondary" onclick="window.location.href='menu-cards.html'">
+                    ← Wróć do kart
+                </button>
+                <button class="btn btn-primary" onclick="openAddSectionModal()">
+                    ➕ Dodaj sekcję
+                </button>
+                <div class="pdf-dropdown">
+                    <button class="btn btn-success" onclick="togglePdfMenu()">
+                        📄 Generuj PDF
+                    </button>
+                    <div class="pdf-menu" id="pdfMenu">
+                        <button onclick="generatePDF('guest')">Dla gości</button>
+                        <button onclick="generatePDF('kitchen')">Dla kucharzy</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sekcje -->
+            <div id="sectionsContainer" class="sections-container">
+                <!-- Sekcje będą renderowane tutaj -->
+            </div>
+            
+            <div id="emptySections" style="display: none; text-align: center; padding: 60px; color: #999;">
+                <p style="font-size: 18px;">Brak sekcji w karcie menu</p>
+                <button class="btn btn-primary" onclick="openAddSectionModal()">
+                    ➕ Dodaj pierwszą sekcję
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: Dodaj/Edytuj sekcję -->
+    <div id="sectionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="sectionModalTitle">Dodaj sekcję</h3>
+                <button class="close-modal" onclick="closeSectionModal()">×</button>
+            </div>
+            <form id="sectionForm">
+                <div class="form-group">
+                    <label>Tytuł sekcji</label>
+                    <select id="sectionTytul" onchange="handleTytulChange()">
+                        <option value="">-- Brak tytułu --</option>
+                        <option value="Napoje">Napoje</option>
+                        <option value="Napoje zimne">Napoje zimne</option>
+                        <option value="Napoje gorące">Napoje gorące</option>
+                        <option value="Zupy">Zupy</option>
+                        <option value="Dania główne">Dania główne</option>
+                        <option value="Desery">Desery</option>
+                        <option value="Przekąski">Przekąski</option>
+                        <option value="Sałatki">Sałatki</option>
+                        <option value="custom">✏️ Własny tytuł...</option>
+                    </select>
+                </div>
+                <div class="form-group" id="customTytulGroup" style="display: none;">
+                    <label>Własny tytuł</label>
+                    <input type="text" id="sectionTytulCustom" placeholder="Wprowadź tytuł sekcji">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="sectionShowDesc"> 
+                        Pokazuj opisy dań w tej sekcji
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeSectionModal()">Anuluj</button>
+                    <button type="submit" class="btn btn-success">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal: Dodaj danie -->
+    <div id="dishModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Dodaj danie</h3>
+                <button class="close-modal" onclick="closeDishModal()">×</button>
+            </div>
+            <form id="dishForm">
+                <div class="form-group">
+                    <label>Wybierz danie</label>
+                    <select id="dishId" onchange="previewDish()" required>
+                        <option value="">-- Wybierz danie --</option>
+                    </select>
+                </div>
+                <div id="dishPreview" class="dish-preview" style="display: none;">
+                    <p id="dishOpisPreview"></p>
+                </div>
+                <div class="form-group">
+                    <label>Cena (opcjonalnie)</label>
+                    <input type="number" step="0.01" id="dishCena" placeholder="np. 25.50">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeDishModal()">Anuluj</button>
+                    <button type="submit" class="btn btn-success">Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal: Edytuj cenę -->
+    <div id="editPriceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edytuj cenę</h3>
+                <button class="close-modal" onclick="closeEditPriceModal()">×</button>
+            </div>
+            <form id="editPriceForm">
+                <div class="form-group">
+                    <label>Danie</label>
+                    <div id="editPriceDishName" style="font-weight: 600; color: #0A1F44;"></div>
+                </div>
+                <div class="form-group">
+                    <label>Nowa cena (zł)</label>
+                    <input type="number" step="0.01" id="editPriceCena" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeEditPriceModal()">Anuluj</button>
+                    <button type="submit" class="btn btn-success">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ========== ZMIENNE GLOBALNE ==========
+        let menuCardId = null;
+        let menuCardData = null;
+        let sectionsData = [];
+        let allDishes = [];
+        
+        let editingSectionId = null; // Dla edycji sekcji
+        let currentSectionId = null; // Dla dodawania dania
+        let editingPriceId = null; // Dla edycji ceny
+        
+        // ========== INIT ==========
+        window.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            menuCardId = urlParams.get('id');
+            
+            if (!menuCardId) {
+                alert('Brak ID karty menu!');
+                window.location.href = 'menu-cards.html';
+                return;
+            }
+            
+            await loadMenuCard();
+            await loadSections();
+            await loadDishes();
+            renderSections();
+        });
+        
+        // ========== ŁADOWANIE DANYCH ==========
+        async function loadMenuCard() {
+            try {
+                const response = await fetch(`/api/menu-cards/${menuCardId}`);
+                if (!response.ok) throw new Error('Nie znaleziono karty menu');
+                
+                menuCardData = await response.json();
+                
+                // Wyświetl info
+                document.getElementById('menuNazwa').textContent = menuCardData.nazwa;
+                document.getElementById('menuLokal').textContent = menuCardData.lokal;
+                document.getElementById('menuStatus').textContent = menuCardData.status;
+                
+                const dataOd = new Date(menuCardData.data_od).toLocaleDateString('pl-PL');
+                const dataDo = menuCardData.data_do ? new Date(menuCardData.data_do).toLocaleDateString('pl-PL') : 'bezterminowo';
+                document.getElementById('menuWaznosc').textContent = `${dataOd} - ${dataDo}`;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd ładowania karty menu');
+                window.location.href = 'menu-cards.html';
+            }
+        }
+        
+        async function loadSections() {
+            try {
+                const response = await fetch(`/api/menu-cards/${menuCardId}/sections`);
+                sectionsData = await response.json();
+                
+                // Dla każdej sekcji pobierz dania
+                for (const section of sectionsData) {
+                    const dishesResp = await fetch(`/api/menu-sections/${section.id}/dishes`);
+                    section.dishes = await dishesResp.json();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        async function loadDishes() {
+            try {
+                const response = await fetch('/api/dishes');
+                allDishes = await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        // ========== RENDEROWANIE ==========
+        function renderSections() {
+            const container = document.getElementById('sectionsContainer');
+            const emptyMsg = document.getElementById('emptySections');
+            
+            if (sectionsData.length === 0) {
+                container.style.display = 'none';
+                emptyMsg.style.display = 'block';
+                return;
+            }
+            
+            container.style.display = 'flex';
+            emptyMsg.style.display = 'none';
+            
+            // Sortuj po kolejności
+            sectionsData.sort((a, b) => a.kolejnosc - b.kolejnosc);
+            
+            container.innerHTML = sectionsData.map(section => createSectionCard(section)).join('');
+        }
+        
+        function createSectionCard(section) {
+            const dishes = section.dishes || [];
+            const hasTitle = section.tytul && section.tytul.trim() !== '';
+            
+            return `
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-title ${!hasTitle ? 'section-no-title' : ''}">
+                            ${hasTitle ? section.tytul : '(bez tytułu)'}
+                        </div>
+                        <div class="section-header-actions">
+                            <button class="btn btn-primary btn-small" onclick="openAddDishModal(${section.id})">
+                                ➕ Danie
+                            </button>
+                            <button class="btn btn-secondary btn-small" onclick="openEditSectionModal(${section.id})" title="Edytuj sekcję">
+                                ✏️
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="deleteSection(${section.id})">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="section-show-desc">
+                            <input type="checkbox" ${section.show_descriptions ? 'checked' : ''} 
+                                   onchange="toggleShowDescriptions(${section.id}, this.checked)">
+                            <span>Pokazuj opisy dań</span>
+                        </div>
+                        ${dishes.length === 0 ? '<div class="empty-section">Brak dań w tej sekcji</div>' : ''}
+                        <div class="dishes-list">
+                            ${dishes.map(dish => createDishItem(dish, section.show_descriptions)).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function createDishItem(dish, showDesc) {
+            const dishData = dish.dishes || {};
+            const nazwa = dishData.nazwa_w_karcie || dishData.nazwa || '—';
+            const cena = dish.cena ? `${parseFloat(dish.cena).toFixed(2)} zł` : 'Brak ceny';
+            const opis = dishData.opis || '';
+            
+            return `
+                <div class="dish-item">
+                    <div class="dish-info">
+                        <div class="dish-name">${nazwa}</div>
+                        <div class="dish-price">${cena}</div>
+                        ${showDesc && opis ? `<div class="dish-desc">${opis}</div>` : ''}
+                    </div>
+                    <div class="dish-actions">
+                        <button class="btn btn-secondary btn-small" onclick="openEditPriceModal(${dish.id}, '${nazwa.replace(/'/g, "\\'")}', ${dish.cena || 0})" title="Edytuj cenę">
+                            ✏️
+                        </button>
+                        <button class="btn btn-danger btn-small" onclick="deleteDish(${dish.id})">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // ========== SEKCJE - MODALS ==========
+        function openAddSectionModal() {
+            editingSectionId = null;
+            document.getElementById('sectionModalTitle').textContent = 'Dodaj sekcję';
+            document.getElementById('sectionForm').reset();
+            document.getElementById('customTytulGroup').style.display = 'none';
+            document.getElementById('sectionModal').classList.add('active');
+        }
+        
+        function openEditSectionModal(sectionId) {
+            editingSectionId = sectionId;
+            const section = sectionsData.find(s => s.id === sectionId);
+            if (!section) return;
+            
+            document.getElementById('sectionModalTitle').textContent = 'Edytuj sekcję';
+            
+            // Sprawdź czy tytuł jest w predefiniowanych
+            const predefinedOptions = ['Napoje', 'Napoje zimne', 'Napoje gorące', 'Zupy', 'Dania główne', 'Desery', 'Przekąski', 'Sałatki'];
+            const tytulSelect = document.getElementById('sectionTytul');
+            
+            if (!section.tytul || section.tytul === '') {
+                tytulSelect.value = '';
+            } else if (predefinedOptions.includes(section.tytul)) {
+                tytulSelect.value = section.tytul;
+            } else {
+                tytulSelect.value = 'custom';
+                document.getElementById('customTytulGroup').style.display = 'block';
+                document.getElementById('sectionTytulCustom').value = section.tytul;
+            }
+            
+            document.getElementById('sectionShowDesc').checked = section.show_descriptions;
+            document.getElementById('sectionModal').classList.add('active');
+        }
+        
+        function closeSectionModal() {
+            document.getElementById('sectionModal').classList.remove('active');
+        }
+        
+        function handleTytulChange() {
+            const select = document.getElementById('sectionTytul');
+            const customGroup = document.getElementById('customTytulGroup');
+            
+            if (select.value === 'custom') {
+                customGroup.style.display = 'block';
+                document.getElementById('sectionTytulCustom').focus();
+            } else {
+                customGroup.style.display = 'none';
+            }
+        }
+        
+        document.getElementById('sectionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const tytulSelect = document.getElementById('sectionTytul').value;
+            let tytul = null;
+            
+            if (tytulSelect === 'custom') {
+                tytul = document.getElementById('sectionTytulCustom').value.trim();
+                if (!tytul) {
+                    alert('Wprowadź tytuł sekcji');
+                    return;
+                }
+            } else if (tytulSelect !== '') {
+                tytul = tytulSelect;
+            }
+            
+            const showDesc = document.getElementById('sectionShowDesc').checked;
+            
+            const sectionData = {
+                tytul: tytul,
+                show_descriptions: showDesc,
+                kolejnosc: editingSectionId ? undefined : sectionsData.length
+            };
+            
+            try {
+                let response;
+                if (editingSectionId) {
+                    // Edycja
+                    response = await fetch(`/api/menu-sections/${editingSectionId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(sectionData)
+                    });
+                } else {
+                    // Dodawanie
+                    response = await fetch(`/api/menu-cards/${menuCardId}/sections`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(sectionData)
+                    });
+                }
+                
+                if (!response.ok) throw new Error('Błąd zapisu sekcji');
+                
+                await loadSections();
+                renderSections();
+                closeSectionModal();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd zapisu sekcji');
+            }
+        });
+        
+        async function deleteSection(sectionId) {
+            const section = sectionsData.find(s => s.id === sectionId);
+            const sectionName = section?.tytul || '(bez tytułu)';
+            
+            if (!confirm(`Czy na pewno usunąć sekcję "${sectionName}"?\n\nWszystkie dania w tej sekcji zostaną usunięte!`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/menu-sections/${sectionId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Błąd usuwania sekcji');
+                
+                await loadSections();
+                renderSections();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd usuwania sekcji');
+            }
+        }
+        
+        async function toggleShowDescriptions(sectionId, show) {
+            try {
+                const response = await fetch(`/api/menu-sections/${sectionId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ show_descriptions: show })
+                });
+                
+                if (!response.ok) throw new Error('Błąd aktualizacji');
+                
+                // Zaktualizuj lokalnie
+                const section = sectionsData.find(s => s.id === sectionId);
+                if (section) {
+                    section.show_descriptions = show;
+                    renderSections();
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd aktualizacji sekcji');
+            }
+        }
+        
+        // ========== DANIA - MODALS ==========
+        function openAddDishModal(sectionId) {
+            currentSectionId = sectionId;
+            
+            // Wypełnij select daniami
+            const dishSelect = document.getElementById('dishId');
+            dishSelect.innerHTML = '<option value="">-- Wybierz danie --</option>' +
+                allDishes.map(dish => {
+                    const nazwa = dish.nazwa_w_karcie || dish.nazwa;
+                    return `<option value="${dish.id}">${nazwa}</option>`;
+                }).join('');
+            
+            document.getElementById('dishForm').reset();
+            document.getElementById('dishPreview').style.display = 'none';
+            document.getElementById('dishModal').classList.add('active');
+        }
+        
+        function closeDishModal() {
+            document.getElementById('dishModal').classList.remove('active');
+        }
+        
+        function previewDish() {
+            const dishId = parseInt(document.getElementById('dishId').value);
+            if (!dishId) {
+                document.getElementById('dishPreview').style.display = 'none';
+                return;
+            }
+            
+            const dish = allDishes.find(d => d.id === dishId);
+            if (dish && dish.opis) {
+                document.getElementById('dishOpisPreview').textContent = dish.opis;
+                document.getElementById('dishPreview').style.display = 'block';
+            } else {
+                document.getElementById('dishPreview').style.display = 'none';
+            }
+        }
+        
+        document.getElementById('dishForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const dishId = parseInt(document.getElementById('dishId').value);
+            const cena = document.getElementById('dishCena').value;
+            
+            if (!dishId) {
+                alert('Wybierz danie');
+                return;
+            }
+            
+            const dishData = {
+                dish_id: dishId,
+                cena: cena ? parseFloat(cena) : null,
+                kolejnosc: 0 // Backend może to ignorować lub używać
+            };
+            
+            try {
+                const response = await fetch(`/api/menu-sections/${currentSectionId}/dishes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dishData)
+                });
+                
+                if (!response.ok) throw new Error('Błąd dodawania dania');
+                
+                await loadSections();
+                renderSections();
+                closeDishModal();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd dodawania dania');
+            }
+        });
+        
+        async function deleteDish(dishSectionId) {
+            if (!confirm('Czy na pewno usunąć to danie z menu?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/menu-section-dishes/${dishSectionId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Błąd usuwania dania');
+                
+                await loadSections();
+                renderSections();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd usuwania dania');
+            }
+        }
+        
+        // ========== EDYCJA CENY ==========
+        function openEditPriceModal(dishSectionId, dishName, currentPrice) {
+            editingPriceId = dishSectionId;
+            document.getElementById('editPriceDishName').textContent = dishName;
+            document.getElementById('editPriceCena').value = currentPrice || '';
+            document.getElementById('editPriceModal').classList.add('active');
+        }
+        
+        function closeEditPriceModal() {
+            document.getElementById('editPriceModal').classList.remove('active');
+        }
+        
+        document.getElementById('editPriceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newCena = parseFloat(document.getElementById('editPriceCena').value);
+            
+            try {
+                const response = await fetch(`/api/menu-section-dishes/${editingPriceId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cena: newCena })
+                });
+                
+                if (!response.ok) throw new Error('Błąd aktualizacji ceny');
+                
+                await loadSections();
+                renderSections();
+                closeEditPriceModal();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd aktualizacji ceny');
+            }
+        });
+        
+        // ========== PDF EXPORT ==========
+        function togglePdfMenu() {
+            const menu = document.getElementById('pdfMenu');
+            menu.classList.toggle('active');
+            
+            // Zamknij po kliknięciu na zewnątrz
+            if (menu.classList.contains('active')) {
+                setTimeout(() => {
+                    document.addEventListener('click', closePdfMenuOnOutsideClick);
+                }, 0);
+            }
+        }
+        
+        function closePdfMenuOnOutsideClick(e) {
+            const menu = document.getElementById('pdfMenu');
+            if (!e.target.closest('.pdf-dropdown')) {
+                menu.classList.remove('active');
+                document.removeEventListener('click', closePdfMenuOnOutsideClick);
+            }
+        }
+        
+        function generatePDF(type) {
+            const menu = document.getElementById('pdfMenu');
+            menu.classList.remove('active');
+            
+            if (type === 'guest') {
+                generateGuestPDF();
+            } else {
+                generateKitchenPDF();
+            }
+        }
+        
+        function generateGuestPDF() {
+            const content = [];
+            
+            // Header
+            content.push({
+                text: menuCardData.nazwa,
+                style: 'header',
+                margin: [0, 0, 0, 10]
+            });
+            content.push({
+                text: `${menuCardData.lokal} • ${menuCardData.status}`,
+                style: 'subheader',
+                margin: [0, 0, 0, 20]
+            });
+            
+            // Sekcje
+            for (const section of sectionsData) {
+                // Tytuł sekcji (jeśli jest)
+                if (section.tytul && section.tytul.trim()) {
+                    content.push({
+                        text: section.tytul,
+                        style: 'sectionTitle',
+                        margin: [0, 15, 0, 10]
+                    });
+                }
+                
+                // Dania
+                if (section.dishes && section.dishes.length > 0) {
+                    const dishes = section.dishes.map(dish => {
+                        const dishData = dish.dishes || {};
+                        const nazwa = dishData.nazwa_w_karcie || dishData.nazwa || '—';
+                        const cena = dish.cena ? `${parseFloat(dish.cena).toFixed(2)} zł` : '';
+                        const opis = section.show_descriptions && dishData.opis ? dishData.opis : '';
+                        
+                        const item = [
+                            {
+                                columns: [
+                                    { text: nazwa, width: '*', style: 'dishName' },
+                                    { text: cena, width: 'auto', style: 'dishPrice', alignment: 'right' }
+                                ],
+                                margin: [0, 3, 0, 0]
+                            }
+                        ];
+                        
+                        if (opis) {
+                            item.push({
+                                text: opis,
+                                style: 'dishDesc',
+                                margin: [0, 2, 0, 5]
+                            });
+                        }
+                        
+                        return item;
+                    }).flat();
+                    
+                    content.push(...dishes);
+                }
+                
+                // Separator między sekcjami
+                content.push({
+                    canvas: [{ type: 'line', x1: 0, y1: 5, x2: 515, y2: 5, lineWidth: 0.5, lineColor: '#cccccc' }],
+                    margin: [0, 10, 0, 0]
+                });
+            }
+            
+            const docDefinition = {
+                content: content,
+                styles: {
+                    header: {
+                        fontSize: 22,
+                        bold: true,
+                        color: '#0A1F44'
+                    },
+                    subheader: {
+                        fontSize: 12,
+                        color: '#666666'
+                    },
+                    sectionTitle: {
+                        fontSize: 16,
+                        bold: true,
+                        color: '#D4AF37'
+                    },
+                    dishName: {
+                        fontSize: 12,
+                        color: '#333333'
+                    },
+                    dishPrice: {
+                        fontSize: 12,
+                        bold: true,
+                        color: '#28a745'
+                    },
+                    dishDesc: {
+                        fontSize: 10,
+                        color: '#666666',
+                        italics: true
+                    }
+                },
+                pageMargins: [40, 40, 40, 40]
+            };
+            
+            pdfMake.createPdf(docDefinition).download(`${menuCardData.nazwa}_goście.pdf`);
+        }
+        
+        function generateKitchenPDF() {
+            const content = [];
+            
+            // Header
+            content.push({
+                text: `${menuCardData.nazwa} - WERSJA DLA KUCHNI`,
+                style: 'header',
+                margin: [0, 0, 0, 10]
+            });
+            content.push({
+                text: `${menuCardData.lokal} • ${menuCardData.status}`,
+                style: 'subheader',
+                margin: [0, 0, 0, 20]
+            });
+            
+            // Sekcje
+            for (const section of sectionsData) {
+                // Tytuł sekcji (jeśli jest)
+                if (section.tytul && section.tytul.trim()) {
+                    content.push({
+                        text: section.tytul,
+                        style: 'sectionTitle',
+                        margin: [0, 15, 0, 10]
+                    });
+                }
+                
+                // Dania - ZAWSZE z opisami dla kucharzy
+                if (section.dishes && section.dishes.length > 0) {
+                    const dishes = section.dishes.map(dish => {
+                        const dishData = dish.dishes || {};
+                        const nazwa = dishData.nazwa || '—'; // Rzeczywista nazwa, nie nazwa_w_karcie
+                        const cena = dish.cena ? `${parseFloat(dish.cena).toFixed(2)} zł` : '';
+                        const opis = dishData.opis || '';
+                        
+                        const item = [
+                            {
+                                columns: [
+                                    { text: nazwa, width: '*', style: 'dishName' },
+                                    { text: cena, width: 'auto', style: 'dishPrice', alignment: 'right' }
+                                ],
+                                margin: [0, 3, 0, 0]
+                            }
+                        ];
+                        
+                        if (opis) {
+                            item.push({
+                                text: opis,
+                                style: 'dishDesc',
+                                margin: [0, 2, 0, 5]
+                            });
+                        }
+                        
+                        return item;
+                    }).flat();
+                    
+                    content.push(...dishes);
+                }
+                
+                // Separator między sekcjami
+                content.push({
+                    canvas: [{ type: 'line', x1: 0, y1: 5, x2: 515, y2: 5, lineWidth: 0.5, lineColor: '#cccccc' }],
+                    margin: [0, 10, 0, 0]
+                });
+            }
+            
+            const docDefinition = {
+                content: content,
+                styles: {
+                    header: {
+                        fontSize: 20,
+                        bold: true,
+                        color: '#0A1F44'
+                    },
+                    subheader: {
+                        fontSize: 11,
+                        color: '#666666'
+                    },
+                    sectionTitle: {
+                        fontSize: 15,
+                        bold: true,
+                        color: '#D4AF37'
+                    },
+                    dishName: {
+                        fontSize: 11,
+                        color: '#333333',
+                        bold: true
+                    },
+                    dishPrice: {
+                        fontSize: 11,
+                        color: '#666666'
+                    },
+                    dishDesc: {
+                        fontSize: 9,
+                        color: '#666666',
+                        italics: true
+                    }
+                },
+                pageMargins: [40, 40, 40, 40]
+            };
+            
+            pdfMake.createPdf(docDefinition).download(`${menuCardData.nazwa}_kuchnia.pdf`);
+        }
+    </script>
+</body>
+</html>
