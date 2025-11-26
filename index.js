@@ -1872,16 +1872,17 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
               
               // Dla każdego kroku stwórz zadanie
               const tasks = recipe.instrukcja.map((krok, idx) => {
-                  const opis = typeof krok === 'string' ? krok : krok.opis;
-                  return {
-                      event_day_id: sectionData.event_day_id,
-                      nazwa: `${opis} [${recipe.nazwa}]`,
-                      zrobione: false,
-                      source_type: 'recipe',
-                      source_id: recipe.id,
-                      kolejnosc: idx + 1
-                  };
-              });
+                const opis = typeof krok === 'string' ? krok : krok.opis;
+                return {
+                    event_day_id: sectionData.event_day_id,
+                    dish_section_id: dishData.id,
+                    nazwa: `${opis} [${recipe.nazwa}]`,
+                    zrobione: false,
+                    source_type: 'recipe',
+                    source_id: recipe.id,
+                    kolejnosc: idx + 1
+                };
+            });
               
               // WSTAW ZADANIA
               const { data: insertedTasks, error: insertError } = await supabase
@@ -1931,16 +1932,11 @@ app.delete('/api/event-section-dishes/:id', async (req, res) => {
               .eq('dish_id', dishData.dish_id)
               .not('recipe_id', 'is', null);
           
-          if (components && components.length > 0 && sectionData) {
-              // Usuń zadania z receptur tego dania
-              const recipeIds = components.map(c => c.recipe_id);
-              await supabase
-                  .from('event_tasks')
-                  .delete()
-                  .eq('event_day_id', sectionData.event_day_id)
-                  .eq('source_type', 'recipe')
-                  .in('source_id', recipeIds);
-          }
+          // Usuń zadania powiązane z tym daniem (niezależnie w którym dniu są teraz)
+await supabase
+.from('event_tasks')
+.delete()
+.eq('dish_section_id', id);
       }
       
       // Usuń danie
