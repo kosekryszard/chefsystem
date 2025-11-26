@@ -826,9 +826,12 @@
                             <button class="btn btn-primary btn-small" onclick="openAddDishModal(${section.id})">
                                 ➕ Danie
                             </button>
-                            <button class="btn btn-danger btn-small" onclick="deleteSection(${section.id})">
-                                🗑️
-                            </button>
+                            <button class="btn btn-danger btn-small"<button class="btn btn-secondary btn-small" onclick="editSection(${section.id})" title="Edytuj sekcję">
+    ✏️
+</button>
+<button class="btn btn-danger btn-small" onclick="deleteSection(${section.id})">
+    🗑️
+</button>
                         </div>
                     </div>
                     <div class="dishes-list">
@@ -839,9 +842,12 @@
                                     <div class="dish-name">${dish.dishes.nazwa}</div>
                                     <div class="dish-portions">${dish.liczba_porcji} porcji</div>
                                 </div>
-                                <button class="btn btn-danger btn-small" onclick="deleteDish(${dish.id})">
-                                    🗑️
-                                </button>
+                              <button class="btn btn-secondary btn-small" onclick="editDish(${dish.id})" title="Edytuj porcje">
+    ✏️
+</button>
+<button class="btn btn-danger btn-small" onclick="deleteDish(${dish.id})">
+    🗑️
+</button>
                             </div>
                         `).join('')}
                     </div>
@@ -1499,6 +1505,55 @@ document.addEventListener('click', (e) => {
         menu.style.display = 'none';
     }
 });
+// Edycja sekcji
+async function editSection(sectionId) {
+    const section = sectionsData.find(s => s.id === sectionId);
+    if (!section) return;
+    
+    document.getElementById('sectionId').value = section.id;
+    document.getElementById('sectionNazwa').value = section.nazwa;
+    document.getElementById('sectionStart').value = section.godzina_start || '';
+    document.getElementById('sectionEnd').value = section.godzina_koniec || '';
+    document.getElementById('sectionSerwis').value = section.rodzaj_serwisu || '';
+    document.getElementById('sectionPorcje').value = section.liczba_porcji || '';
+    
+    document.getElementById('sectionModalTitle').textContent = 'Edytuj sekcję';
+    document.getElementById('sectionModal').style.display = 'flex';
+}
+
+// Edycja dania (liczba porcji)
+async function editDish(dishId) {
+    const dish = sectionsData
+        .flatMap(s => s.dishes || [])
+        .find(d => d.id === dishId);
+    
+    if (!dish) return;
+    
+    const newPortions = prompt(`Zmień liczbę porcji dla "${dish.dishes.nazwa}":`, dish.liczba_porcji);
+    
+    if (newPortions === null) return;
+    
+    const portions = parseInt(newPortions);
+    if (isNaN(portions) || portions < 1) {
+        alert('❌ Podaj prawidłową liczbę porcji');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/event-section-dishes/${dishId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ liczba_porcji: portions })
+        });
+        
+        if (!res.ok) throw new Error('Błąd aktualizacji');
+        
+        await loadEventData();
+    } catch (error) {
+        console.error(error);
+        alert('❌ Błąd aktualizacji porcji');
+    }
+}
     </script>
 </body>
 </html>

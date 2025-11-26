@@ -2036,6 +2036,27 @@ app.delete('/api/event-tasks/:id', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
+// PATCH /api/event-section-dishes/:id - Edytuj liczbę porcji
+app.patch('/api/event-section-dishes/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { liczba_porcji } = req.body;
+      
+      const { data, error } = await supabase
+          .from('event_section_dishes')
+          .update({ liczba_porcji })
+          .eq('id', id)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
 
 console.log('✅ Endpointy Events załadowane pomyślnie');
 
