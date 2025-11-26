@@ -806,52 +806,56 @@
         }
 
         function createSectionCard(section) {
-            const dishes = section.dishes || [];
-            const timeRange = section.godzina_start || section.godzina_koniec ? 
-                `${section.godzina_start || '—'} - ${section.godzina_koniec || '—'}` : '';
-            
-            return `
-                <div class="section-card">
-                    <div class="section-header">
+    const dishes = section.dishes || [];
+    const timeRange = section.godzina_start || section.godzina_koniec ?
+        `${section.godzina_start || '—'} - ${section.godzina_koniec || '—'}` : '';
+    return `
+        <div class="section-card">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">${section.nazwa}</div>
+                    ${timeRange || section.rodzaj_serwisu || section.liczba_porcji ?
+                        `<div class="section-meta">
+                            ${timeRange ? `🕐 ${timeRange}` : ''}
+                            ${section.rodzaj_serwisu ? `・${section.rodzaj_serwisu}` : ''}
+                            ${section.liczba_porcji ? `・${section.liczba_porcji} porcji` : ''}
+                        </div>` : ''
+                    }
+                </div>
+                <div style="display: flex; gap: 5px;">
+                    <button class="btn btn-primary btn-small" onclick="openAddDishModal(${section.id})">
+                        ➕ Danie
+                    </button>
+                    <button class="btn btn-secondary btn-small" onclick="editSection(${section.id})" title="Edytuj sekcję">
+                        ✏️
+                    </button>
+                    <button class="btn btn-danger btn-small" onclick="deleteSection(${section.id})">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+            <div class="dishes-list">
+                ${dishes.length === 0 ? '<p style="color: #999; font-size: 12px;">Brak dań</p>' : ''}
+                ${dishes.map(dish => `
+                    <div class="dish-item">
                         <div>
-                            <div class="section-title">${section.nazwa}</div>
-                            ${timeRange || section.rodzaj_serwisu || section.liczba_porcji ? 
-                                `<div class="section-meta">
-                                    ${timeRange ? `🕐 ${timeRange}` : ''}
-                                    ${section.rodzaj_serwisu ? `・${section.rodzaj_serwisu}` : ''}
-                                    ${section.liczba_porcji ? `・${section.liczba_porcji} porcji` : ''}
-                                </div>` : ''
-                            }
+                            <div class="dish-name">${dish.dishes.nazwa}</div>
+                            <div class="dish-portions">${dish.liczba_porcji} porcji</div>
                         </div>
                         <div style="display: flex; gap: 5px;">
-                            <button class="btn btn-primary btn-small" onclick="openAddDishModal(${section.id})">
-                                ➕ Danie
+                            <button class="btn btn-secondary btn-small" onclick="editDish(${dish.id})" title="Edytuj porcje">
+                                ✏️
                             </button>
-                            <button class="btn btn-danger btn-small"<button class="btn btn-secondary btn-small" onclick="editSection(${section.id})" title="Edytuj sekcję">
-    ✏️
-</button>
-<button class="btn btn-danger btn-small" onclick="deleteSection(${section.id})">
-    🗑️
-</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteDish(${dish.id})">
+                                🗑️
+                            </button>
                         </div>
                     </div>
-                    <div class="dish-item">
-    <div>
-        <div class="dish-name">${dish.dishes.nazwa}</div>
-        <div class="dish-portions">${dish.liczba_porcji} porcji</div>
-    </div>
-    <div style="display: flex; gap: 5px;">
-        <button class="btn btn-secondary btn-small" onclick="editDish(${dish.id})" title="Edytuj porcje">
-            ✏️
-        </button>
-        <button class="btn btn-danger btn-small" onclick="deleteDish(${dish.id})">
-            🗑️
-        </button>
-    </div>
-</div>
-                </div>
-            `;
-        }
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
 
         function createTaskItem(task) {
             return `
