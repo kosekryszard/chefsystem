@@ -593,45 +593,46 @@
         }
         
         function createSectionCard(section) {
-            const dishes = section.dishes || [];
-            const hasTitle = section.tytul && section.tytul.trim() !== '';
-            
-            return `
-                <div class="section-card">
-                    <div class="section-header">
-                        <div class="section-title ${!hasTitle ? 'section-no-title' : ''}">
-                            ${hasTitle ? section.tytul : '(bez tytułu)'}
-                        </div>
-                        <div class="section-header-actions">
-                            <button class="btn btn-primary btn-small" onclick="openAddDishModal(${section.id})">
-                                ➕ Danie
-                            </button>
-                            <button class="btn btn-secondary btn-small" onclick="openEditSectionModal(${section.id})" title="Edytuj sekcję">
-                                ✏️
-                            </button>
-                            <button class="btn btn-danger btn-small" onclick="deleteSection(${section.id})">
-                                🗑️
-                            </button>
-                        </div>
-                    </div>
-                    <div class="section-body">
-                        <div class="section-show-desc">
-                            <input type="checkbox" ${section.show_descriptions ? 'checked' : ''} 
-                                   onchange="toggleShowDescriptions(${section.id}, this.checked)">
-                            <span>Pokazuj opisy dań</span>
-                        </div>
-                        ${dishes.length === 0 ? '<div class="empty-section">Brak dań w tej sekcji</div>' : ''}
-                        <div class="dishes-list">
-                            ${dishes.map(dish => createDishItem(dish, section.show_descriptions)).join('')}
-                        </div>
-                    </div>
+    const dishes = section.dishes || [];
+    const hasTitle = section.tytul && section.tytul.trim() !== '';
+    
+    return `
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-title ${!hasTitle ? 'section-no-title' : ''}">
+                    ${hasTitle ? section.tytul : '(bez tytułu)'}
                 </div>
-            `;
-        }
+                <div class="section-header-actions">
+                    <button class="btn btn-primary btn-small" onclick="openAddDishModal(${section.id})">
+                        ➕ Danie
+                    </button>
+                    <button class="btn btn-secondary btn-small" onclick="openEditSectionModal(${section.id})" title="Edytuj sekcję">
+                        ✏️
+                    </button>
+                    <button class="btn btn-danger btn-small" onclick="deleteSection(${section.id})">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+            <div class="section-body">
+                <div class="section-show-desc">
+                    <input type="checkbox" ${section.show_descriptions ? 'checked' : ''} 
+                           onchange="toggleShowDescriptions(${section.id}, this.checked)">
+                    <span>Pokazuj opisy dań</span>
+                </div>
+                ${!Array.isArray(dishes) || dishes.length === 0 ? '<div class="empty-section">Brak dań w tej sekcji</div>' : ''}
+                <div class="dishes-list">
+                    ${Array.isArray(dishes) ? dishes.map(dish => createDishItem(dish, section.show_descriptions)).join('') : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
         
         function createDishItem(dish, showDesc) {
-            const dishData = dish.dishes || {};
-            const nazwa = dishData.nazwa_w_karcie || dishData.nazwa || '—';
+    // Backend może zwrócić dishes jako obiekt lub jako zagnieżdżone pole
+    const dishData = dish.dishes || dish.dish || {};
+    const nazwa = dishData.nazwa_w_karcie || dishData.nazwa || '—';
             const cena = dish.cena ? `${parseFloat(dish.cena).toFixed(2)} zł` : 'Brak ceny';
             const opis = dishData.opis || '';
             
