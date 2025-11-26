@@ -165,8 +165,9 @@
 
         /* Dropdown status */
         .status-dropdown {
+    display: none;  /* Domyślnie ukryty */
     position: absolute;
-    bottom: 100%;  /* Zmień z top: 100% */
+    bottom: 100%;
     right: 0;
     background: white;
     border: 2px solid #e0e0e0;
@@ -174,12 +175,11 @@
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     z-index: 1000;
     min-width: 150px;
-    margin-bottom: 5px;  /* Dodaj */
+    margin-bottom: 5px;
 }
-        
-        .status-dropdown.show {
-            display: block;
-        }
+.status-dropdown.show { 
+    display: block; 
+}
         .status-option {
             padding: 10px 15px;
             cursor: pointer;

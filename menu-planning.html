@@ -629,31 +629,33 @@
     `;
 }
         
-        function createDishItem(dish, showDesc) {
-    // Backend może zwrócić dishes jako obiekt lub jako zagnieżdżone pole
-    const dishData = dish.dishes || dish.dish || {};
-    const nazwa = dishData.nazwa_w_karcie || dishData.nazwa || '—';
-            const cena = dish.cena ? `${parseFloat(dish.cena).toFixed(2)} zł` : 'Brak ceny';
-            const opis = dishData.opis || '';
-            
-            return `
-                <div class="dish-item">
-                    <div class="dish-info">
-                        <div class="dish-name">${nazwa}</div>
-                        <div class="dish-price">${cena}</div>
-                        ${showDesc && opis ? `<div class="dish-desc">${opis}</div>` : ''}
-                    </div>
-                    <div class="dish-actions">
-                        <button class="btn btn-secondary btn-small" onclick="openEditPriceModal(${dish.id}, '${nazwa.replace(/'/g, "\\'")}', ${dish.cena || 0})" title="Edytuj cenę">
-                            ✏️
-                        </button>
-                        <button class="btn btn-danger btn-small" onclick="deleteDish(${dish.id})">
-                            🗑️
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
+function createDishItem(dish, showDesc) {
+    // Debug - sprawdź co przychodzi
+    console.log('dish:', dish);
+    
+    const dishData = dish.dishes || {};
+    const nazwa = dishData.nazwa_w_karcie || dishData.nazwa || 'Brak nazwy';
+    const cena = dish.cena ? `${parseFloat(dish.cena).toFixed(2)} zł` : 'Brak ceny';
+    const opis = dishData.opis || '';
+    
+    return `
+        <div class="dish-item">
+            <div class="dish-info">
+                <div class="dish-name">${nazwa}</div>
+                <div class="dish-price">${cena}</div>
+                ${showDesc && opis ? `<div class="dish-desc">${opis}</div>` : ''}
+            </div>
+            <div class="dish-actions">
+                <button class="btn btn-secondary btn-small" onclick="openEditPriceModal(${dish.id}, '${nazwa.replace(/'/g, "\\'")}', ${dish.cena || 0})" title="Edytuj cenę">
+                    ✏️
+                </button>
+                <button class="btn btn-danger btn-small" onclick="deleteDish(${dish.id})">
+                    🗑️
+                </button>
+            </div>
+        </div>
+    `;
+}
         
         // ========== SEKCJE - MODALS ==========
         function openAddSectionModal() {
