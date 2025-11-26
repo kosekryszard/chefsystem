@@ -386,7 +386,25 @@
                     <button class="btn btn-secondary" onclick="window.location.href='events.html'">
                         ← Wróć do eventów
                     </button>
-                    <h2 style="margin: 0;">Plan eventu</h2>
+                    <h2 style="margin: 0; flex: 1;">Plan eventu</h2>
+                    
+                    <!-- Eksport PDF -->
+                    <div style="position: relative;">
+                        <button class="btn btn-primary" onclick="togglePdfMenu()">
+                            📄 Generuj PDF
+                        </button>
+                        <div id="pdfMenu" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 5px; background: white; border: 2px solid #D4AF37; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 200px; z-index: 1000;">
+                            <button onclick="generatePDF('menu')" style="width: 100%; text-align: left; padding: 12px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600;">
+                                📋 Jadłospis
+                            </button>
+                            <button onclick="generatePDF('tasks')" style="width: 100%; text-align: left; padding: 12px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600;">
+                                ✅ Zadania
+                            </button>
+                            <button onclick="generatePDF('complete')" style="width: 100%; text-align: left; padding: 12px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600;">
+                                📦 Kompletny
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Dzień "Produkcja" -->
@@ -1157,6 +1175,27 @@
                 }
             });
         };
+        // ========== PDF EXPORT ==========
+
+function togglePdfMenu() {
+    const menu = document.getElementById('pdfMenu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+function generatePDF(type) {
+    const url = `/api/events/${eventId}/pdf/${type}`;
+    window.open(url, '_blank');
+    togglePdfMenu();
+}
+
+// Zamknij menu kliknięciem poza
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('pdfMenu');
+    const button = e.target.closest('button');
+    if (menu.style.display === 'block' && !button?.textContent?.includes('Generuj PDF')) {
+        menu.style.display = 'none';
+    }
+});
     </script>
 </body>
 </html>
