@@ -641,6 +641,8 @@ function createDishItem(dish, showDesc) {
     const cena = dish.cena ? `${parseFloat(dish.cena).toFixed(2)} zł` : 'Brak ceny';
     const opis = dishData.opis || '';
     
+    console.log('showDesc:', showDesc, 'opis:', opis); // DEBUG
+
     return `
         <div class="dish-item">
             <div class="dish-info">
