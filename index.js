@@ -2269,9 +2269,12 @@ app.post('/api/menu-cards/:id/duplicate', async (req, res) => {
 });
 
 // GET /api/menu-cards/:id/sections - Sekcje karty z daniami
+// GET /api/menu-cards/:id/sections - Sekcje karty z daniami
 app.get('/api/menu-cards/:id/sections', async (req, res) => {
   try {
       const { id } = req.params;
+      
+      console.log('GET sections for card:', id); // DEBUG
       
       const { data: sections, error } = await supabase
           .from('menu_sections')
@@ -2281,14 +2284,20 @@ app.get('/api/menu-cards/:id/sections', async (req, res) => {
       
       if (error) throw error;
       
+      console.log('Sections found:', sections?.length); // DEBUG
+      
       // Dla każdej sekcji pobierz dania
       for (const section of sections) {
+          console.log('Getting dishes for section:', section.id); // DEBUG
+          
           // Najpierw pobierz menu_section_dishes
-          const { data: menuDishes } = await supabase
+          const { data: menuDishes, error: dishError } = await supabase
               .from('menu_section_dishes')
               .select('*')
               .eq('menu_section_id', section.id)
               .order('kolejnosc');
+          
+          console.log('menuDishes:', menuDishes?.length, 'error:', dishError); // DEBUG
           
           // Dla każdego menu_dish pobierz szczegóły dania
           section.dishes = [];
@@ -2299,6 +2308,8 @@ app.get('/api/menu-cards/:id/sections', async (req, res) => {
                   .eq('id', menuDish.dish_id)
                   .single();
               
+              console.log('Dish fetched:', dish?.id); // DEBUG
+              
               if (dish) {
                   section.dishes.push({
                       ...menuDish,
@@ -2306,6 +2317,8 @@ app.get('/api/menu-cards/:id/sections', async (req, res) => {
                   });
               }
           }
+          
+          console.log('Section dishes count:', section.dishes.length); // DEBUG
       }
       
       res.json(sections);
