@@ -641,7 +641,7 @@ function createDishItem(dish, showDesc) {
     const dishData = dish.dishes || {};
     const nazwa = dishData.nazwa_karta || dishData.nazwa || 'Brak nazwy';
     const cena = dish.cena ? `${parseFloat(dish.cena).toFixed(2)} zł` : 'Brak ceny';
-    const opis = dishData.opis || '';
+    const opis = dishData.opis_karta || '';
     
     console.log('showDesc:', showDesc, 'opis:', opis); // DEBUG
 
