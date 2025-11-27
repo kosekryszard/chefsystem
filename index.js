@@ -2304,7 +2304,7 @@ app.get('/api/menu-cards/:id/sections', async (req, res) => {
           for (const menuDish of menuDishes || []) {
               const { data: dish } = await supabase
                   .from('dishes')
-                  .select('id, nazwa, nazwa_karta, opis')
+                  .select('id, nazwa, nazwa_karta, opis_karta')
                   .eq('id', menuDish.dish_id)
                   .single();
               
@@ -2411,7 +2411,7 @@ app.get('/api/menu-sections/:id/dishes', async (req, res) => {
       for (const menuDish of menuDishes || []) {
           const { data: dish, error: dishError } = await supabase
               .from('dishes')
-              .select('id, nazwa, nazwa_karta, opis')
+              .select('id, nazwa, nazwa_karta, opis_karta')
               .eq('id', menuDish.dish_id)
               .single();
           
