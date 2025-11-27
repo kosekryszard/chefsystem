@@ -2497,6 +2497,332 @@ app.delete('/api/menu-section-dishes/:id', async (req, res) => {
   }
 });
 
+// ========== SHOPPING (ZAKUPY) ==========
+
+// GET /api/shopping/sources - Pobierz dostępne źródła do zakupów
+app.get('/api/shopping/sources', async (req, res) => {
+  try {
+      const { date_to, lokal } = req.query;
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      
+      let eventsQuery = supabase
+          .from('events')
+          .select('id, nazwa, lokal, data_rozpoczecia, data_zakonczenia, status')
+          .gte('data_zakonczenia', yesterday) // Nie wcześniej niż wczoraj
+          .neq('status', 'archiwum')
+          .order('data_rozpoczecia');
+      
+      let groupsQuery = supabase
+          .from('groups')
+          .select('id, nazwa, lokal, data_pierwszy_posilek, data_ostatni_posilek, status')
+          .gte('data_ostatni_posilek', yesterday)
+          .neq('status', 'archived')
+          .order('data_pierwszy_posilek');
+      
+      let menuCardsQuery = supabase
+          .from('menu_cards')
+          .select('id, nazwa, lokal, status, data_od, data_do')
+          .or(`data_do.is.null,data_do.gte.${today}`)
+          .in('status', ['stała', 'sezonowa', 'eventowa'])
+          .order('lokal');
+      
+      // Filtruj po dacie_do jeśli podana
+      if (date_to) {
+          eventsQuery = eventsQuery.lte('data_rozpoczecia', date_to);
+          groupsQuery = groupsQuery.lte('data_pierwszy_posilek', date_to);
+      }
+      
+      // Filtruj po lokalu jeśli podany
+      if (lokal && lokal !== 'wszystkie') {
+          eventsQuery = eventsQuery.eq('lokal', lokal);
+          groupsQuery = groupsQuery.eq('lokal', lokal);
+          menuCardsQuery = menuCardsQuery.eq('lokal', lokal);
+      }
+      
+      const [eventsRes, groupsRes, menuCardsRes] = await Promise.all([
+          eventsQuery,
+          groupsQuery,
+          menuCardsQuery
+      ]);
+      
+      if (eventsRes.error) throw eventsRes.error;
+      if (groupsRes.error) throw groupsRes.error;
+      if (menuCardsRes.error) throw menuCardsRes.error;
+      
+      // Dla eventów - pobierz dni
+      for (const event of eventsRes.data || []) {
+          const { data: days } = await supabase
+              .from('event_days')
+              .select('id, nazwa, data, kolejnosc')
+              .eq('event_id', event.id)
+              .gte('kolejnosc', 0)
+              .order('kolejnosc');
+          event.days = days || [];
+      }
+      
+      // Dla grup - generuj dni
+      for (const group of groupsRes.data || []) {
+          const days = [];
+          const start = new Date(group.data_pierwszy_posilek);
+          const end = new Date(group.data_ostatni_posilek);
+          let dayNum = 1;
+          
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+              days.push({
+                  day_number: dayNum++,
+                  date: d.toISOString().split('T')[0]
+              });
+          }
+          group.days = days;
+      }
+      
+      res.json({
+          events: eventsRes.data || [],
+          groups: groupsRes.data || [],
+          menu_cards: menuCardsRes.data || []
+      });
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/shopping/calculate - Wylicz składniki
+app.post('/api/shopping/calculate', async (req, res) => {
+  try {
+      const { sources } = req.body; // [{type, id, days, manual_amounts}]
+      const ingredients = {}; // Suma składników
+      
+      for (const source of sources) {
+          if (source.type === 'event') {
+              await calculateFromEvent(source, ingredients);
+          } else if (source.type === 'group') {
+              await calculateFromGroup(source, ingredients);
+          } else if (source.type === 'menu_card') {
+              await calculateFromMenuCard(source, ingredients);
+          }
+      }
+      
+      res.json(Object.values(ingredients));
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// Funkcja pomocnicza - wyliczenie z eventu
+async function calculateFromEvent(source, ingredients) {
+    const { id, days } = source;
+    
+    // Pobierz dane eventu
+    const { data: event } = await supabase
+        .from('events')
+        .select('id, nazwa')
+        .eq('id', id)
+        .single();
+    
+    // Dla każdego wybranego dnia
+    for (const dayData of days) {
+        // Pobierz sekcje dnia
+        const { data: sections } = await supabase
+            .from('event_sections')
+            .select('id')
+            .eq('event_day_id', dayData.day_id);
+        
+        for (const section of sections || []) {
+            // Pobierz dania w sekcji
+            const { data: dishes } = await supabase
+                .from('event_section_dishes')
+                .select(`
+                    id,
+                    dish_id,
+                    liczba_porcji,
+                    dishes (
+                        id,
+                        nazwa
+                    )
+                `)
+                .eq('event_section_id', section.id);
+            
+            for (const dishData of dishes || []) {
+                await processDish(
+                    dishData.dish_id,
+                    dishData.liczba_porcji,
+                    dishData.dishes.nazwa,
+                    'event',
+                    event.nazwa,
+                    ingredients
+                );
+            }
+        }
+    }
+}
+
+// Funkcja pomocnicza - wyliczenie z grupy
+async function calculateFromGroup(source, ingredients) {
+    const { id, days } = source;
+    
+    // Pobierz dane grupy
+    const { data: group } = await supabase
+        .from('groups')
+        .select('id, nazwa')
+        .eq('id', id)
+        .single();
+    
+    // Dla każdego wybranego dnia
+    for (const dayData of days) {
+        // Pobierz posiłki z tego dnia
+        const { data: meals } = await supabase
+            .from('group_meals')
+            .select(`
+                id,
+                dish_id,
+                liczba_porcji,
+                dishes (
+                    id,
+                    nazwa
+                )
+            `)
+            .eq('group_id', id)
+            .eq('data', dayData.date);
+        
+        for (const meal of meals || []) {
+            await processDish(
+                meal.dish_id,
+                meal.liczba_porcji,
+                meal.dishes.nazwa,
+                'group',
+                group.nazwa,
+                ingredients
+            );
+        }
+    }
+}
+
+// Funkcja pomocnicza - wyliczenie z karty menu
+async function calculateFromMenuCard(source, ingredients) {
+    const { id, manual_amounts } = source; // {dish_id: ilosc}
+    
+    // Pobierz dane karty
+    const { data: menuCard } = await supabase
+        .from('menu_cards')
+        .select('id, nazwa')
+        .eq('id', id)
+        .single();
+    
+    // Dla każdego dania z ręcznie wpisaną ilością
+    for (const [dishId, porcje] of Object.entries(manual_amounts)) {
+        const { data: dish } = await supabase
+            .from('dishes')
+            .select('id, nazwa')
+            .eq('id', parseInt(dishId))
+            .single();
+        
+        await processDish(
+            parseInt(dishId),
+            porcje,
+            dish.nazwa,
+            'menu_card',
+            menuCard.nazwa,
+            ingredients
+        );
+    }
+}
+
+// Funkcja pomocnicza - przetworz danie na składniki
+async function processDish(dishId, porcje, dishNazwa, sourceType, sourceName, ingredients) {
+    // Pobierz komponenty dania (receptury)
+    const { data: components } = await supabase
+        .from('dish_components')
+        .select(`
+            id,
+            recipe_id,
+            ilosc,
+            jm,
+            kategoria,
+            recipes (
+                id,
+                nazwa,
+                wydajnosc_ilosc,
+                wydajnosc_jm
+            )
+        `)
+        .eq('dish_id', dishId);
+    
+    for (const comp of components || []) {
+        const receptura_w_porcji = comp.ilosc; // ile receptury w 1 porcji
+        const receptura_wydajnosc = comp.recipes.wydajnosc_ilosc; // wydajność receptury
+        
+        // Przelicznik
+        const potrzebna_receptura = receptura_w_porcji * porcje;
+        const przelicznik = potrzebna_receptura / receptura_wydajnosc;
+        
+        // Pobierz składniki receptury
+        const { data: recipeIngredients } = await supabase
+            .from('recipe_ingredients')
+            .select(`
+                ingredient_id,
+                ilosc,
+                jm,
+                ingredients (
+                    id,
+                    nazwa
+                )
+            `)
+            .eq('recipe_id', comp.recipe_id);
+        
+        for (const ing of recipeIngredients || []) {
+            const potrzebna_ilosc = ing.ilosc * przelicznik;
+            
+            // Dodaj do sumy
+            if (!ingredients[ing.ingredient_id]) {
+                ingredients[ing.ingredient_id] = {
+                    id: ing.ingredient_id,
+                    nazwa: ing.ingredients.nazwa,
+                    ilosc: 0,
+                    jm: ing.jm,
+                    breakdown: {
+                        total: 0,
+                        sources: []
+                    }
+                };
+            }
+            
+            ingredients[ing.ingredient_id].ilosc += potrzebna_ilosc;
+            ingredients[ing.ingredient_id].breakdown.total += potrzebna_ilosc;
+            
+            // Znajdź lub utwórz źródło
+            let sourceEntry = ingredients[ing.ingredient_id].breakdown.sources.find(
+                s => s.type === sourceType && s.name === sourceName
+            );
+            
+            if (!sourceEntry) {
+                sourceEntry = {
+                    type: sourceType,
+                    name: sourceName,
+                    amount: 0,
+                    dishes: []
+                };
+                ingredients[ing.ingredient_id].breakdown.sources.push(sourceEntry);
+            }
+            
+            sourceEntry.amount += potrzebna_ilosc;
+            
+            // Dodaj szczegóły dania (nie dla menu_card)
+            if (sourceType !== 'menu_card') {
+                let dishEntry = sourceEntry.dishes.find(d => d.name === dishNazwa);
+                if (!dishEntry) {
+                    dishEntry = { name: dishNazwa, amount: 0 };
+                    sourceEntry.dishes.push(dishEntry);
+                }
+                dishEntry.amount += potrzebna_ilosc;
+            }
+        }
+    }
+}
+
+console.log('✅ Endpointy Shopping załadowane pomyślnie');
 
 // Start serwera
 app.listen(3000, () => console.log('Serwer działa na http://localhost:3000'));
