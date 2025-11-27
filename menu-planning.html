@@ -599,6 +599,8 @@
     const dishes = section.dishes || [];
     const hasTitle = section.tytul && section.tytul.trim() !== '';
     
+    console.log('Section:', section.tytul, 'show_descriptions:', section.show_descriptions); // DEBUG
+
     return `
         <div class="section-card">
             <div class="section-header">
