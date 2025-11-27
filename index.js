@@ -1838,7 +1838,7 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
           .eq('dish_id', dish_id)
           .not('recipe_id', 'is', null);
       // Dla każdej receptury pobierz kroki i stwórz zadania
-      console.log('📦 Components found:', components);
+    
       if (components && components.length > 0) {
           for (const comp of components) {
               const { data: recipe, error: recipeError } = await supabase
@@ -1867,9 +1867,7 @@ app.post('/api/event-sections/:sectionId/dishes', async (req, res) => {
                   continue;
               }
               
-              console.log('📝 Recipe:', recipe);
-              console.log('📋 Instrukcja:', recipe?.instrukcja);
-              
+       
               // Dla każdego kroku stwórz zadanie
               const tasks = recipe.instrukcja.map((krok, idx) => {
                 const opis = typeof krok === 'string' ? krok : krok.opis;
@@ -2079,7 +2077,7 @@ app.put('/api/event-sections/:id', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-console.log('✅ Endpointy Events załadowane pomyślnie');
+
 // ============================================
 // MENU CARDS - Karty menu/jadłospisy
 // ============================================
@@ -2274,7 +2272,7 @@ app.get('/api/menu-cards/:id/sections', async (req, res) => {
   try {
       const { id } = req.params;
       
-      console.log('GET sections for card:', id); // DEBUG
+     
       
       const { data: sections, error } = await supabase
           .from('menu_sections')
@@ -2284,11 +2282,11 @@ app.get('/api/menu-cards/:id/sections', async (req, res) => {
       
       if (error) throw error;
       
-      console.log('Sections found:', sections?.length); // DEBUG
+    
       
       // Dla każdej sekcji pobierz dania
       for (const section of sections) {
-          console.log('Getting dishes for section:', section.id); // DEBUG
+  
           
           // Najpierw pobierz menu_section_dishes
           const { data: menuDishes, error: dishError } = await supabase
@@ -2297,7 +2295,7 @@ app.get('/api/menu-cards/:id/sections', async (req, res) => {
               .eq('menu_section_id', section.id)
               .order('kolejnosc');
           
-          console.log('menuDishes:', menuDishes?.length, 'error:', dishError); // DEBUG
+    
           
           // Dla każdego menu_dish pobierz szczegóły dania
           section.dishes = [];
@@ -2308,7 +2306,7 @@ app.get('/api/menu-cards/:id/sections', async (req, res) => {
                   .eq('id', menuDish.dish_id)
                   .single();
               
-              console.log('Dish fetched:', dish?.id); // DEBUG
+           
               
               if (dish) {
                   section.dishes.push({
@@ -2318,7 +2316,7 @@ app.get('/api/menu-cards/:id/sections', async (req, res) => {
               }
           }
           
-          console.log('Section dishes count:', section.dishes.length); // DEBUG
+       
       }
       
       res.json(sections);
@@ -2499,6 +2497,6 @@ app.delete('/api/menu-section-dishes/:id', async (req, res) => {
   }
 });
 
-console.log('✅ Endpointy Menu Cards załadowane pomyślnie');
+
 // Start serwera
 app.listen(3000, () => console.log('Serwer działa na http://localhost:3000'));

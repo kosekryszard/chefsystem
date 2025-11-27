@@ -553,13 +553,13 @@
         const response = await fetch(`/api/menu-cards/${menuCardId}/sections`);
         sectionsData = await response.json();
         
-        console.log('sectionsData:', sectionsData); // DEBUG
+     
         
         // Dla każdej sekcji pobierz dania
         for (const section of sectionsData) {
             const dishesResp = await fetch(`/api/menu-sections/${section.id}/dishes`);
             section.dishes = await dishesResp.json();
-            console.log(`Section ${section.id} dishes:`, section.dishes); // DEBUG
+         
         }
     } catch (error) {
         console.error('Error:', error);
@@ -599,7 +599,7 @@
     const dishes = section.dishes || [];
     const hasTitle = section.tytul && section.tytul.trim() !== '';
     
-    console.log('Section:', section.tytul, 'show_descriptions:', section.show_descriptions); // DEBUG
+
 
     return `
         <div class="section-card">
@@ -635,15 +635,14 @@
 }
         
 function createDishItem(dish, showDesc) {
-    // Debug - sprawdź co przychodzi
-    console.log('dish:', dish);
+  
     
     const dishData = dish.dishes || {};
     const nazwa = dishData.nazwa_karta || dishData.nazwa || 'Brak nazwy';
     const cena = dish.cena ? `${parseFloat(dish.cena).toFixed(2)} zł` : 'Brak ceny';
     const opis = dishData.opis_karta || '';
     
-    console.log('showDesc:', showDesc, 'opis:', opis); // DEBUG
+    
 
     return `
         <div class="dish-item">
