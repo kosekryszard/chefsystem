@@ -2847,5 +2847,36 @@ async function processDish(dishId, porcje, dishNazwa, sourceType, sourceName, in
 
 console.log('✅ Endpointy Shopping załadowane pomyślnie');
 
+// GET /api/dishes/:id/components - Komponenty dania (receptury)
+app.get('/api/dishes/:id/components', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .from('dish_components')
+          .select(`
+              id,
+              recipe_id,
+              ilosc,
+              jm,
+              kategoria,
+              recipes (
+                  id,
+                  nazwa,
+                  wydajnosc_ilosc,
+                  wydajnosc_jm
+              )
+          `)
+          .eq('dish_id', id);
+      
+      if (error) throw error;
+      
+      res.json(data || []);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
 // Start serwera
 app.listen(3000, () => console.log('Serwer działa na http://localhost:3000'));

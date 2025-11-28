@@ -691,11 +691,13 @@ async function toggleMenuSelection(cardId) {
         }
         
         async function generateShoppingList(typ) {
-            const menu = document.getElementById('pdfMenu');
-            menu.classList.remove('active');
-            
-            // Przygotuj źródła do wysłania
-            const sources = [];
+    const menu = document.getElementById('pdfMenu');
+    menu.classList.remove('active');
+    
+    console.log('selectedSources:', selectedSources); // DEBUG
+    
+    // Przygotuj źródła do wysłania
+    const sources = [];
             
             // Eventy
             for (const [eventId, dayIds] of Object.entries(selectedSources.events)) {
