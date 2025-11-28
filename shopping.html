@@ -672,7 +672,21 @@
                 delete selectedSources.menu_cards[cardId][dishId];
             }
         }
-        
+        function updateMenuIngredientAmount(cardId, ingredientId, amount, jm) {
+    if (!selectedSources.menu_cards[cardId]) {
+        selectedSources.menu_cards[cardId] = {};
+    }
+    
+    const parsedAmount = parseFloat(amount);
+    if (parsedAmount > 0) {
+        selectedSources.menu_cards[cardId][ingredientId] = {
+            amount: parsedAmount,
+            jm: jm
+        };
+    } else {
+        delete selectedSources.menu_cards[cardId][ingredientId];
+    }
+}
         // ========== GENEROWANIE LISTY ==========
         function togglePdfMenu() {
             const menu = document.getElementById('pdfMenu');
