@@ -652,21 +652,24 @@ console.log('FINAL INGREDIENTS MAP:', ingredientsMap); // DEBUG
 console.log('FINAL INGREDIENTS ARRAY:', ingredients); // DEBUG
 
 if (ingredients.length === 0) {
-            
-            amountsList.innerHTML = ingredients.map(ing => `
-                <div class="amount-item">
-                    <label>${ing.nazwa} (${ing.jm})</label>
-                    <input type="number" min="0" step="0.001" placeholder="0" 
-                           id="menu-${cardId}-ing-${ing.id}"
-                           data-jm="${ing.jm}"
-                           onchange="updateMenuIngredientAmount(${cardId}, ${ing.id}, this.value, '${ing.jm}')">
-                </div>
-            `).join('');
-            
-        } catch (error) {
-            console.error('Error loading ingredients:', error);
-            amountsList.innerHTML = '<div class="empty-state">Błąd ładowania składników</div>';
-        }
+    amountsList.innerHTML = '<div class="empty-state">Brak składników w tej karcie</div>';
+    return;
+}
+
+amountsList.innerHTML = ingredients.map(ing => `
+    <div class="amount-item">
+        <label>${ing.nazwa} (${ing.jm})</label>
+        <input type="number" min="0" step="0.001" placeholder="0" 
+               id="menu-${cardId}-ing-${ing.id}"
+               data-jm="${ing.jm}"
+               onchange="updateMenuIngredientAmount(${cardId}, ${ing.id}, this.value, '${ing.jm}')">
+    </div>
+`).join('');
+
+} catch (error) {
+    console.error('Error loading ingredients:', error);
+    amountsList.innerHTML = '<div class="empty-state">Błąd ładowania składników</div>';
+}
         
     } else {
         amountsList.classList.remove('visible');
