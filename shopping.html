@@ -427,25 +427,37 @@
         }
         
         function toggleEventSelection(eventId) {
-            const checkbox = document.getElementById(`event-check-${eventId}`);
-            const daysList = document.getElementById(`event-days-${eventId}`);
-            const item = document.getElementById(`event-${eventId}`);
-            
-            if (checkbox.checked) {
-                daysList.classList.add('visible');
-                item.classList.add('selected');
-                selectedSources.events[eventId] = [];
-            } else {
-                daysList.classList.remove('visible');
-                item.classList.remove('selected');
-                delete selectedSources.events[eventId];
-                // Odznacz wszystkie dni
-                const event = sourcesData.events.find(e => e.id === eventId);
-                event.days.forEach(day => {
-                    document.getElementById(`event-day-${eventId}-${day.id}`).checked = false;
-                });
+    const checkbox = document.getElementById(`event-check-${eventId}`);
+    const daysList = document.getElementById(`event-days-${eventId}`);
+    const item = document.getElementById(`event-${eventId}`);
+    
+    if (checkbox.checked) {
+        daysList.classList.add('visible');
+        item.classList.add('selected');
+        selectedSources.events[eventId] = [];
+        
+        // Automatycznie zaznacz wszystkie dni
+        const event = sourcesData.events.find(e => e.id === eventId);
+        event.days.forEach(day => {
+            const dayCheckbox = document.getElementById(`event-day-${eventId}-${day.id}`);
+            if (dayCheckbox) {
+                dayCheckbox.checked = true;
+                selectedSources.events[eventId].push(day.id);
             }
-        }
+        });
+        
+    } else {
+        daysList.classList.remove('visible');
+        item.classList.remove('selected');
+        delete selectedSources.events[eventId];
+        // Odznacz wszystkie dni
+        const event = sourcesData.events.find(e => e.id === eventId);
+        event.days.forEach(day => {
+            const dayCheckbox = document.getElementById(`event-day-${eventId}-${day.id}`);
+            if (dayCheckbox) dayCheckbox.checked = false;
+        });
+    }
+}
         
         function toggleEventDay(eventId, dayId) {
             const checkbox = document.getElementById(`event-day-${eventId}-${dayId}`);
@@ -500,25 +512,37 @@
         }
         
         function toggleGroupSelection(groupId) {
-            const checkbox = document.getElementById(`group-check-${groupId}`);
-            const daysList = document.getElementById(`group-days-${groupId}`);
-            const item = document.getElementById(`group-${groupId}`);
-            
-            if (checkbox.checked) {
-                daysList.classList.add('visible');
-                item.classList.add('selected');
-                selectedSources.groups[groupId] = [];
-            } else {
-                daysList.classList.remove('visible');
-                item.classList.remove('selected');
-                delete selectedSources.groups[groupId];
-                // Odznacz wszystkie dni
-                const group = sourcesData.groups.find(g => g.id === groupId);
-                group.days.forEach((day, idx) => {
-                    document.getElementById(`group-day-${groupId}-${idx}`).checked = false;
-                });
+    const checkbox = document.getElementById(`group-check-${groupId}`);
+    const daysList = document.getElementById(`group-days-${groupId}`);
+    const item = document.getElementById(`group-${groupId}`);
+    
+    if (checkbox.checked) {
+        daysList.classList.add('visible');
+        item.classList.add('selected');
+        selectedSources.groups[groupId] = [];
+        
+        // Automatycznie zaznacz wszystkie dni
+        const group = sourcesData.groups.find(g => g.id === groupId);
+        group.days.forEach((day, idx) => {
+            const dayCheckbox = document.getElementById(`group-day-${groupId}-${idx}`);
+            if (dayCheckbox) {
+                dayCheckbox.checked = true;
+                selectedSources.groups[groupId].push(day.date);
             }
-        }
+        });
+        
+    } else {
+        daysList.classList.remove('visible');
+        item.classList.remove('selected');
+        delete selectedSources.groups[groupId];
+        // Odznacz wszystkie dni
+        const group = sourcesData.groups.find(g => g.id === groupId);
+        group.days.forEach((day, idx) => {
+            const dayCheckbox = document.getElementById(`group-day-${groupId}-${idx}`);
+            if (dayCheckbox) dayCheckbox.checked = false;
+        });
+    }
+}
         
         function toggleGroupDay(groupId, date) {
             const checkbox = document.querySelector(`#group-day-${groupId}-[data-date="${date}"]`);
