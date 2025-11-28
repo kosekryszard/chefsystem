@@ -2507,18 +2507,20 @@ app.get('/api/shopping/sources', async (req, res) => {
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
       
       let eventsQuery = supabase
-    .from('events')
-    .select('id, nazwa, lokal, data_rozpoczecia, data_zakonczenia, status')
-    .gte('data_zakonczenia', yesterday) // Kończy się nie wcześniej niż wczoraj
-    .neq('status', 'archiwum')
-    .order('data_rozpoczecia');
+      .from('events')
+      .select('id, nazwa, lokal, data_rozpoczecia, data_zakonczenia, status')
+      .not('data_zakonczenia', 'is', null) // Musi mieć datę zakończenia
+      .gte('data_zakonczenia', yesterday)
+      .neq('status', 'archiwum')
+      .order('data_rozpoczecia', { nullsFirst: false });
 
-let groupsQuery = supabase
-    .from('groups')
-    .select('id, nazwa, lokal, data_pierwszy_posilek, data_ostatni_posilek, status')
-    .gte('data_ostatni_posilek', yesterday) // Kończy się nie wcześniej niż wczoraj
-    .neq('status', 'archived')
-    .order('data_pierwszy_posilek');
+      let groupsQuery = supabase
+      .from('groups')
+      .select('id, nazwa, lokal, data_pierwszy_posilek, data_ostatni_posilek, status')
+      .not('data_ostatni_posilek', 'is', null)
+      .gte('data_ostatni_posilek', yesterday)
+      .neq('status', 'archived')
+      .order('data_pierwszy_posilek', { nullsFirst: false });
       
       let menuCardsQuery = supabase
           .from('menu_cards')
@@ -2702,32 +2704,53 @@ async function calculateFromGroup(source, ingredients) {
 
 // Funkcja pomocnicza - wyliczenie z karty menu
 async function calculateFromMenuCard(source, ingredients) {
-    const { id, manual_amounts } = source; // {dish_id: ilosc}
-    
-    // Pobierz dane karty
-    const { data: menuCard } = await supabase
-        .from('menu_cards')
-        .select('id, nazwa')
-        .eq('id', id)
-        .single();
-    
-    // Dla każdego dania z ręcznie wpisaną ilością
-    for (const [dishId, porcje] of Object.entries(manual_amounts)) {
-        const { data: dish } = await supabase
-            .from('dishes')
-            .select('id, nazwa')
-            .eq('id', parseInt(dishId))
-            .single();
-        
-        await processDish(
-            parseInt(dishId),
-            porcje,
-            dish.nazwa,
-            'menu_card',
-            menuCard.nazwa,
-            ingredients
-        );
-    }
+  const { id, manual_amounts } = source; // {ingredient_id: {amount, jm}}
+  
+  const { data: menuCard } = await supabase
+      .from('menu_cards')
+      .select('id, nazwa')
+      .eq('id', id)
+      .single();
+  
+  // Dodaj ręcznie wpisane składniki
+  for (const [ingredientId, data] of Object.entries(manual_amounts)) {
+      const { data: ingredient } = await supabase
+          .from('ingredients')
+          .select('id, nazwa')
+          .eq('id', parseInt(ingredientId))
+          .single();
+      
+      if (!ingredients[ingredientId]) {
+          ingredients[ingredientId] = {
+              id: parseInt(ingredientId),
+              nazwa: ingredient.nazwa,
+              ilosc: 0,
+              jm: data.jm,
+              breakdown: {
+                  total: 0,
+                  sources: []
+              }
+          };
+      }
+      
+      ingredients[ingredientId].ilosc += data.amount;
+      ingredients[ingredientId].breakdown.total += data.amount;
+      
+      let sourceEntry = ingredients[ingredientId].breakdown.sources.find(
+          s => s.type === 'menu_card' && s.name === menuCard.nazwa
+      );
+      
+      if (!sourceEntry) {
+          sourceEntry = {
+              type: 'menu_card',
+              name: menuCard.nazwa,
+              amount: 0
+          };
+          ingredients[ingredientId].breakdown.sources.push(sourceEntry);
+      }
+      
+      sourceEntry.amount += data.amount;
+  }
 }
 
 // Funkcja pomocnicza - przetworz danie na składniki
