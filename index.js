@@ -2663,45 +2663,49 @@ async function calculateFromEvent(source, ingredients) {
 
 // Funkcja pomocnicza - wyliczenie z grupy
 async function calculateFromGroup(source, ingredients) {
-    const { id, days } = source;
-    
-    // Pobierz dane grupy
-    const { data: group } = await supabase
-        .from('groups')
-        .select('id, nazwa')
-        .eq('id', id)
-        .single();
-    
-    // Dla każdego wybranego dnia
-    for (const dayData of days) {
-        // Pobierz posiłki z tego dnia
-        const { data: meals } = await supabase
-            .from('group_meals')
-            .select(`
-                id,
-                dish_id,
-                liczba_porcji,
-                dishes (
-                    id,
-                    nazwa
-                )
-            `)
-            .eq('group_id', id)
-            .eq('data', dayData.date);
-        
-        for (const meal of meals || []) {
-            await processDish(
-                meal.dish_id,
-                meal.liczba_porcji,
-                meal.dishes.nazwa,
-                'group',
-                group.nazwa,
-                ingredients
-            );
-        }
-    }
+  const { id, days } = source;
+  
+  console.log('calculateFromGroup - group_id:', id, 'days:', days); // DEBUG
+  
+  const { data: group } = await supabase
+      .from('groups')
+      .select('id, nazwa')
+      .eq('id', id)
+      .single();
+  
+  console.log('Group:', group); // DEBUG
+  
+  for (const dayData of days) {
+      console.log('Processing day:', dayData.date); // DEBUG
+      
+      const { data: meals } = await supabase
+          .from('group_meals')
+          .select(`
+              id,
+              dish_id,
+              liczba_porcji,
+              dishes (
+                  id,
+                  nazwa
+              )
+          `)
+          .eq('group_id', id)
+          .eq('data', dayData.date);
+      
+      console.log('Meals found:', meals?.length); // DEBUG
+      
+      for (const meal of meals || []) {
+          await processDish(
+              meal.dish_id,
+              meal.liczba_porcji,
+              meal.dishes.nazwa,
+              'group',
+              group.nazwa,
+              ingredients
+          );
+      }
+  }
 }
-
 // Funkcja pomocnicza - wyliczenie z karty menu
 async function calculateFromMenuCard(source, ingredients) {
   const { id, manual_amounts } = source; // {ingredient_id: {amount, jm}}
