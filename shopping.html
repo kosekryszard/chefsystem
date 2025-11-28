@@ -631,26 +631,27 @@ for (const section of sections) {
             console.log('Recipe ingredients:', recipe.skladniki?.length); // DEBUG
             
             // Dodaj składniki do mapy
-            for (const ing of recipe.skladniki || []) {
-                console.log('Adding ingredient:', ing.ingredients.nazwa); // DEBUG
-                if (!ingredientsMap[ing.ingredient_id]) {
-                    ingredientsMap[ing.ingredient_id] = {
-                        id: ing.ingredient_id,
-                        nazwa: ing.ingredients.nazwa,
-                        jm: ing.jm
-                    };
-                }
-            }
+            // Dodaj składniki do mapy (użyj pierwszej jednostki jaką znajdziesz)
+for (const ing of recipe.skladniki || []) {
+    const ingId = ing.ingredient_id;
+    if (!ingredientsMap[ingId]) {
+        ingredientsMap[ingId] = {
+            id: ingId,
+            nazwa: ing.ingredients.nazwa,
+            jm: ing.jm
+        };
+    }
+}
         }
     }
 }
             
-            const ingredients = Object.values(ingredientsMap).sort((a, b) => a.nazwa.localeCompare(b.nazwa));
-            
-            if (ingredients.length === 0) {
-                amountsList.innerHTML = '<div class="empty-state">Brak składników w tej karcie</div>';
-                return;
-            }
+const ingredients = Object.values(ingredientsMap).sort((a, b) => a.nazwa.localeCompare(b.nazwa, 'pl'));
+
+console.log('FINAL INGREDIENTS MAP:', ingredientsMap); // DEBUG
+console.log('FINAL INGREDIENTS ARRAY:', ingredients); // DEBUG
+
+if (ingredients.length === 0) {
             
             amountsList.innerHTML = ingredients.map(ing => `
                 <div class="amount-item">
