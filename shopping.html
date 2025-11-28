@@ -427,37 +427,25 @@
         }
         
         function toggleEventSelection(eventId) {
-    const checkbox = document.getElementById(`event-check-${eventId}`);
-    const daysList = document.getElementById(`event-days-${eventId}`);
-    const item = document.getElementById(`event-${eventId}`);
-    
-    if (checkbox.checked) {
-        daysList.classList.add('visible');
-        item.classList.add('selected');
-        selectedSources.events[eventId] = [];
-        
-        // Automatycznie zaznacz wszystkie dni
-        const event = sourcesData.events.find(e => e.id === eventId);
-        event.days.forEach(day => {
-            const dayCheckbox = document.getElementById(`event-day-${eventId}-${day.id}`);
-            if (dayCheckbox) {
-                dayCheckbox.checked = true;
-                selectedSources.events[eventId].push(day.id);
+            const checkbox = document.getElementById(`event-check-${eventId}`);
+            const daysList = document.getElementById(`event-days-${eventId}`);
+            const item = document.getElementById(`event-${eventId}`);
+            
+            if (checkbox.checked) {
+                daysList.classList.add('visible');
+                item.classList.add('selected');
+                selectedSources.events[eventId] = [];
+            } else {
+                daysList.classList.remove('visible');
+                item.classList.remove('selected');
+                delete selectedSources.events[eventId];
+                // Odznacz wszystkie dni
+                const event = sourcesData.events.find(e => e.id === eventId);
+                event.days.forEach(day => {
+                    document.getElementById(`event-day-${eventId}-${day.id}`).checked = false;
+                });
             }
-        });
-        
-    } else {
-        daysList.classList.remove('visible');
-        item.classList.remove('selected');
-        delete selectedSources.events[eventId];
-        // Odznacz wszystkie dni
-        const event = sourcesData.events.find(e => e.id === eventId);
-        event.days.forEach(day => {
-            const dayCheckbox = document.getElementById(`event-day-${eventId}-${day.id}`);
-            if (dayCheckbox) dayCheckbox.checked = false;
-        });
-    }
-}
+        }
         
         function toggleEventDay(eventId, dayId) {
             const checkbox = document.getElementById(`event-day-${eventId}-${dayId}`);
@@ -512,37 +500,25 @@
         }
         
         function toggleGroupSelection(groupId) {
-    const checkbox = document.getElementById(`group-check-${groupId}`);
-    const daysList = document.getElementById(`group-days-${groupId}`);
-    const item = document.getElementById(`group-${groupId}`);
-    
-    if (checkbox.checked) {
-        daysList.classList.add('visible');
-        item.classList.add('selected');
-        selectedSources.groups[groupId] = [];
-        
-        // Automatycznie zaznacz wszystkie dni
-        const group = sourcesData.groups.find(g => g.id === groupId);
-        group.days.forEach((day, idx) => {
-            const dayCheckbox = document.getElementById(`group-day-${groupId}-${idx}`);
-            if (dayCheckbox) {
-                dayCheckbox.checked = true;
-                selectedSources.groups[groupId].push(day.date);
+            const checkbox = document.getElementById(`group-check-${groupId}`);
+            const daysList = document.getElementById(`group-days-${groupId}`);
+            const item = document.getElementById(`group-${groupId}`);
+            
+            if (checkbox.checked) {
+                daysList.classList.add('visible');
+                item.classList.add('selected');
+                selectedSources.groups[groupId] = [];
+            } else {
+                daysList.classList.remove('visible');
+                item.classList.remove('selected');
+                delete selectedSources.groups[groupId];
+                // Odznacz wszystkie dni
+                const group = sourcesData.groups.find(g => g.id === groupId);
+                group.days.forEach((day, idx) => {
+                    document.getElementById(`group-day-${groupId}-${idx}`).checked = false;
+                });
             }
-        });
-        
-    } else {
-        daysList.classList.remove('visible');
-        item.classList.remove('selected');
-        delete selectedSources.groups[groupId];
-        // Odznacz wszystkie dni
-        const group = sourcesData.groups.find(g => g.id === groupId);
-        group.days.forEach((day, idx) => {
-            const dayCheckbox = document.getElementById(`group-day-${groupId}-${idx}`);
-            if (dayCheckbox) dayCheckbox.checked = false;
-        });
-    }
-}
+        }
         
         function toggleGroupDay(groupId, date) {
             const checkbox = document.querySelector(`#group-day-${groupId}-[data-date="${date}"]`);
@@ -562,140 +538,121 @@
         
         // ========== RENDEROWANIE KART MENU ==========
         async function renderMenuCards() {
-    const container = document.getElementById('menuCardsContainer');
-    
-    if (sourcesData.menu_cards.length === 0) {
-        container.innerHTML = '<div class="empty-state">Brak aktywnych kart menu</div>';
-        return;
-    }
-    
-    container.innerHTML = sourcesData.menu_cards.map(card => `
-        <div class="source-item" id="menu-${card.id}">
-            <div class="source-checkbox">
-                <input type="checkbox" id="menu-check-${card.id}" 
-                       onchange="toggleMenuSelection(${card.id})">
-                <label for="menu-check-${card.id}">${card.nazwa}</label>
-            </div>
-            <div class="source-meta">
-                📍 ${card.lokal} • 
-                🏷️ ${card.status}
-            </div>
-            <div class="manual-amounts" id="menu-amounts-${card.id}">
-                <div class="loading">Ładowanie dań...</div>
-            </div>
-        </div>
-    `).join('');
-}
-        
-async function toggleMenuSelection(cardId) {
-    const checkbox = document.getElementById(`menu-check-${cardId}`);
-    const amountsList = document.getElementById(`menu-amounts-${cardId}`);
-    const item = document.getElementById(`menu-${cardId}`);
-    
-    if (checkbox.checked) {
-        amountsList.classList.add('visible');
-        item.classList.add('selected');
-        selectedSources.menu_cards[cardId] = {};
-        
-        // Pobierz wszystkie unikatowe surowce z karty
-        amountsList.innerHTML = '<div class="loading">Ładowanie składników...</div>';
-        
-        try {
-            // Pobierz sekcje i dania
-            const sectionsRes = await fetch(`/api/menu-cards/${cardId}/sections`);
-            const sections = await sectionsRes.json();
+            const container = document.getElementById('menuCardsContainer');
             
-            console.log('SECTIONS:', sections); // DEBUG - DODAJ TO
+            if (sourcesData.menu_cards.length === 0) {
+                container.innerHTML = '<div class="empty-state">Brak aktywnych kart menu</div>';
+                return;
+            }
             
-            const ingredientsMap = {}; // {ingredient_id: {nazwa, jm}}
+            container.innerHTML = '<div class="loading">Ładowanie dań...</div>';
             
-            // Dla każdej sekcji
-for (const section of sections) {
-    console.log('Section:', section.tytul, 'Dishes:', section.dishes.length); // DEBUG
-    
-    for (const sectionDish of section.dishes || []) {
-        console.log('Processing dish:', sectionDish.dish_id); // DEBUG
-        
-        // Pobierz komponenty dania
-        const compRes = await fetch(`/api/dishes/${sectionDish.dish_id}/components`);
-        const components = await compRes.json();
-        console.log('Components:', components.length); // DEBUG
-        
-        // Dla każdego komponentu (receptury)
-        for (const comp of components) {
-            console.log('Processing recipe:', comp.recipe_id); // DEBUG
+            // Dla każdej karty pobierz dania
+            for (const card of sourcesData.menu_cards) {
+                const response = await fetch(`/api/menu-cards/${card.id}/sections`);
+                const sections = await response.json();
+                card.dishes = [];
+                sections.forEach(section => {
+                    card.dishes.push(...(section.dishes || []));
+                });
+            }
             
-            // Pobierz składniki receptury
-            const ingRes = await fetch(`/api/recipes/${comp.recipe_id}`);
-            const recipe = await ingRes.json();
-            console.log('Recipe ingredients:', recipe.skladniki?.length); // DEBUG
-            
-            // Dodaj składniki do mapy
-            // Dodaj składniki do mapy (użyj pierwszej jednostki jaką znajdziesz)
-for (const ing of recipe.skladniki || []) {
-    const ingId = ing.ingredient_id;
-    if (!ingredientsMap[ingId]) {
-        ingredientsMap[ingId] = {
-            id: ingId,
-            nazwa: ing.ingredients.nazwa,
-            jm: ing.jm
-        };
-    }
-}
+            container.innerHTML = sourcesData.menu_cards.map(card => `
+                <div class="source-item" id="menu-${card.id}">
+                    <div class="source-checkbox">
+                        <input type="checkbox" id="menu-check-${card.id}" 
+                               onchange="toggleMenuSelection(${card.id})">
+                        <label for="menu-check-${card.id}">${card.nazwa}</label>
+                    </div>
+                    <div class="source-meta">
+                        📍 ${card.lokal} • 
+                        🏷️ ${card.status}
+                    </div>
+                    <div class="manual-amounts" id="menu-amounts-${card.id}">
+                        ${card.dishes.map(dish => `
+                            <div class="amount-item">
+                                <label>${dish.dishes.nazwa_karta || dish.dishes.nazwa}</label>
+                                <input type="number" min="0" step="1" placeholder="0" 
+                                       id="menu-${card.id}-dish-${dish.dish_id}"
+                                       onchange="updateMenuAmount(${card.id}, ${dish.dish_id}, this.value)">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
         }
-    }
-}
+        
+        async function toggleMenuSelection(cardId) {
+            const checkbox = document.getElementById(`menu-check-${cardId}`);
+            const amountsList = document.getElementById(`menu-amounts-${cardId}`);
+            const item = document.getElementById(`menu-${cardId}`);
             
-const ingredients = Object.values(ingredientsMap).sort((a, b) => a.nazwa.localeCompare(b.nazwa, 'pl'));
-
-console.log('FINAL INGREDIENTS MAP:', ingredientsMap); // DEBUG
-console.log('FINAL INGREDIENTS ARRAY:', ingredients); // DEBUG
-
-if (ingredients.length === 0) {
-    amountsList.innerHTML = '<div class="empty-state">Brak składników w tej karcie</div>';
-    return;
-}
-
-amountsList.innerHTML = ingredients.map(ing => `
-    <div class="amount-item">
-        <label>${ing.nazwa} (${ing.jm})</label>
-        <input type="number" min="0" step="0.001" placeholder="0" 
-               id="menu-${cardId}-ing-${ing.id}"
-               data-jm="${ing.jm}"
-               onchange="updateMenuIngredientAmount(${cardId}, ${ing.id}, this.value, '${ing.jm}')">
-    </div>
-`).join('');
-
-} catch (error) {
-    console.error('Error loading ingredients:', error);
-    amountsList.innerHTML = '<div class="empty-state">Błąd ładowania składników</div>';
-}
-        
-    } else {
-        amountsList.classList.remove('visible');
-        item.classList.remove('selected');
-        delete selectedSources.menu_cards[cardId];
-        amountsList.innerHTML = '';
-    }
-}
-        
-
-        function updateMenuIngredientAmount(cardId, ingredientId, amount, jm) {
-            if (!selectedSources.menu_cards[cardId]) {
+            if (checkbox.checked) {
+                amountsList.classList.add('visible');
+                item.classList.add('selected');
                 selectedSources.menu_cards[cardId] = {};
-            }
-            
-            const parsedAmount = parseFloat(amount);
-            if (parsedAmount > 0) {
-                selectedSources.menu_cards[cardId][ingredientId] = {
-                    amount: parsedAmount,
-                    jm: jm
-                };
+                
+                amountsList.innerHTML = '<div class="loading">Ładowanie składników...</div>';
+                
+                try {
+                    const sectionsRes = await fetch(`/api/menu-cards/${cardId}/sections`);
+                    const sections = await sectionsRes.json();
+                    
+                    const ingredientsMap = {};
+                    
+                    for (const section of sections) {
+                        for (const sectionDish of section.dishes || []) {
+                            const compRes = await fetch(`/api/dishes/${sectionDish.dish_id}/components`);
+                            const components = await compRes.json();
+                            
+                            for (const comp of components) {
+                                const ingRes = await fetch(`/api/recipes/${comp.recipe_id}`);
+                                const recipe = await ingRes.json();
+                                
+                                for (const ing of recipe.skladniki || []) {
+                                    const ingId = ing.ingredient_id;
+                                    if (!ingredientsMap[ingId]) {
+                                        ingredientsMap[ingId] = {
+                                            id: ingId,
+                                            nazwa: ing.ingredients.nazwa,
+                                            jm: ing.jm
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    const ingredients = Object.values(ingredientsMap).sort((a, b) => a.nazwa.localeCompare(b.nazwa, 'pl'));
+                    
+                    if (ingredients.length === 0) {
+                        amountsList.innerHTML = '<div class="empty-state">Brak składników w tej karcie</div>';
+                        return;
+                    }
+                    
+                    amountsList.innerHTML = ingredients.map(ing => `
+                        <div class="amount-item">
+                            <label>${ing.nazwa} (${ing.jm})</label>
+                            <input type="number" min="0" step="0.001" placeholder="0" 
+                                   id="menu-${cardId}-ing-${ing.id}"
+                                   data-jm="${ing.jm}"
+                                   onchange="updateMenuIngredientAmount(${cardId}, ${ing.id}, this.value, '${ing.jm}')">
+                        </div>
+                    `).join('');
+                    
+                } catch (error) {
+                    console.error('Error loading ingredients:', error);
+                    amountsList.innerHTML = '<div class="empty-state">Błąd ładowania składników</div>';
+                }
+                
             } else {
-                delete selectedSources.menu_cards[cardId][ingredientId];
+                amountsList.classList.remove('visible');
+                item.classList.remove('selected');
+                delete selectedSources.menu_cards[cardId];
+                amountsList.innerHTML = '';
             }
         }
-
+        
         function updateMenuAmount(cardId, dishId, amount) {
             if (!selectedSources.menu_cards[cardId]) {
                 selectedSources.menu_cards[cardId] = {};
@@ -730,13 +687,11 @@ amountsList.innerHTML = ingredients.map(ing => `
         }
         
         async function generateShoppingList(typ) {
-    const menu = document.getElementById('pdfMenu');
-    menu.classList.remove('active');
-    
-    console.log('selectedSources:', selectedSources); // DEBUG
-    
-    // Przygotuj źródła do wysłania
-    const sources = [];
+            const menu = document.getElementById('pdfMenu');
+            menu.classList.remove('active');
+            
+            // Przygotuj źródła do wysłania
+            const sources = [];
             
             // Eventy
             for (const [eventId, dayIds] of Object.entries(selectedSources.events)) {
@@ -753,25 +708,24 @@ amountsList.innerHTML = ingredients.map(ing => `
                 }
             }
             
-           // Grupy
-for (const [groupId, dates] of Object.entries(selectedSources.groups)) {
-    if (dates.length > 0) {
-        sources.push({
-            type: 'group',
-            id: parseInt(groupId),
-            days: dates.map(date => ({ date }))
-        });
-    }
-}
-
+            // Grupy
+            for (const [groupId, dates] of Object.entries(selectedSources.groups)) {
+                if (dates.length > 0) {
+                    sources.push({
+                        type: 'group',
+                        id: parseInt(groupId),
+                        days: dates.map(date => ({ date }))
+                    });
+                }
+            }
             
-                        // Karty menu
+            // Karty menu
             for (const [cardId, amounts] of Object.entries(selectedSources.menu_cards)) {
                 if (Object.keys(amounts).length > 0) {
                     sources.push({
                         type: 'menu_card',
                         id: parseInt(cardId),
-                        manual_amounts: amounts // Już w formacie {ing_id: {amount, jm}}
+                        manual_amounts: amounts
                     });
                 }
             }
