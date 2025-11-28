@@ -608,31 +608,40 @@ async function toggleMenuSelection(cardId) {
             const ingredientsMap = {}; // {ingredient_id: {nazwa, jm}}
             
             // Dla każdej sekcji
-            for (const section of sections) {
-                for (const sectionDish of section.dishes || []) {
-                    // Pobierz komponenty dania
-                    const compRes = await fetch(`/api/dishes/${sectionDish.dish_id}/components`);
-                    const components = await compRes.json();
-                    
-                    // Dla każdego komponentu (receptury)
-                    for (const comp of components) {
-                        // Pobierz składniki receptury
-                        const ingRes = await fetch(`/api/recipes/${comp.recipe_id}`);
-                        const recipe = await ingRes.json();
-                        
-                        // Dodaj składniki do mapy
-                        for (const ing of recipe.skladniki || []) {
-                            if (!ingredientsMap[ing.ingredient_id]) {
-                                ingredientsMap[ing.ingredient_id] = {
-                                    id: ing.ingredient_id,
-                                    nazwa: ing.ingredients.nazwa,
-                                    jm: ing.jm
-                                };
-                            }
-                        }
-                    }
+for (const section of sections) {
+    console.log('Section:', section.tytul, 'Dishes:', section.dishes.length); // DEBUG
+    
+    for (const sectionDish of section.dishes || []) {
+        console.log('Processing dish:', sectionDish.dish_id); // DEBUG
+        
+        // Pobierz komponenty dania
+        const compRes = await fetch(`/api/dishes/${sectionDish.dish_id}/components`);
+        const components = await compRes.json();
+        console.log('Components:', components.length); // DEBUG
+        
+        // Dla każdego komponentu (receptury)
+        for (const comp of components) {
+            console.log('Processing recipe:', comp.recipe_id); // DEBUG
+            
+            // Pobierz składniki receptury
+            const ingRes = await fetch(`/api/recipes/${comp.recipe_id}`);
+            const recipe = await ingRes.json();
+            console.log('Recipe ingredients:', recipe.skladniki?.length); // DEBUG
+            
+            // Dodaj składniki do mapy
+            for (const ing of recipe.skladniki || []) {
+                console.log('Adding ingredient:', ing.ingredients.nazwa); // DEBUG
+                if (!ingredientsMap[ing.ingredient_id]) {
+                    ingredientsMap[ing.ingredient_id] = {
+                        id: ing.ingredient_id,
+                        nazwa: ing.ingredients.nazwa,
+                        jm: ing.jm
+                    };
                 }
             }
+        }
+    }
+}
             
             const ingredients = Object.values(ingredientsMap).sort((a, b) => a.nazwa.localeCompare(b.nazwa));
             
