@@ -605,6 +605,8 @@ async function toggleMenuSelection(cardId) {
             const sectionsRes = await fetch(`/api/menu-cards/${cardId}/sections`);
             const sections = await sectionsRes.json();
             
+            console.log('SECTIONS:', sections); // DEBUG - DODAJ TO
+            
             const ingredientsMap = {}; // {ingredient_id: {nazwa, jm}}
             
             // Dla każdej sekcji
