@@ -348,6 +348,8 @@
                 <a href="dishes.html">Dania</a>
                 <a href="groups.html">Grupy</a>
                 <a href="events.html">← Eventy</a>
+                <a href="menu-cards.html">Karty</a>
+                <a href="shopping.html">Zakupy</a>
             </nav>
         </header>
 
@@ -937,6 +939,8 @@
         if (!response.ok) throw new Error('Błąd zapisywania sekcji');
         
         closeSectionModal();
+        await loadSectionsAndDishes();
+        renderSections();
         await loadEventData();
     } catch (error) {
         console.error(error);

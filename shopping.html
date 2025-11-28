@@ -538,49 +538,30 @@
         
         // ========== RENDEROWANIE KART MENU ==========
         async function renderMenuCards() {
-            const container = document.getElementById('menuCardsContainer');
-            
-            if (sourcesData.menu_cards.length === 0) {
-                container.innerHTML = '<div class="empty-state">Brak aktywnych kart menu</div>';
-                return;
-            }
-            
-            container.innerHTML = '<div class="loading">Ładowanie dań...</div>';
-            
-            // Dla każdej karty pobierz dania
-            for (const card of sourcesData.menu_cards) {
-                const response = await fetch(`/api/menu-cards/${card.id}/sections`);
-                const sections = await response.json();
-                card.dishes = [];
-                sections.forEach(section => {
-                    card.dishes.push(...(section.dishes || []));
-                });
-            }
-            
-            container.innerHTML = sourcesData.menu_cards.map(card => `
-                <div class="source-item" id="menu-${card.id}">
-                    <div class="source-checkbox">
-                        <input type="checkbox" id="menu-check-${card.id}" 
-                               onchange="toggleMenuSelection(${card.id})">
-                        <label for="menu-check-${card.id}">${card.nazwa}</label>
-                    </div>
-                    <div class="source-meta">
-                        📍 ${card.lokal} • 
-                        🏷️ ${card.status}
-                    </div>
-                    <div class="manual-amounts" id="menu-amounts-${card.id}">
-                        ${card.dishes.map(dish => `
-                            <div class="amount-item">
-                                <label>${dish.dishes.nazwa_karta || dish.dishes.nazwa}</label>
-                                <input type="number" min="0" step="1" placeholder="0" 
-                                       id="menu-${card.id}-dish-${dish.dish_id}"
-                                       onchange="updateMenuAmount(${card.id}, ${dish.dish_id}, this.value)">
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('');
-        }
+    const container = document.getElementById('menuCardsContainer');
+    
+    if (sourcesData.menu_cards.length === 0) {
+        container.innerHTML = '<div class="empty-state">Brak aktywnych kart menu</div>';
+        return;
+    }
+    
+    container.innerHTML = sourcesData.menu_cards.map(card => `
+        <div class="source-item" id="menu-${card.id}">
+            <div class="source-checkbox">
+                <input type="checkbox" id="menu-check-${card.id}" 
+                       onchange="toggleMenuSelection(${card.id})">
+                <label for="menu-check-${card.id}">${card.nazwa}</label>
+            </div>
+            <div class="source-meta">
+                📍 ${card.lokal} • 
+                🏷️ ${card.status}
+            </div>
+            <div class="manual-amounts" id="menu-amounts-${card.id}">
+                <div class="loading">Ładowanie dań...</div>
+            </div>
+        </div>
+    `).join('');
+}
         
         function toggleMenuSelection(cardId) {
             const checkbox = document.getElementById(`menu-check-${cardId}`);
@@ -659,16 +640,17 @@
                 }
             }
             
-            // Grupy
-            for (const [groupId, dates] of Object.entries(selectedSources.groups)) {
-                if (dates.length > 0) {
-                    sources.push({
-                        type: 'group',
-                        id: parseInt(groupId),
-                        days: dates.map(date => ({ date }))
-                    });
-                }
-            }
+           // Grupy
+for (const [groupId, dates] of Object.entries(selectedSources.groups)) {
+    if (dates.length > 0) {
+        sources.push({
+            type: 'group',
+            id: parseInt(groupId),
+            days: dates.map(date => ({ date }))
+        });
+    }
+}
+
             
             // Karty menu
             for (const [cardId, amounts] of Object.entries(selectedSources.menu_cards)) {
