@@ -610,7 +610,7 @@
                                 const recipe = await ingRes.json();
                                 
                                 for (const ing of recipe.skladniki || []) {
-                                    const ingId = ing.ingredients_id;
+                                    const ingId = ing.ingredients.id;
                                     console.log('Processing ingredient:', ing.ingredients.nazwa, 'ID:', ingId);
                                     if (!ingredientsMap[ingId]) {
                                         ingredientsMap[ingId] = {
