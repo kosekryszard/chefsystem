@@ -2507,18 +2507,18 @@ app.get('/api/shopping/sources', async (req, res) => {
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
       
       let eventsQuery = supabase
-          .from('events')
-          .select('id, nazwa, lokal, data_rozpoczecia, data_zakonczenia, status')
-          .gte('data_zakonczenia', yesterday) // Nie wcześniej niż wczoraj
-          .neq('status', 'archiwum')
-          .order('data_rozpoczecia');
-      
-      let groupsQuery = supabase
-          .from('groups')
-          .select('id, nazwa, lokal, data_pierwszy_posilek, data_ostatni_posilek, status')
-          .gte('data_ostatni_posilek', yesterday)
-          .neq('status', 'archived')
-          .order('data_pierwszy_posilek');
+    .from('events')
+    .select('id, nazwa, lokal, data_rozpoczecia, data_zakonczenia, status')
+    .gte('data_zakonczenia', yesterday) // Kończy się nie wcześniej niż wczoraj
+    .neq('status', 'archiwum')
+    .order('data_rozpoczecia');
+
+let groupsQuery = supabase
+    .from('groups')
+    .select('id, nazwa, lokal, data_pierwszy_posilek, data_ostatni_posilek, status')
+    .gte('data_ostatni_posilek', yesterday) // Kończy się nie wcześniej niż wczoraj
+    .neq('status', 'archived')
+    .order('data_pierwszy_posilek');
       
       let menuCardsQuery = supabase
           .from('menu_cards')
