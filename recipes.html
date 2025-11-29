@@ -133,6 +133,73 @@
         margin-bottom: 0;
         padding-bottom: 0;
     }
+    .action-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.action-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-edit {
+    background: #ffc107;
+    color: #000;
+}
+
+.btn-delete {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-delete:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.status-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 150px;
+    margin-top: 4px;
+}
+
+.status-menu div {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.status-menu div:hover {
+    background: #f0f0f0;
+}
+
+.badge-status {
+    font-size: 10px;
+}
+.status-draft { background: #ffc107; color: #000; }
+.status-active { background: #28a745; }
+.status-archived { background: #6c757d; }
+.badge-in-use { background: #dc3545; }
 </style>
 </head>
 <body>
@@ -153,7 +220,20 @@
     <a href="shopping.html">Zakupy</a>
     </nav>
 </header>
-        
+<div class="filters-bar">
+    <button class="filter-btn active" data-filter="all" onclick="filterRecipes('all')">
+        Wszystkie
+    </button>
+    <button class="filter-btn" data-filter="draft" onclick="filterRecipes('draft')">
+        📝 Robocze
+    </button>
+    <button class="filter-btn" data-filter="active" onclick="filterRecipes('active')">
+        ✅ Aktywne
+    </button>
+    <button class="filter-btn" data-filter="archived" onclick="filterRecipes('archived')">
+        📦 Archiwalne
+    </button>
+</div>
         <div class="content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2>Lista receptur</h2>
@@ -271,8 +351,19 @@
     </div>
     
     <script>
-        const API_URL = 'https://chefsystem.vercel.app';
         let allRecipes = [];
+let currentFilter = 'all';
+
+function filterRecipes(filter) {
+    currentFilter = filter;
+    
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === filter);
+    });
+    
+    renderRecipes();
+}
+        const API_URL = 'https://chefsystem.vercel.app';
         let allIngredients = [];
         let currentSteps = [];
         
@@ -294,25 +385,67 @@
         }
         
         function renderRecipes() {
-            const grid = document.getElementById('recipeGrid');
+    const grid = document.getElementById('recipeGrid');
+    
+    // Filtruj według statusu
+    let filtered = allRecipes;
+    if (currentFilter !== 'all') {
+        filtered = allRecipes.filter(r => r.status === currentFilter);
+    }
+    
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div class="loading">Brak receptur do wyświetlenia</div>';
+        return;
+    }
+    
+    grid.innerHTML = filtered.map(r => `
+        <div class="recipe-card">
+            <h3>${r.nazwa}</h3>
+            <p style="color: #666; margin: 10px 0;">${r.opis || 'Brak opisu'}</p>
+            <div class="recipe-meta">
+                <span class="badge badge-type">${r.typ}</span>
+                ${r.wydajnosc_ilosc ? `<span class="badge badge-yield">${r.wydajnosc_ilosc} ${r.wydajnosc_jm}</span>` : ''}
+                ${r.weganski ? '<span class="badge badge-vegan">Vegan</span>' : ''}
+                <span class="badge badge-status status-${r.status || 'active'}">${getStatusLabel(r.status || 'active')}</span>
+                ${r.in_use ? '<span class="badge badge-in-use">🔒 W użyciu</span>' : ''}
+            </div>
             
-            if (allRecipes.length === 0) {
-                grid.innerHTML = '<div class="loading">Brak receptur. Dodaj pierwszą!</div>';
-                return;
-            }
-            
-            grid.innerHTML = allRecipes.map(r => `
-                <div class="recipe-card" onclick="showRecipeDetails(${r.id})">
-                    <h3>${r.nazwa}</h3>
-                    <p style="color: #666; margin: 10px 0;">${r.opis || 'Brak opisu'}</p>
-                    <div class="recipe-meta">
-                        <span class="badge badge-type">${r.typ}</span>
-                        ${r.wydajnosc_ilosc ? `<span class="badge badge-yield">${r.wydajnosc_ilosc} ${r.wydajnosc_jm}</span>` : ''}
-                        ${r.weganski ? '<span class="badge badge-vegan">Vegan</span>' : ''}
+            <div class="action-buttons" onclick="event.stopPropagation()">
+                <div style="position: relative; display: inline-block;">
+                    <button onclick="toggleStatusMenu(${r.id})" 
+                            class="action-btn btn-secondary"
+                            title="Zmień status">
+                        📦
+                    </button>
+                    <div id="statusMenu-${r.id}" class="status-menu" style="display: none;">
+                        <div onclick="changeStatus(${r.id}, 'draft')">📝 Robocze</div>
+                        <div onclick="changeStatus(${r.id}, 'active')">✅ Aktywne</div>
+                        <div onclick="changeStatus(${r.id}, 'archived')">📦 Archiwum</div>
                     </div>
                 </div>
-            `).join('');
-        }
+                
+                <button class="action-btn btn-secondary" 
+                        onclick="duplicateRecipe(${r.id})"
+                        title="Stwórz podobną recepturę">
+                    📋
+                </button>
+                
+                <button class="action-btn btn-edit" 
+                        onclick="editRecipe(${r.id})"
+                        title="Edytuj recepturę">
+                    ✏️
+                </button>
+                
+                <button class="action-btn btn-delete" 
+                        onclick="deleteRecipe(${r.id})"
+                        title="Usuń recepturę"
+                        ${r.in_use ? 'disabled' : ''}>
+                    🗑️
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
         
         async function showRecipeDetails(id) {
             try {
@@ -628,7 +761,107 @@ async function importRecipes(event) {
     event.target.value = '';
   }
 }
+function getStatusLabel(status) {
+    const labels = {
+        'draft': '📝 Robocze',
+        'active': '✅ Aktywne',
+        'archived': '📦 Archiwum'
+    };
+    return labels[status] || status;
+}
 
+function toggleStatusMenu(id) {
+    const menu = document.getElementById(`statusMenu-${id}`);
+    const isVisible = menu.style.display === 'block';
+    
+    document.querySelectorAll('.status-menu').forEach(m => m.style.display = 'none');
+    
+    menu.style.display = isVisible ? 'none' : 'block';
+    
+    if (!isVisible) {
+        setTimeout(() => {
+            document.addEventListener('click', closeStatusMenus);
+        }, 0);
+    }
+}
+
+function closeStatusMenus() {
+    document.querySelectorAll('.status-menu').forEach(m => m.style.display = 'none');
+    document.removeEventListener('click', closeStatusMenus);
+}
+
+async function changeStatus(id, newStatus) {
+    try {
+        const res = await fetch(`${API_URL}/api/recipes/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        });
+        
+        if (res.ok) {
+            loadData();
+        }
+    } catch (err) {
+        alert('Błąd zmiany statusu');
+    }
+}
+
+async function duplicateRecipe(id) {
+    const recipe = allRecipes.find(r => r.id === id);
+    if (!recipe) return;
+    
+    const newName = prompt('Nazwa nowej receptury:', `${recipe.nazwa} (kopia)`);
+    if (!newName) return;
+    
+    try {
+        const res = await fetch(`${API_URL}/api/recipes/${id}`);
+        const fullRecipe = await res.json();
+        
+        const copy = {
+            nazwa: newName,
+            typ: fullRecipe.typ,
+            opis: fullRecipe.opis,
+            wydajnosc_ilosc: fullRecipe.wydajnosc_ilosc,
+            wydajnosc_jm: fullRecipe.wydajnosc_jm,
+            wegetarianski: fullRecipe.wegetarianski,
+            weganski: fullRecipe.weganski,
+            instrukcja: fullRecipe.instrukcja,
+            status: 'draft'
+        };
+        
+        const createRes = await fetch(`${API_URL}/api/recipes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(copy)
+        });
+        
+        const newRecipe = await createRes.json();
+        
+        // Skopiuj składniki
+        for (const ing of fullRecipe.skladniki || []) {
+            await fetch(`${API_URL}/api/recipe-ingredients`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    recipe_id: newRecipe.id,
+                    ingredient_id: ing.ingredient_id,
+                    ilosc: ing.ilosc,
+                    jm: ing.jm,
+                    kolejnosc: ing.kolejnosc
+                })
+            });
+        }
+        
+        alert('Receptura skopiowana!');
+        loadData();
+    } catch (err) {
+        alert('Błąd kopiowania receptury');
+    }
+}
+
+function editRecipe(id) {
+    showRecipeDetails(id);
+}
 loadData();
     </script>
 </body>
