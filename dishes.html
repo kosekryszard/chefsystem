@@ -224,6 +224,15 @@
 let allDishes = [];
 let currentFilter = 'all';
 
+function getStatusLabel(status) {
+    const labels = {
+        'draft': '📝 Robocze',
+        'active': '✅ Aktywne',
+        'archived': '📦 Archiwum'
+    };
+    return labels[status] || status;
+}
+
 function filterDishes(filter) {
     currentFilter = filter;
     
