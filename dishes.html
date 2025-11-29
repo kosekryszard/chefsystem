@@ -377,10 +377,10 @@ async function loadData() {
             </button>
             
             <button class="action-btn btn-edit" 
-                    onclick="editDish(${d.id})"
-                    title="Edytuj danie">
-                ✏️
-            </button>
+        onclick="openEditDish(${d.id})"  // ← ZMIEŃ NAZWĘ
+        title="Edytuj danie">
+    ✏️
+</button>
             
             <button class="action-btn btn-delete" 
                     onclick="deleteDish(${d.id})"
@@ -392,7 +392,9 @@ async function loadData() {
     </div>
 `).join('');
         }
-        
+        function openEditDish(id) {
+    editDish(id); // Wywołaj prawdziwą funkcję edycji
+}
         async function showDishDetails(id) {
             try {
                 const res = await fetch(`${API_URL}/api/dishes/${id}`);

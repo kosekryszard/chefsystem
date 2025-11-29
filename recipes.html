@@ -431,10 +431,10 @@ function filterRecipes(filter) {
                 </button>
                 
                 <button class="action-btn btn-edit" 
-                        onclick="editRecipe(${r.id})"
-                        title="Edytuj recepturę">
-                    ✏️
-                </button>
+        onclick="openEditRecipe(${d.id})"  // ← ZMIEŃ NAZWĘ
+        title="Edytuj Recepturę">
+    ✏️
+</button>
                 
                 <button class="action-btn btn-delete" 
                         onclick="deleteRecipe(${r.id})"
@@ -446,7 +446,9 @@ function filterRecipes(filter) {
         </div>
     `).join('');
 }
-        
+function openEditRecipe(id) {
+    editRecipe(id); // Wywołaj prawdziwą funkcję edycji
+}
         async function showRecipeDetails(id) {
             try {
                 const res = await fetch(`${API_URL}/api/recipes/${id}`);
