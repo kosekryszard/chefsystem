@@ -522,10 +522,11 @@
         }
         
         function toggleGroupDay(groupId, date) {
-    console.log('toggleGroupDay called:', groupId, date); // DEBUG
+    console.log('toggleGroupDay called:', groupId, date);
     
-    const checkbox = document.querySelector(`#group-day-${groupId}-[data-date="${date}"]`);
-    console.log('Checkbox found:', checkbox, 'checked:', checkbox?.checked); // DEBUG
+    // Znajdź checkbox po data-date attribute
+    const checkbox = document.querySelector(`input[type="checkbox"][data-date="${date}"]`);
+    console.log('Checkbox found:', checkbox, 'checked:', checkbox?.checked);
     
     if (!selectedSources.groups[groupId]) {
         selectedSources.groups[groupId] = [];
@@ -534,14 +535,14 @@
     if (checkbox && checkbox.checked) {
         if (!selectedSources.groups[groupId].includes(date)) {
             selectedSources.groups[groupId].push(date);
-            console.log('Added date to group'); // DEBUG
+            console.log('Added date to group');
         }
     } else {
         selectedSources.groups[groupId] = selectedSources.groups[groupId].filter(d => d !== date);
-        console.log('Removed date from group'); // DEBUG
+        console.log('Removed date from group');
     }
     
-    console.log('selectedSources.groups after:', selectedSources.groups); // DEBUG
+    console.log('selectedSources.groups after:', selectedSources.groups);
 }
         
         // ========== RENDEROWANIE KART MENU ==========
