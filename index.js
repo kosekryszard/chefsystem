@@ -2521,8 +2521,8 @@ app.get('/api/shopping/sources', async (req, res) => {
       let groupsQuery = supabase
       .from('groups')
       .select('id, nazwa, lokal, data_pierwszy_posilek, data_ostatni_posilek, status')
-      .not('data_ostatni_posilek', 'is', null)
-      .gte('data_ostatni_posilek', yesterday)
+      .not('data_zakonczenia', 'is', null)
+      .gte('data_zakonczenia', yesterday)
       .neq('status', 'archived')
       .order('data_pierwszy_posilek', { nullsFirst: false });
       
@@ -2552,8 +2552,8 @@ app.get('/api/shopping/sources', async (req, res) => {
           menuCardsQuery
       ]);
       
-      console.log('Events found:', eventsRes.data?.length, eventsRes.data); // DEBUG
-      console.log('Groups found:', groupsRes.data?.length, groupsRes.data); // DEBUG
+      console.log('Events found:', eventsRes.data?.length, eventsRes.data); // DODAJ
+      console.log('Groups found:', groupsRes.data?.length, groupsRes.data);
 
       if (eventsRes.error) throw eventsRes.error;
       if (groupsRes.error) throw groupsRes.error;
