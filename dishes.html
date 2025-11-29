@@ -81,6 +81,66 @@
         margin-bottom: 10px;
         align-items: center;
     }
+
+    .action-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.action-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-edit {
+    background: #ffc107;
+    color: #000;
+}
+
+.btn-delete {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-delete:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.status-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 150px;
+}
+
+.status-menu div {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.status-menu div:hover {
+    background: #f0f0f0;
+}
+
 </style>
 </head>
 <body>
@@ -284,19 +344,53 @@ async function loadData() {
     }
     
     grid.innerHTML = filtered.map(d => `
-        <div class="dish-card" onclick="showDishDetails(${d.id})">
-            <h3>${d.nazwa}</h3>
-            <p style="color: #666; margin: 10px 0;">${d.opis_karta || 'Brak opisu'}</p>
-            <div class="dish-meta">
-                <span class="badge badge-type">${d.typ}</span>
-                ${d.cena_sugerowana ? `<span class="badge badge-price">${d.cena_sugerowana} zł</span>` : ''}
-                ${d.weganski ? '<span class="badge badge-vegan">Vegan</span>' : ''}
-                <span class="badge badge-status status-${d.status || 'active'}">${getStatusLabel(d.status || 'active')}</span>
-                ${d.in_use ? '<span class="badge badge-in-use">🔒 W użyciu</span>' : ''}
-            </div>
+    <div class="dish-card">
+        <h3>${d.nazwa}</h3>
+        <p style="color: #666; margin: 10px 0;">${d.opis_karta || 'Brak opisu'}</p>
+        <div class="dish-meta">
+            <span class="badge badge-type">${d.typ}</span>
+            ${d.cena_sugerowana ? `<span class="badge badge-price">${d.cena_sugerowana} zł</span>` : ''}
+            ${d.weganski ? '<span class="badge badge-vegan">Vegan</span>' : ''}
+            <span class="badge badge-status status-${d.status || 'active'}">${getStatusLabel(d.status || 'active')}</span>
+            ${d.in_use ? '<span class="badge badge-in-use">🔒 W użyciu</span>' : ''}
         </div>
-    `).join('');
-}
+        
+        <div class="action-buttons" onclick="event.stopPropagation()">
+            <div style="position: relative; display: inline-block;">
+                <button onclick="toggleStatusMenu(${d.id})" 
+                        class="action-btn btn-secondary"
+                        title="Zmień status">
+                    📦
+                </button>
+                <div id="statusMenu-${d.id}" class="status-menu" style="display: none;">
+                    <div onclick="changeStatus(${d.id}, 'draft')">📝 Robocze</div>
+                    <div onclick="changeStatus(${d.id}, 'active')">✅ Aktywne</div>
+                    <div onclick="changeStatus(${d.id}, 'archived')">📦 Archiwum</div>
+                </div>
+            </div>
+            
+            <button class="action-btn btn-secondary" 
+                    onclick="duplicateDish(${d.id})"
+                    title="Stwórz podobne danie">
+                📋
+            </button>
+            
+            <button class="action-btn btn-edit" 
+                    onclick="editDish(${d.id})"
+                    title="Edytuj danie">
+                ✏️
+            </button>
+            
+            <button class="action-btn btn-delete" 
+                    onclick="deleteDish(${d.id})"
+                    title="Usuń danie"
+                    ${d.in_use ? 'disabled' : ''}>
+                🗑️
+            </button>
+        </div>
+    </div>
+`).join('');
+        }
         
         async function showDishDetails(id) {
             try {
@@ -545,6 +639,103 @@ async function importDishes(event) {
   } finally {
     event.target.value = '';
   }
+}
+
+function toggleStatusMenu(id) {
+    const menu = document.getElementById(`statusMenu-${id}`);
+    const isVisible = menu.style.display === 'block';
+    
+    // Zamknij wszystkie menu
+    document.querySelectorAll('.status-menu').forEach(m => m.style.display = 'none');
+    
+    // Toggle tego menu
+    menu.style.display = isVisible ? 'none' : 'block';
+    
+    if (!isVisible) {
+        setTimeout(() => {
+            document.addEventListener('click', closeStatusMenus);
+        }, 0);
+    }
+}
+
+function closeStatusMenus() {
+    document.querySelectorAll('.status-menu').forEach(m => m.style.display = 'none');
+    document.removeEventListener('click', closeStatusMenus);
+}
+
+async function changeStatus(id, newStatus) {
+    try {
+        const res = await fetch(`${API_URL}/api/dishes/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        });
+        
+        if (res.ok) {
+            loadData();
+        }
+    } catch (err) {
+        alert('Błąd zmiany statusu');
+    }
+}
+
+async function duplicateDish(id) {
+    const dish = allDishes.find(d => d.id === id);
+    if (!dish) return;
+    
+    const newName = prompt('Nazwa nowego dania:', `${dish.nazwa} (kopia)`);
+    if (!newName) return;
+    
+    try {
+        // Pobierz szczegóły z komponentami
+        const res = await fetch(`${API_URL}/api/dishes/${id}`);
+        const fullDish = await res.json();
+        
+        // Utwórz kopię
+        const copy = {
+            nazwa: newName,
+            nazwa_karta: newName,
+            typ: fullDish.typ,
+            opis_karta: fullDish.opis_karta,
+            cena_sugerowana: fullDish.cena_sugerowana,
+            wegetarianski: fullDish.wegetarianski,
+            weganski: fullDish.weganski,
+            status: 'draft'
+        };
+        
+        const createRes = await fetch(`${API_URL}/api/dishes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(copy)
+        });
+        
+        const newDish = await createRes.json();
+        
+        // Skopiuj komponenty
+        for (const comp of fullDish.komponenty || []) {
+            await fetch(`${API_URL}/api/dishes/${newDish.id}/components`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    recipe_id: comp.recipes.id,
+                    ilosc: comp.ilosc,
+                    jm: comp.jm,
+                    kategoria: comp.kategoria,
+                    kolejnosc: comp.kolejnosc
+                })
+            });
+        }
+        
+        alert('Danie skopiowane!');
+        loadData();
+    } catch (err) {
+        alert('Błąd kopiowania dania');
+    }
+}
+
+function editDish(id) {
+    // Otwórz modal edycji - istniejąca funkcja
+    showDishDetails(id);
 }
 
 loadData();
