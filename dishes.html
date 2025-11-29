@@ -494,6 +494,8 @@ function updateUnitForRecipe(selectElement) {
         }
         
         async function editDish(id) {
+    console.log('editDish called with id:', id); // DEBUG
+    alert('editDish wywołane: ' + id); // DEBUG
     try {
         const res = await fetch(`${API_URL}/api/dishes/${id}`);
         const dish = await res.json();

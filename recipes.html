@@ -367,9 +367,10 @@ function filterRecipes(filter) {
         let allIngredients = [];
         let currentSteps = [];
         
-        async function loadData() {
-            try {
-                const [recipesRes, ingredientsRes] = await Promise.all([
+        aasync function loadData() {
+    try {
+        console.log('Loading recipes...'); // DEBUG
+        const [recipesRes, ingredientsRes] = await Promise.all([
                     fetch(`${API_URL}/api/recipes`),
                     fetch(`${API_URL}/api/ingredients`)
                 ]);
