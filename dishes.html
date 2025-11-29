@@ -101,7 +101,20 @@
     <a href="shopping.html">Zakupy</a>
     </nav>
 </header>
-        
+<div class="filters-bar">
+    <button class="filter-btn active" data-filter="all" onclick="filterDishes('all')">
+        Wszystkie
+    </button>
+    <button class="filter-btn" data-filter="draft" onclick="filterDishes('draft')">
+        📝 Robocze
+    </button>
+    <button class="filter-btn" data-filter="active" onclick="filterDishes('active')">
+        ✅ Aktywne
+    </button>
+    <button class="filter-btn" data-filter="archived" onclick="filterDishes('archived')">
+        📦 Archiwalne
+    </button>
+</div>
         <div class="content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2>Lista dań</h2>
@@ -207,9 +220,24 @@
     </div>
     
     <script>
-        const API_URL = 'https://chefsystem.vercel.app';
-        let allDishes = [];
-        let allRecipes = [];
+
+let allDishes = [];
+let currentFilter = 'all';
+
+function filterDishes(filter) {
+    currentFilter = filter;
+    
+    // Aktualizuj przyciski
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === filter);
+    });
+    
+    renderDishes();
+}
+
+const API_URL = 'https://chefsystem.vercel.app';
+// USUŃ: let allDishes = [];  ← TA LINIA
+let allRecipes = [];
         
         async function loadData() {
             try {
@@ -229,25 +257,33 @@
         }
         
         function renderDishes() {
-            const grid = document.getElementById('dishGrid');
-            
-            if (allDishes.length === 0) {
-                grid.innerHTML = '<div class="loading">Brak dań. Dodaj pierwsze!</div>';
-                return;
-            }
-            
-            grid.innerHTML = allDishes.map(d => `
-                <div class="dish-card" onclick="showDishDetails(${d.id})">
-                    <h3>${d.nazwa}</h3>
-                    <p style="color: #666; margin: 10px 0;">${d.opis_karta || 'Brak opisu'}</p>
-                    <div class="dish-meta">
-                        <span class="badge badge-type">${d.typ}</span>
-                        ${d.cena_sugerowana ? `<span class="badge badge-price">${d.cena_sugerowana} zł</span>` : ''}
-                        ${d.weganski ? '<span class="badge badge-vegan">Vegan</span>' : ''}
-                    </div>
-                </div>
-            `).join('');
-        }
+    const grid = document.getElementById('dishGrid');
+    
+    // Filtruj według statusu
+    let filtered = allDishes;
+    if (currentFilter !== 'all') {
+        filtered = allDishes.filter(d => d.status === currentFilter);
+    }
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div class="loading">Brak dań do wyświetlenia</div>';
+        return;
+    }
+    
+    grid.innerHTML = filtered.map(d => `
+        <div class="dish-card" onclick="showDishDetails(${d.id})">
+            <h3>${d.nazwa}</h3>
+            <p style="color: #666; margin: 10px 0;">${d.opis_karta || 'Brak opisu'}</p>
+            <div class="dish-meta">
+                <span class="badge badge-type">${d.typ}</span>
+                ${d.cena_sugerowana ? `<span class="badge badge-price">${d.cena_sugerowana} zł</span>` : ''}
+                ${d.weganski ? '<span class="badge badge-vegan">Vegan</span>' : ''}
+                <span class="badge badge-status status-${d.status || 'active'}">${getStatusLabel(d.status || 'active')}</span>
+                ${d.in_use ? '<span class="badge badge-in-use">🔒 W użyciu</span>' : ''}
+            </div>
+        </div>
+    `).join('');
+}
         
         async function showDishDetails(id) {
             try {
