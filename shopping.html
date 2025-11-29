@@ -779,6 +779,7 @@
                 if (!response.ok) throw new Error('Błąd wyliczania składników');
                 
                 const ingredients = await response.json();
+                console.log('Ingredients from backend:', ingredients[0]); // DEBUG - pokaż pierwszy składnik
                 
                 if (ingredients.length === 0) {
                     alert('Brak składników do wygenerowania');
