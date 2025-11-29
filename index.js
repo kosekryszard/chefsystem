@@ -2519,12 +2519,12 @@ app.get('/api/shopping/sources', async (req, res) => {
       console.log('Events query built'); // DEBUG
 
       let groupsQuery = supabase
-      .from('groups')
-      .select('id, nazwa, lokal, data_pierwszy_posilek, data_ostatni_posilek, status')
-      .not('data_zakonczenia', 'is', null)
-      .gte('data_zakonczenia', yesterday)
-      .neq('status', 'archived')
-      .order('data_pierwszy_posilek', { nullsFirst: false });
+    .from('groups')
+    .select('id, nazwa, lokal, data_pierwszy_posilek, data_ostatni_posilek, status')
+    .not('data_ostatni_posilek', 'is', null)  // ← POPRAWIONE
+    .gte('data_ostatni_posilek', yesterday)   // ← POPRAWIONE
+    .neq('status', 'archived')
+    .order('data_pierwszy_posilek', { nullsFirst: false });
       
       let menuCardsQuery = supabase
           .from('menu_cards')
