@@ -392,43 +392,7 @@ async function loadData() {
     </div>
 `).join('');
         }
-        function openEditDish(id) {
-    editDish(id); // Wywołaj prawdziwą funkcję edycji
-}
-        async function showDishDetails(id) {
-            try {
-                const res = await fetch(`${API_URL}/api/dishes/${id}`);
-                const dish = await res.json();
-                
-                const content = `
-                    <p><strong>Typ:</strong> ${dish.typ}</p>
-                    <p><strong>Nazwa w karcie:</strong> ${dish.nazwa_karta || '-'}</p>
-                    <p><strong>Cena sugerowana:</strong> ${dish.cena_sugerowana ? dish.cena_sugerowana + ' zł' : '-'}</p>
-                    <p><strong>Opis:</strong> ${dish.opis_karta || '-'}</p>
-                    
-                    <h3 style="margin-top: 20px;">Receptury:</h3>
-                    <div class="components-list">
-                        ${(dish.komponenty || []).map(k => `
-                            <div class="component-item">
-                                <span>${k.recipes.nazwa} (${k.kategoria})</span>
-                                <span><strong>${k.ilosc} ${k.jm}</strong></span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
-                    <div style="margin-top: 20px; display: flex; gap: 10px;">
-                        <button class="btn btn-primary" onclick="editDish(${id})">Edytuj</button>
-                        <button class="btn btn-danger" onclick="deleteDish(${id})">Usuń</button>
-                    </div>
-                `;
-                
-                document.getElementById('detailTitle').textContent = dish.nazwa;
-                document.getElementById('detailContent').innerHTML = content;
-                document.getElementById('detailModal').style.display = 'block';
-            } catch (err) {
-                alert('Błąd ładowania szczegółów');
-            }
-        }
+        
         
         function openAddModal() {
             document.getElementById('formTitle').textContent = 'Nowe danie';

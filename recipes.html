@@ -449,59 +449,7 @@ function filterRecipes(filter) {
 function openEditRecipe(id) {
     editRecipe(id); // Wywołaj prawdziwą funkcję edycji
 }
-        async function showRecipeDetails(id) {
-            try {
-                const res = await fetch(`${API_URL}/api/recipes/${id}`);
-                const recipe = await res.json();
-                
-                // Wyświetlanie instrukcji krok po kroku
-                let stepsHtml = '';
-                if (recipe.instrukcja && recipe.instrukcja.length > 0) {
-                    stepsHtml = `
-                        <h3 style="margin-top: 20px;">Instrukcja przygotowania:</h3>
-                        <div class="steps-display">
-                            ${recipe.instrukcja.map((step, idx) => `
-                                <div class="step-display-item">
-                                    <div class="step-number">${idx + 1}</div>
-                                    <div style="flex: 1;">
-                                        <p>${step}</p>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                }
-                
-                const content = `
-                    <p><strong>Typ:</strong> ${recipe.typ}</p>
-                    <p><strong>Wydajność:</strong> ${recipe.wydajnosc_ilosc || '-'} ${recipe.wydajnosc_jm || ''}</p>
-                    <p><strong>Opis:</strong> ${recipe.opis || '-'}</p>
-                    
-                    <h3 style="margin-top: 20px;">Składniki:</h3>
-                    <div class="ingredients-list">
-                        ${(recipe.skladniki || []).map(s => `
-                            <div class="ingredient-item">
-                                <span>${s.ingredients.nazwa}</span>
-                                <span><strong>${s.ilosc} ${s.jm}</strong></span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
-                    ${stepsHtml}
-                    
-                    <div style="margin-top: 20px; display: flex; gap: 10px;">
-                        <button class="btn btn-primary" onclick="editRecipe(${id})">Edytuj</button>
-                        <button class="btn btn-danger" onclick="deleteRecipe(${id})">Usuń</button>
-                    </div>
-                `;
-                
-                document.getElementById('detailTitle').textContent = recipe.nazwa;
-                document.getElementById('detailContent').innerHTML = content;
-                document.getElementById('detailModal').style.display = 'block';
-            } catch (err) {
-                alert('Błąd ładowania szczegółów');
-            }
-        }
+
         
         function openAddModal() {
     document.getElementById('formTitle').textContent = 'Nowa receptura';
