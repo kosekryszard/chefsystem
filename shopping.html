@@ -522,20 +522,27 @@
         }
         
         function toggleGroupDay(groupId, date) {
-            const checkbox = document.querySelector(`#group-day-${groupId}-[data-date="${date}"]`);
-            
-            if (!selectedSources.groups[groupId]) {
-                selectedSources.groups[groupId] = [];
-            }
-            
-            if (checkbox && checkbox.checked) {
-                if (!selectedSources.groups[groupId].includes(date)) {
-                    selectedSources.groups[groupId].push(date);
-                }
-            } else {
-                selectedSources.groups[groupId] = selectedSources.groups[groupId].filter(d => d !== date);
-            }
+    console.log('toggleGroupDay called:', groupId, date); // DEBUG
+    
+    const checkbox = document.querySelector(`#group-day-${groupId}-[data-date="${date}"]`);
+    console.log('Checkbox found:', checkbox, 'checked:', checkbox?.checked); // DEBUG
+    
+    if (!selectedSources.groups[groupId]) {
+        selectedSources.groups[groupId] = [];
+    }
+    
+    if (checkbox && checkbox.checked) {
+        if (!selectedSources.groups[groupId].includes(date)) {
+            selectedSources.groups[groupId].push(date);
+            console.log('Added date to group'); // DEBUG
         }
+    } else {
+        selectedSources.groups[groupId] = selectedSources.groups[groupId].filter(d => d !== date);
+        console.log('Removed date from group'); // DEBUG
+    }
+    
+    console.log('selectedSources.groups after:', selectedSources.groups); // DEBUG
+}
         
         // ========== RENDEROWANIE KART MENU ==========
         async function renderMenuCards() {

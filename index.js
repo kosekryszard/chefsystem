@@ -2506,13 +2506,17 @@ app.get('/api/shopping/sources', async (req, res) => {
       const today = new Date().toISOString().split('T')[0];
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
       
+      console.log('GET /api/shopping/sources - date_to:', date_to, 'lokal:', lokal); // DEBUG
+      
       let eventsQuery = supabase
-      .from('events')
-      .select('id, nazwa, lokal, data_rozpoczecia, data_zakonczenia, status')
-      .not('data_zakonczenia', 'is', null) // Musi mieć datę zakończenia
-      .gte('data_zakonczenia', yesterday)
-      .neq('status', 'archiwum')
-      .order('data_rozpoczecia', { nullsFirst: false });
+          .from('events')
+          .select('id, nazwa, lokal, data_rozpoczecia, data_zakonczenia, status')
+          .not('data_zakonczenia', 'is', null)
+          .gte('data_zakonczenia', yesterday)
+          .neq('status', 'archiwum')
+          .order('data_rozpoczecia', { nullsFirst: false });
+      
+      console.log('Events query built'); // DEBUG
 
       let groupsQuery = supabase
       .from('groups')
@@ -2548,6 +2552,9 @@ app.get('/api/shopping/sources', async (req, res) => {
           menuCardsQuery
       ]);
       
+      console.log('Events found:', eventsRes.data?.length, eventsRes.data); // DEBUG
+      console.log('Groups found:', groupsRes.data?.length, groupsRes.data); // DEBUG
+
       if (eventsRes.error) throw eventsRes.error;
       if (groupsRes.error) throw groupsRes.error;
       if (menuCardsRes.error) throw menuCardsRes.error;
@@ -2665,7 +2672,7 @@ async function calculateFromEvent(source, ingredients) {
 async function calculateFromGroup(source, ingredients) {
   const { id, days } = source;
   
-  console.log('calculateFromGroup - group_id:', id, 'days:', days); // DEBUG
+
   
   const { data: group } = await supabase
       .from('groups')
@@ -2673,10 +2680,10 @@ async function calculateFromGroup(source, ingredients) {
       .eq('id', id)
       .single();
   
-  console.log('Group:', group); // DEBUG
+
   
   for (const dayData of days) {
-      console.log('Processing day:', dayData.date); // DEBUG
+   
       
       const { data: meals } = await supabase
           .from('group_meals')
@@ -2692,7 +2699,7 @@ async function calculateFromGroup(source, ingredients) {
           .eq('group_id', id)
           .eq('data', dayData.date);
       
-      console.log('Meals found:', meals?.length); // DEBUG
+
       
       for (const meal of meals || []) {
           await processDish(
@@ -2849,7 +2856,7 @@ async function processDish(dishId, porcje, dishNazwa, sourceType, sourceName, in
     }
 }
 
-console.log('✅ Endpointy Shopping załadowane pomyślnie');
+
 
 // GET /api/dishes/:id/components - Komponenty dania (receptury)
 app.get('/api/dishes/:id/components', async (req, res) => {
