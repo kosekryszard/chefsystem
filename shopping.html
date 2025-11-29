@@ -522,11 +522,11 @@
         }
         
         function toggleGroupDay(groupId, date) {
-    console.log('toggleGroupDay called:', groupId, date);
+   
     
     // Znajdź checkbox po data-date attribute
     const checkbox = document.querySelector(`input[type="checkbox"][data-date="${date}"]`);
-    console.log('Checkbox found:', checkbox, 'checked:', checkbox?.checked);
+  
     
     if (!selectedSources.groups[groupId]) {
         selectedSources.groups[groupId] = [];
@@ -535,14 +535,14 @@
     if (checkbox && checkbox.checked) {
         if (!selectedSources.groups[groupId].includes(date)) {
             selectedSources.groups[groupId].push(date);
-            console.log('Added date to group');
+       
         }
     } else {
         selectedSources.groups[groupId] = selectedSources.groups[groupId].filter(d => d !== date);
-        console.log('Removed date from group');
+      
     }
     
-    console.log('selectedSources.groups after:', selectedSources.groups);
+
 }
         
         // ========== RENDEROWANIE KART MENU ==========
@@ -718,10 +718,7 @@
         async function generateShoppingList(typ) {
     const menu = document.getElementById('pdfMenu');
     menu.classList.remove('active');
-    
-    console.log('selectedSources:', selectedSources); // DEBUG - już jest
-    console.log('selectedSources.events:', selectedSources.events);
-    console.log('selectedSources.groups:', selectedSources.groups);
+  
     
     // Przygotuj źródła do wysłania
     const sources = [];
@@ -762,7 +759,7 @@
                     });
                 }
             }
-            console.log('Sources to send:', JSON.stringify(sources, null, 2));
+     
             if (sources.length === 0) {
                 alert('Nie wybrano żadnych źródeł');
                 return;
@@ -779,7 +776,7 @@
                 if (!response.ok) throw new Error('Błąd wyliczania składników');
                 
                 const ingredients = await response.json();
-                console.log('Ingredients from backend:', ingredients[0]); // DEBUG - pokaż pierwszy składnik
+            
                 
                 if (ingredients.length === 0) {
                     alert('Brak składników do wygenerowania');
