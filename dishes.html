@@ -122,13 +122,14 @@
 .status-menu {
     position: absolute;
     top: 100%;
-    left: 0;
+    right: 0;  /* ← ZMIEŃ z left: 0 */
     background: white;
     border: 1px solid #ddd;
     border-radius: 6px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     z-index: 1000;
     min-width: 150px;
+    margin-top: 4px; /* ← DODAJ */
 }
 
 .status-menu div {
@@ -711,20 +712,21 @@ async function duplicateDish(id) {
         
         const newDish = await createRes.json();
         
-        // Skopiuj komponenty
-        for (const comp of fullDish.komponenty || []) {
-            await fetch(`${API_URL}/api/dishes/${newDish.id}/components`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    recipe_id: comp.recipes.id,
-                    ilosc: comp.ilosc,
-                    jm: comp.jm,
-                    kategoria: comp.kategoria,
-                    kolejnosc: comp.kolejnosc
-                })
-            });
-        }
+       // Skopiuj komponenty
+for (const comp of fullDish.komponenty || []) {
+    await fetch(`${API_URL}/api/dish-components`, {  // ← ZMIEŃ URL
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            dish_id: newDish.id,  // ← DODAJ
+            recipe_id: comp.recipes.id,
+            ilosc: comp.ilosc,
+            jm: comp.jm,
+            kategoria: comp.kategoria,
+            kolejnosc: comp.kolejnosc
+        })
+    });
+}
         
         alert('Danie skopiowane!');
         loadData();
