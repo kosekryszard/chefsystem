@@ -2919,6 +2919,22 @@ app.get('/api/dishes/:id/components', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
-
+// PATCH /api/recipes/:id - Aktualizuj recepturę (np. status)
+app.patch('/api/recipes/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { error } = await supabase
+          .from('recipes')
+          .update(req.body)
+          .eq('id', id);
+      
+      if (error) throw error;
+      
+      res.json({ message: 'Receptura zaktualizowana' });
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
 // Start serwera
 app.listen(3000, () => console.log('Serwer działa na http://localhost:3000'));
