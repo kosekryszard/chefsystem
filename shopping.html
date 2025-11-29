@@ -708,11 +708,15 @@
         }
         
         async function generateShoppingList(typ) {
-            const menu = document.getElementById('pdfMenu');
-            menu.classList.remove('active');
-            
-            // Przygotuj źródła do wysłania
-            const sources = [];
+    const menu = document.getElementById('pdfMenu');
+    menu.classList.remove('active');
+    
+    console.log('selectedSources:', selectedSources); // DEBUG - już jest
+    console.log('selectedSources.events:', selectedSources.events);
+    console.log('selectedSources.groups:', selectedSources.groups);
+    
+    // Przygotuj źródła do wysłania
+    const sources = [];
             
             // Eventy
             for (const [eventId, dayIds] of Object.entries(selectedSources.events)) {
@@ -750,7 +754,7 @@
                     });
                 }
             }
-            
+            console.log('Sources to send:', JSON.stringify(sources, null, 2));
             if (sources.length === 0) {
                 alert('Nie wybrano żadnych źródeł');
                 return;
