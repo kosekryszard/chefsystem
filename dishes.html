@@ -514,12 +514,14 @@ function updateUnitForRecipe(selectElement) {
                 });
                 
                 if (res.ok) {
-                    alert(id ? 'Danie zaktualizowane!' : 'Danie dodane!');
-                    closeFormModal();
-                    loadData();
-                } else {
-                    alert('Błąd zapisu');
-                }
+    alert(id ? 'Danie zaktualizowane!' : 'Danie dodane!');
+    closeFormModal();
+    loadData();
+} else {
+    const error = await res.json();  // ← DODAJ
+    alert('Błąd zapisu: ' + (error.error || 'Nieznany błąd'));  // ← ZMIEŃ
+    console.error('Save error:', error);  // ← DODAJ
+}
             } catch (err) {
                 alert('Błąd: ' + err.message);
             }
