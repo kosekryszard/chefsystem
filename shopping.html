@@ -611,24 +611,23 @@
                                 
                                 for (const ing of recipe.skladniki || []) {
                                     const ingId = ing.ingredients.id;
-                                    console.log('Processing ingredient:', ing.ingredients.nazwa, 'ID:', ingId);
+                                   
                                     if (!ingredientsMap[ingId]) {
                                         ingredientsMap[ingId] = {
                                             id: ingId,
                                             nazwa: ing.ingredients.nazwa,
                                             jm: ing.jm
                                         };
-                                        console.log('Added to map:', ing.ingredients.nazwa);
+                                   
                                     } else {
-                                        console.log('Already in map:', ing.ingredients.nazwa);
+                                     
                                     }
                                 }
                             }
                         }
                     }
                     
-                    console.log('Final ingredientsMap:', ingredientsMap);
-                    console.log('Keys in map:', Object.keys(ingredientsMap));
+                  
 
                     const ingredients = Object.values(ingredientsMap).sort((a, b) => a.nazwa.localeCompare(b.nazwa, 'pl'));
                     
