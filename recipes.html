@@ -363,17 +363,17 @@ function filterRecipes(filter) {
     
     renderRecipes();
 }
-        const API_URL = 'https://chefsystem.vercel.app';
-        let allIngredients = [];
-        let currentSteps = [];
-        
-        aasync function loadData() {
+const API_URL = 'https://chefsystem.vercel.app';
+let allIngredients = [];
+let currentSteps = [];
+
+async function loadData() {  // ← USUŃ JEDNO "a"
     try {
-        console.log('Loading recipes...'); // DEBUG
+        console.log('Loading recipes...');
         const [recipesRes, ingredientsRes] = await Promise.all([
-                    fetch(`${API_URL}/api/recipes`),
-                    fetch(`${API_URL}/api/ingredients`)
-                ]);
+            fetch(`${API_URL}/api/recipes`),      // ← DODAJ ()
+            fetch(`${API_URL}/api/ingredients`)    // ← DODAJ ()
+        ]);
                 
                 allRecipes = await recipesRes.json();
                 allIngredients = await ingredientsRes.json();
