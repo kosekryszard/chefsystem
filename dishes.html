@@ -239,22 +239,26 @@ const API_URL = 'https://chefsystem.vercel.app';
 // USUŃ: let allDishes = [];  ← TA LINIA
 let allRecipes = [];
         
-        async function loadData() {
-            try {
-                const [dishesRes, recipesRes] = await Promise.all([
-                    fetch(`${API_URL}/api/dishes`),
-                    fetch(`${API_URL}/api/recipes`)
-                ]);
-                
-                allDishes = await dishesRes.json();
-                allRecipes = await recipesRes.json();
-                
-                renderDishes();
-            } catch (err) {
-                document.getElementById('dishGrid').innerHTML = 
-                    '<div class="loading">Błąd ładowania danych</div>';
-            }
-        }
+async function loadData() {
+    try {
+        const [dishesRes, recipesRes] = await Promise.all([
+            fetch(`${API_URL}/api/dishes`),
+            fetch(`${API_URL}/api/recipes`)
+        ]);
+        
+        allDishes = await dishesRes.json();
+        allRecipes = await recipesRes.json();
+        
+        console.log('allDishes loaded:', allDishes.length); // DEBUG
+        console.log('currentFilter:', currentFilter); // DEBUG
+        
+        renderDishes();
+    } catch (err) {
+        console.error('loadData error:', err); // DEBUG
+        document.getElementById('dishGrid').innerHTML = 
+            '<div class="loading">Błąd ładowania danych</div>';
+    }
+}
         
         function renderDishes() {
     const grid = document.getElementById('dishGrid');
