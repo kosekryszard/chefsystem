@@ -311,21 +311,23 @@ let allRecipes = [];
         
 async function loadData() {
     try {
-        const [dishesRes, recipesRes] = await Promise.all([
-            fetch(`${API_URL}/api/dishes`),
-            fetch(`${API_URL}/api/recipes`)
+        console.log('Loading recipes...');
+        const [recipesRes, ingredientsRes] = await Promise.all([
+            fetch(`${API_URL}/api/recipes`),
+            fetch(`${API_URL}/api/ingredients`)
         ]);
         
-        allDishes = await dishesRes.json();
+        console.log('Responses received'); // DODAJ
+        
         allRecipes = await recipesRes.json();
+        allIngredients = await ingredientsRes.json();
         
-        console.log('allDishes loaded:', allDishes.length); // DEBUG
-        console.log('currentFilter:', currentFilter); // DEBUG
+        console.log('Data parsed:', allRecipes.length, 'recipes'); // DODAJ
         
-        renderDishes();
+        renderRecipes();
     } catch (err) {
-        console.error('loadData error:', err); // DEBUG
-        document.getElementById('dishGrid').innerHTML = 
+        console.error('loadData error:', err); // DODAJ
+        document.getElementById('recipeGrid').innerHTML = 
             '<div class="loading">Błąd ładowania danych</div>';
     }
 }
@@ -494,8 +496,7 @@ function updateUnitForRecipe(selectElement) {
         }
         
         async function editDish(id) {
-    console.log('editDish called with id:', id); // DEBUG
-    alert('editDish wywołane: ' + id); // DEBUG
+
     try {
         const res = await fetch(`${API_URL}/api/dishes/${id}`);
         const dish = await res.json();
@@ -535,10 +536,13 @@ async function deleteDish(id) {
     
     try {
         const res = await fetch(`${API_URL}/api/dishes/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        
         if (res.ok) {
             alert('Danie usunięte!');
-            closeDetailModal();
             loadData();
+        } else {
+            alert(data.error || 'Błąd usuwania');
         }
     } catch (err) {
         alert('Błąd usuwania');
