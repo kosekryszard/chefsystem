@@ -434,29 +434,50 @@ function updateUnitForRecipe(selectElement) {
     unitInput.value = unit || 'porcja';
 }
         
-        async function saveDish(e) {
-            e.preventDefault();
-            
-            const components = [];
-            const rows = document.querySelectorAll('.component-row');
-            console.log('Found component rows:', rows.length); // DODAJ
-            console.log('Rows:', rows); // DODAJ
-
-            console.log('Components to save:', components); // DEBUG
-            const data = {
-                nazwa: document.getElementById('nazwa').value,
-                nazwa_karta: document.getElementById('nazwa_karta').value || null,
-                typ: document.getElementById('typ').value,
-                cena_sugerowana: parseFloat(document.getElementById('cena_sugerowana').value) || null,
-                opis_karta: document.getElementById('opis_karta').value || null,
-                wegetarianski: document.getElementById('wegetarianski').checked,
-                weganski: document.getElementById('weganski').checked,
-                komponenty: components
-            };
-            console.log('Full data to save:', data); // DEBUG
-            const id = document.getElementById('editId').value;
-            const url = (id && id.trim() !== '') ? `${API_URL}/api/dishes/${id}` : `${API_URL}/api/dishes`;
-            const method = (id && id.trim() !== '') ? 'PUT' : 'POST';
+async function saveDish(e) {
+    e.preventDefault();
+    
+    const components = [];
+    const rows = document.querySelectorAll('.component-row');
+    console.log('Found component rows:', rows.length);
+    
+    rows.forEach(row => {
+        const recipeId = row.querySelector('.comp-recipe').value;
+        const amount = row.querySelector('.comp-amount').value;
+        const unit = row.querySelector('.comp-unit').value;
+        const category = row.querySelector('.comp-category').value;
+        
+        console.log('Recipe:', recipeId, 'Amount:', amount);
+        
+        if (recipeId && amount) {
+            components.push({
+                recipe_id: parseInt(recipeId),
+                ilosc: parseFloat(amount),
+                jm: unit,
+                kategoria: category
+            });
+        }
+    });
+    
+    console.log('Components to save:', components);
+    
+    const data = {
+        nazwa: document.getElementById('nazwa').value,
+        nazwa_karta: document.getElementById('nazwa_karta').value || null,
+        typ: document.getElementById('typ').value,
+        cena_sugerowana: parseFloat(document.getElementById('cena_sugerowana').value) || null,
+        opis_karta: document.getElementById('opis_karta').value || null,
+        wegetarianski: document.getElementById('wegetarianski').checked,
+        weganski: document.getElementById('weganski').checked,
+        komponenty: components
+    };
+    
+    console.log('Full data to save:', data);
+    
+    const id = document.getElementById('editId').value;
+    const url = (id && id.trim() !== '') ? `${API_URL}/api/dishes/${id}` : `${API_URL}/api/dishes`;
+    const method = (id && id.trim() !== '') ? 'PUT' : 'POST';
+    
             
             try {
                 const res = await fetch(url, {
