@@ -530,21 +530,14 @@ function updateUnitForRecipe(selectElement) {
 }
 
 async function deleteDish(id) {
-  
     if (!confirm('Czy na pewno usunąć to danie?')) return;
     
-    const url = `${API_URL}/api/dishes/:id`;  // ← TEST
-   
-    
     try {
-        const res = await fetch(url, { 
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }
+        const res = await fetch(`${API_URL}/api/dishes/${id}`, { 
+            method: 'DELETE'
         });
         
-      
         const data = await res.json();
-    
         
         if (res.ok) {
             alert('Danie usunięte!');
@@ -553,7 +546,7 @@ async function deleteDish(id) {
             alert('Błąd: ' + data.error);
         }
     } catch (err) {
-        console.error('Error:', err);
+        
         alert('Błąd: ' + err.message);
     }
 }
