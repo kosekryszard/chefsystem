@@ -537,10 +537,11 @@ async function deleteDish(id) {
             alert('Danie usunięte!');
             loadData();
         } else {
-            alert(data.error || 'Błąd usuwania');
+            alert('Błąd usuwania: ' + data.error);  // POKAŻ BŁĄD
+            console.error('Delete error:', data);
         }
     } catch (err) {
-        alert('Błąd usuwania');
+        alert('Błąd usuwania: ' + err.message);
     }
 }
 
