@@ -442,16 +442,17 @@ async function saveDish(e) {
     console.log('Found component rows:', rows.length);
     
     rows.forEach(row => {
-        console.log('Row HTML:', row.outerHTML); // DODAJ - pokaż cały HTML
-        const recipeId = row.querySelector('.comp-recipe').value;
-        const amount = row.querySelector('.comp-amount').value;
-        const unit = row.querySelector('.comp-unit').value;
-        const category = row.querySelector('.comp-category').value;
-        
-        console.log('Amount input found:', amountInput); // DODAJ
-        console.log('Amount input value:', amountInput?.value); // DODAJ
-        console.log('Recipe:', recipeId, 'Amount:', amount);
-        
+    const recipeSelect = row.querySelector('.comp-recipe');
+    const amountInput = row.querySelector('.comp-amount');
+    const unitInput = row.querySelector('.comp-unit');
+    const categorySelect = row.querySelector('.comp-category');
+    
+    const recipeId = recipeSelect?.value;
+    const amount = amountInput?.value;
+    const unit = unitInput?.value;
+    const category = categorySelect?.value;
+    console.log('Recipe:', recipeId, 'Amount:', amount, 'Unit:', unit, 'Category:', category);
+
         if (recipeId && amount) {
             components.push({
                 recipe_id: parseInt(recipeId),
@@ -508,10 +509,14 @@ async function saveDish(e) {
         }
         
         async function editDish(id) {
-
+    console.log('editDish called with id:', id); // DODAJ
+  
     try {
         const res = await fetch(`${API_URL}/api/dishes/${id}`);
         const dish = await res.json();
+        
+        console.log('Dish loaded:', dish); // DODAJ
+        console.log('Komponenty:', dish.komponenty); // DODAJ
         
         document.getElementById('formTitle').textContent = 'Edytuj danie';
         document.getElementById('editId').value = id;
