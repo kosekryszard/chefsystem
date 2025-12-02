@@ -530,7 +530,7 @@ async function deleteDish(id) {
     console.log('DELETE - id:', id, 'type:', typeof id);
     if (!confirm('Czy na pewno usunąć to danie?')) return;
     
-    const url = `${API_URL}/api/dishes/${id}`;
+    const url = `${API_URL}/api/dishes/remove/${id}`;  // ← TEST
     console.log('DELETE URL:', url);
     console.log('Method: DELETE');
     
