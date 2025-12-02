@@ -576,12 +576,23 @@ function renumberSteps() {
 async function saveRecipe(e) {
     e.preventDefault();
     
-    // Zbierz składniki
-    const ingredients = [];
-    document.querySelectorAll('.ingredient-row').forEach(row => {
-        const ingId = row.querySelector('.ing-select').value;
-        const amount = row.querySelector('.ing-amount').value;
-        const unit = row.querySelector('.ing-unit').value;
+    // ... zbieranie danych ...
+    
+    const data = {
+        nazwa: document.getElementById('nazwa').value,
+        // ... reszta pól ...
+        skladniki: ingredients,
+        instrukcja: steps
+    };
+    
+    console.log('Saving recipe with data:', data); // DEBUG
+    console.log('Ingredients count:', ingredients.length); // DEBUG
+    
+    const id = document.getElementById('editId').value;
+    const url = (id && id !== '') ? `${API_URL}/api/recipes/${id}` : `${API_URL}/api/recipes`;
+    const method = (id && id !== '') ? 'PUT' : 'POST';
+    
+    console.log('Method:', method, 'URL:', url); // DEBUG
         
         if (ingId && amount) {
             ingredients.push({
