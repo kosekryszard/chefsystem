@@ -615,8 +615,8 @@ async function saveRecipe(e) {
     };
     
     const id = document.getElementById('editId').value;
-    const url = id ? `${API_URL}/api/recipes/${id}` : `${API_URL}/api/recipes`;
-    const method = id ? 'PUT' : 'POST';
+const url = (id && id !== '') ? `${API_URL}/api/recipes/${id}` : `${API_URL}/api/recipes`;
+const method = (id && id !== '') ? 'PUT' : 'POST';
     
     try {
         const res = await fetch(url, {
