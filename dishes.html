@@ -642,45 +642,41 @@ async function importDishes(event) {
 
 function toggleStatusMenu(id) {
     const menu = document.getElementById(`statusMenu-${id}`);
-    const isVisible = menu.style.display === 'block';
     
-    // Zamknij wszystkie menu
+    // Zamknij inne otwarte menu
     document.querySelectorAll('.status-menu').forEach(m => {
-        m.style.display = 'none';
-        m.style.top = '';
-        m.style.bottom = '';
+        if (m.id !== `statusMenu-${id}`) {
+            m.style.display = 'none';
+        }
     });
     
-    if (isVisible) {
-        return;
-    }
+    const isVisible = menu.style.display === 'block';
+    menu.style.display = isVisible ? 'none' : 'block';
     
-    // Znajdź przycisk który wywołał menu (parent div → button)
-    const button = menu.parentElement.querySelector('.action-btn.btn-secondary');
-    
-    if (button) {
-        const rect = button.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const spaceAbove = rect.top;
+    // Sprawdź czy menu wychodzi poza ekran i ustaw pozycję
+    if (!isVisible) {
+        setTimeout(() => {
+            const rect = menu.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            
+            // Jeśli menu wychodzi poza dolną krawędź ekranu, pokaż w górę
+            if (rect.bottom > viewportHeight - 20) {
+                menu.style.bottom = '100%';
+                menu.style.top = 'auto';
+                menu.style.marginBottom = '5px';
+                menu.style.marginTop = '0';
+            } else {
+                menu.style.top = '100%';
+                menu.style.bottom = 'auto';
+                menu.style.marginTop = '5px';
+                menu.style.marginBottom = '0';
+            }
+        }, 10);
         
-        if (spaceBelow < 200 && spaceAbove > 200) {
-            menu.style.bottom = '100%';
-            menu.style.top = 'auto';
-            menu.style.marginBottom = '4px';
-            menu.style.marginTop = '0';
-        } else {
-            menu.style.top = '100%';
-            menu.style.bottom = 'auto';
-            menu.style.marginTop = '4px';
-            menu.style.marginBottom = '0';
-        }
+        setTimeout(() => {
+            document.addEventListener('click', closeStatusMenus);
+        }, 0);
     }
-    
-    menu.style.display = 'block';
-    
-    setTimeout(() => {
-        document.addEventListener('click', closeStatusMenus);
-    }, 0);
 }
 
 function closeStatusMenus() {
