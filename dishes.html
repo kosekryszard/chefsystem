@@ -438,21 +438,10 @@ function updateUnitForRecipe(selectElement) {
             e.preventDefault();
             
             const components = [];
-            document.querySelectorAll('.component-row').forEach(row => {
-                const recipeId = row.querySelector('.comp-recipe').value;
-                const amount = row.querySelector('.comp-amount').value;
-                const unit = row.querySelector('.comp-unit').value;
-                const category = row.querySelector('.comp-category').value;
-                
-                if (recipeId && amount) {
-                    components.push({
-                        recipe_id: parseInt(recipeId),
-                        ilosc: parseFloat(amount),
-                        jm: unit,
-                        kategoria: category
-                    });
-                }
-            });
+            const rows = document.querySelectorAll('.component-row');
+            console.log('Found component rows:', rows.length); // DODAJ
+            console.log('Rows:', component-row); // DODAJ
+
             console.log('Components to save:', components); // DEBUG
             const data = {
                 nazwa: document.getElementById('nazwa').value,
@@ -478,7 +467,7 @@ function updateUnitForRecipe(selectElement) {
                 console.log('Response status:', res.status); // DODAJ
     const responseData = await res.json(); // ZMIEŃ - pobierz dane
     console.log('Response data:', responseData); // DODAJ
-    
+
                 if (res.ok) {
              alert(id ? 'Danie zaktualizowane!' : 'Danie dodane!');
             closeFormModal();
