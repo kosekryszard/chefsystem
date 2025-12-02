@@ -442,11 +442,14 @@ async function saveDish(e) {
     console.log('Found component rows:', rows.length);
     
     rows.forEach(row => {
+        console.log('Row HTML:', row.outerHTML); // DODAJ - pokaż cały HTML
         const recipeId = row.querySelector('.comp-recipe').value;
         const amount = row.querySelector('.comp-amount').value;
         const unit = row.querySelector('.comp-unit').value;
         const category = row.querySelector('.comp-category').value;
         
+        console.log('Amount input found:', amountInput); // DODAJ
+        console.log('Amount input value:', amountInput?.value); // DODAJ
         console.log('Recipe:', recipeId, 'Amount:', amount);
         
         if (recipeId && amount) {
@@ -455,6 +458,7 @@ async function saveDish(e) {
                 ilosc: parseFloat(amount),
                 jm: unit,
                 kategoria: category
+
             });
         }
     });
