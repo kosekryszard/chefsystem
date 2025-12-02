@@ -371,7 +371,7 @@ app.put('/api/dishes/:id', async (req, res) => {
   }
   res.json(dish);
 });
-// DELETE danie
+// DELETE danie - FORCE REDEPLOY v2
 app.delete('/api/dishes/:id', async (req, res) => {
   const { error } = await supabase
     .from('dishes')
