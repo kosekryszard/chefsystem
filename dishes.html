@@ -645,16 +645,42 @@ function toggleStatusMenu(id) {
     const isVisible = menu.style.display === 'block';
     
     // Zamknij wszystkie menu
-    document.querySelectorAll('.status-menu').forEach(m => m.style.display = 'none');
+    document.querySelectorAll('.status-menu').forEach(m => {
+        m.style.display = 'none';
+        m.style.top = '';
+        m.style.bottom = '';
+    });
     
-    // Toggle tego menu
-    menu.style.display = isVisible ? 'none' : 'block';
-    
-    if (!isVisible) {
-        setTimeout(() => {
-            document.addEventListener('click', closeStatusMenus);
-        }, 0);
+    if (isVisible) {
+        return; // Już było otwarte, zamknęliśmy
     }
+    
+    // Sprawdź gdzie jest miejsce
+    const button = menu.parentElement.querySelector('button');
+    const rect = button.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    
+    // Ustaw pozycję w zależności od dostępnego miejsca
+    if (spaceBelow < 200 && spaceAbove > 200) {
+        // Otwórz nad przyciskiem
+        menu.style.bottom = '100%';
+        menu.style.top = 'auto';
+        menu.style.marginBottom = '4px';
+        menu.style.marginTop = '0';
+    } else {
+        // Otwórz pod przyciskiem
+        menu.style.top = '100%';
+        menu.style.bottom = 'auto';
+        menu.style.marginTop = '4px';
+        menu.style.marginBottom = '0';
+    }
+    
+    menu.style.display = 'block';
+    
+    setTimeout(() => {
+        document.addEventListener('click', closeStatusMenus);
+    }, 0);
 }
 
 function closeStatusMenus() {

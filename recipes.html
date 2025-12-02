@@ -369,18 +369,17 @@ let currentSteps = [];
 
 async function loadData() {
     try {
-        console.log('Loading recipes...');
         const [recipesRes, ingredientsRes] = await Promise.all([
             fetch(`${API_URL}/api/recipes`),
             fetch(`${API_URL}/api/ingredients`)
         ]);
         
-        console.log('Responses received'); // DODAJ
+   
         
         allRecipes = await recipesRes.json();
         allIngredients = await ingredientsRes.json();
         
-        console.log('Data parsed:', allRecipes.length, 'recipes'); // DODAJ
+
         
         renderRecipes();
     } catch (err) {
@@ -391,7 +390,7 @@ async function loadData() {
 }
         
         function renderRecipes() {
-            console.log('renderRecipes called'); // DODAJ
+
     const grid = document.getElementById('recipeGrid');
     
     // Filtruj według statusu
@@ -614,10 +613,7 @@ async function saveRecipe(e) {
     instrukcja: steps
 };
 
-console.log('Saving recipe - ingredients:', ingredients); // DEBUG
-console.log('Saving recipe - steps:', steps); // DEBUG
-console.log('Full data:', data); // DEBUG
-    
+
     const id = document.getElementById('editId').value;
 const url = (id && id !== '') ? `${API_URL}/api/recipes/${id}` : `${API_URL}/api/recipes`;
 const method = (id && id !== '') ? 'PUT' : 'POST';
@@ -735,15 +731,43 @@ function toggleStatusMenu(id) {
     const menu = document.getElementById(`statusMenu-${id}`);
     const isVisible = menu.style.display === 'block';
     
-    document.querySelectorAll('.status-menu').forEach(m => m.style.display = 'none');
+    // Zamknij wszystkie menu
+    document.querySelectorAll('.status-menu').forEach(m => {
+        m.style.display = 'none';
+        m.style.top = '';
+        m.style.bottom = '';
+    });
     
-    menu.style.display = isVisible ? 'none' : 'block';
-    
-    if (!isVisible) {
-        setTimeout(() => {
-            document.addEventListener('click', closeStatusMenus);
-        }, 0);
+    if (isVisible) {
+        return; // Już było otwarte, zamknęliśmy
     }
+    
+    // Sprawdź gdzie jest miejsce
+    const button = menu.parentElement.querySelector('button');
+    const rect = button.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    
+    // Ustaw pozycję w zależności od dostępnego miejsca
+    if (spaceBelow < 200 && spaceAbove > 200) {
+        // Otwórz nad przyciskiem
+        menu.style.bottom = '100%';
+        menu.style.top = 'auto';
+        menu.style.marginBottom = '4px';
+        menu.style.marginTop = '0';
+    } else {
+        // Otwórz pod przyciskiem
+        menu.style.top = '100%';
+        menu.style.bottom = 'auto';
+        menu.style.marginTop = '4px';
+        menu.style.marginBottom = '0';
+    }
+    
+    menu.style.display = 'block';
+    
+    setTimeout(() => {
+        document.addEventListener('click', closeStatusMenus);
+    }, 0);
 }
 
 function closeStatusMenus() {
