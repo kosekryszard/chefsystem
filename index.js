@@ -374,12 +374,25 @@ app.put('/api/dishes/:id', async (req, res) => {
 // DELETE danie - TEST ENDPOINT
 app.delete('/api/dishes/remove/:id', async (req, res) => {
   console.log('DELETE remove endpoint - id:', req.params.id);
-  const { error } = await supabase
-    .from('dishes')
-    .delete()
-    .eq('id', req.params.id);
-  if (error) return res.status(400).json({ error: error.message });
-  res.json({ message: 'Danie usunięte via /remove' });
+  
+  try {
+    const result = await supabase
+      .from('dishes')
+      .delete()
+      .eq('id', req.params.id);
+    
+    console.log('Supabase result:', JSON.stringify(result, null, 2));
+    
+    if (result.error) {
+      console.error('Supabase error:', result.error);
+      return res.status(400).json({ error: result.error.message });
+    }
+    
+    res.json({ message: 'Danie usunięte via /remove' });
+  } catch (err) {
+    console.error('Catch error:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // DELETE danie - FORCE REDEPLOY v2
