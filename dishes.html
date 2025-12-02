@@ -508,9 +508,9 @@ function updateUnitForRecipe(selectElement) {
         
         document.getElementById('componentsList').innerHTML = '';
         if (dish.komponenty && dish.komponenty.length > 0) {
-    console.log('Loading components:', dish.komponenty); // DEBUG
+    console.log('Loading components:', dish.komponenty); // DODAJ
     dish.komponenty.forEach(k => {
-        console.log('Component:', k); // DEBUG
+        console.log('Component:', k); // DODAJ
         const row = addComponentRow();
         row.querySelector('.comp-recipe').value = k.recipes.id;
         row.querySelector('.comp-amount').value = k.ilosc;
@@ -546,7 +546,7 @@ async function deleteDish(id) {
             alert('Błąd: ' + data.error);
         }
     } catch (err) {
-        
+
         alert('Błąd: ' + err.message);
     }
 }
