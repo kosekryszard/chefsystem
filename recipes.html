@@ -739,28 +739,28 @@ function toggleStatusMenu(id) {
     });
     
     if (isVisible) {
-        return; // Już było otwarte, zamknęliśmy
+        return;
     }
     
-    // Sprawdź gdzie jest miejsce
-    const button = menu.parentElement.querySelector('button');
-    const rect = button.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
+    // Znajdź przycisk który wywołał menu (parent div → button)
+    const button = menu.parentElement.querySelector('.action-btn.btn-secondary');
     
-    // Ustaw pozycję w zależności od dostępnego miejsca
-    if (spaceBelow < 200 && spaceAbove > 200) {
-        // Otwórz nad przyciskiem
-        menu.style.bottom = '100%';
-        menu.style.top = 'auto';
-        menu.style.marginBottom = '4px';
-        menu.style.marginTop = '0';
-    } else {
-        // Otwórz pod przyciskiem
-        menu.style.top = '100%';
-        menu.style.bottom = 'auto';
-        menu.style.marginTop = '4px';
-        menu.style.marginBottom = '0';
+    if (button) {
+        const rect = button.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        
+        if (spaceBelow < 200 && spaceAbove > 200) {
+            menu.style.bottom = '100%';
+            menu.style.top = 'auto';
+            menu.style.marginBottom = '4px';
+            menu.style.marginTop = '0';
+        } else {
+            menu.style.top = '100%';
+            menu.style.bottom = 'auto';
+            menu.style.marginTop = '4px';
+            menu.style.marginBottom = '0';
+        }
     }
     
     menu.style.display = 'block';
