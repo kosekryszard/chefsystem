@@ -527,21 +527,28 @@ const method = (id && id !== '') ? 'PUT' : 'POST';
 }
 
 async function deleteDish(id) {
+    console.log('Attempting to delete dish:', id);
     if (!confirm('Czy na pewno usunąć to danie?')) return;
     
     try {
-        const res = await fetch(`${API_URL}/api/dishes/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/api/dishes/${id}`, { 
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        console.log('Response status:', res.status);
         const data = await res.json();
+        console.log('Response data:', data);
         
         if (res.ok) {
             alert('Danie usunięte!');
             loadData();
         } else {
-            alert('Błąd usuwania: ' + data.error);  // POKAŻ BŁĄD
-            console.error('Delete error:', data);
+            alert('Błąd: ' + data.error);
         }
     } catch (err) {
-        alert('Błąd usuwania: ' + err.message);
+        console.error('Error:', err);
+        alert('Błąd: ' + err.message);
     }
 }
 
