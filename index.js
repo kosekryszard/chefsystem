@@ -371,6 +371,43 @@ app.put('/api/dishes/:id', async (req, res) => {
   }
   res.json(dish);
 });
+
+// TEST - bezpośredni DELETE
+app.delete('/api/dishes/test/:id', async (req, res) => {
+  const id = req.params.id;
+  console.log('TEST DELETE - id:', id);
+  
+  // Test 1 - sprawdź czy danie istnieje
+  const { data: existing } = await supabase
+    .from('dishes')
+    .select('id, nazwa')
+    .eq('id', id)
+    .single();
+  
+  console.log('Existing dish:', existing);
+  
+  if (!existing) {
+    return res.status(404).json({ error: 'Danie nie istnieje' });
+  }
+  
+  // Test 2 - usuń bez dependency check
+  const { data, error } = await supabase
+    .from('dishes')
+    .delete()
+    .eq('id', id)
+    .select();
+  
+  console.log('Delete result - data:', data);
+  console.log('Delete result - error:', error);
+  
+  if (error) {
+    return res.status(400).json({ error: error.message, details: error });
+  }
+  
+  res.json({ message: 'OK', deleted: data });
+});
+
+
 // DELETE danie - TEST ENDPOINT
 app.delete('/api/dishes/remove/:id', async (req, res) => {
   console.log('DELETE remove endpoint - id:', req.params.id);
