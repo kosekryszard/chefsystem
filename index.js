@@ -338,9 +338,11 @@ app.post('/api/dishes', async (req, res) => {
   }
   res.status(201).json(dish);
 });
-// PUT edycja dania
 app.put('/api/dishes/:id', async (req, res) => {
   const { komponenty, ...dishData } = req.body;
+  
+  console.log('PUT /api/dishes/:id - komponenty:', komponenty); // DEBUG
+  
   // Aktualizuj danie
   const { data: dish, error: dishError } = await supabase
     .from('dishes')
@@ -349,12 +351,20 @@ app.put('/api/dishes/:id', async (req, res) => {
     .select()
     .single();
   if (dishError) return res.status(400).json({ error: dishError.message });
+  
   // Jeśli są nowe komponenty, usuń stare i dodaj nowe
   if (komponenty) {
-    await supabase
+    console.log('Deleting old components for dish:', req.params.id); // DEBUG
+    
+    const { error: deleteError } = await supabase
       .from('dish_components')
       .delete()
       .eq('dish_id', req.params.id);
+    
+    if (deleteError) {
+      console.error('Delete error:', deleteError); // DEBUG
+    }
+    
     if (komponenty.length > 0) {
       const componentsData = komponenty.map((k, idx) => ({
         dish_id: dish.id,
@@ -364,72 +374,21 @@ app.put('/api/dishes/:id', async (req, res) => {
         kategoria: k.kategoria || 'glowne',
         kolejnosc: idx + 1
       }));
-      await supabase
+      
+      console.log('Inserting components:', componentsData); // DEBUG
+      
+      const { error: insertError } = await supabase
         .from('dish_components')
         .insert(componentsData);
+      
+      if (insertError) {
+        console.error('Insert error:', insertError); // DEBUG
+        return res.status(400).json({ error: insertError.message });
+      }
     }
   }
+  
   res.json(dish);
-});
-
-// TEST - bezpośredni DELETE
-app.delete('/api/dishes/test/:id', async (req, res) => {
-  const id = req.params.id;
-  console.log('TEST DELETE - id:', id);
-  
-  // Test 1 - sprawdź czy danie istnieje
-  const { data: existing } = await supabase
-    .from('dishes')
-    .select('id, nazwa')
-    .eq('id', id)
-    .single();
-  
-  console.log('Existing dish:', existing);
-  
-  if (!existing) {
-    return res.status(404).json({ error: 'Danie nie istnieje' });
-  }
-  
-  // Test 2 - usuń bez dependency check
-  const { data, error } = await supabase
-    .from('dishes')
-    .delete()
-    .eq('id', id)
-    .select();
-  
-  console.log('Delete result - data:', data);
-  console.log('Delete result - error:', error);
-  
-  if (error) {
-    return res.status(400).json({ error: error.message, details: error });
-  }
-  
-  res.json({ message: 'OK', deleted: data });
-});
-
-
-// DELETE danie - TEST ENDPOINT
-app.delete('/api/dishes/remove/:id', async (req, res) => {
-  console.log('DELETE remove endpoint - id:', req.params.id);
-  
-  try {
-    const result = await supabase
-      .from('dishes')
-      .delete()
-      .eq('id', req.params.id);
-    
-    console.log('Supabase result:', JSON.stringify(result, null, 2));
-    
-    if (result.error) {
-      console.error('Supabase error:', result.error);
-      return res.status(400).json({ error: result.error.message });
-    }
-    
-    res.json({ message: 'Danie usunięte via /remove' });
-  } catch (err) {
-    console.error('Catch error:', err);
-    res.status(500).json({ error: err.message });
-  }
 });
 
 // DELETE danie - FORCE REDEPLOY v2
@@ -441,6 +400,7 @@ app.delete('/api/dishes/:id', async (req, res) => {
   if (error) return res.status(400).json({ error: error.message });
   res.json({ message: 'Danie usunięte' });
 });
+
 // ========================================
 // IMPORT/EXPORT
 // ========================================
@@ -2567,7 +2527,7 @@ app.get('/api/shopping/sources', async (req, res) => {
       const today = new Date().toISOString().split('T')[0];
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
       
-      console.log('GET /api/shopping/sources - date_to:', date_to, 'lokal:', lokal); // DEBUG
+
       
       let eventsQuery = supabase
           .from('events')
@@ -2577,7 +2537,7 @@ app.get('/api/shopping/sources', async (req, res) => {
           .neq('status', 'archiwum')
           .order('data_rozpoczecia', { nullsFirst: false });
       
-      console.log('Events query built'); // DEBUG
+   
 
       let groupsQuery = supabase
     .from('groups')
@@ -2612,9 +2572,7 @@ app.get('/api/shopping/sources', async (req, res) => {
           groupsQuery,
           menuCardsQuery
       ]);
-      
-      console.log('Events found:', eventsRes.data?.length, eventsRes.data); // DODAJ
-      console.log('Groups found:', groupsRes.data?.length, groupsRes.data);
+       
 
       if (eventsRes.error) throw eventsRes.error;
       if (groupsRes.error) throw groupsRes.error;
