@@ -508,13 +508,16 @@ function updateUnitForRecipe(selectElement) {
         
         document.getElementById('componentsList').innerHTML = '';
         if (dish.komponenty && dish.komponenty.length > 0) {
-            dish.komponenty.forEach(k => {
-                const row = addComponentRow();
-                row.querySelector('.comp-recipe').value = k.recipes.id;
-                row.querySelector('.comp-amount').value = k.ilosc;
-                row.querySelector('.comp-unit').value = k.jm;
-                row.querySelector('.comp-category').value = k.kategoria;
-            });
+    console.log('Loading components:', dish.komponenty); // DEBUG
+    dish.komponenty.forEach(k => {
+        console.log('Component:', k); // DEBUG
+        const row = addComponentRow();
+        row.querySelector('.comp-recipe').value = k.recipes.id;
+        row.querySelector('.comp-amount').value = k.ilosc;
+        row.querySelector('.comp-unit').value = k.jm;
+        row.querySelector('.comp-category').value = k.kategoria;
+        console.log('Row populated with recipe ID:', k.recipes.id); // DEBUG
+    });
         } else {
             addComponentRow();
         }
