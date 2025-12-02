@@ -471,8 +471,8 @@ function updateUnitForRecipe(selectElement) {
             };
             
             const id = document.getElementById('editId').value;
-            const url = id ? `${API_URL}/api/dishes/${id}` : `${API_URL}/api/dishes`;
-            const method = id ? 'PUT' : 'POST';
+const url = (id && id !== '') ? `${API_URL}/api/dishes/${id}` : `${API_URL}/api/dishes`;
+const method = (id && id !== '') ? 'PUT' : 'POST';
             
             try {
                 const res = await fetch(url, {

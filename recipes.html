@@ -367,25 +367,31 @@ const API_URL = 'https://chefsystem.vercel.app';
 let allIngredients = [];
 let currentSteps = [];
 
-async function loadData() {  // ← USUŃ JEDNO "a"
+async function loadData() {
     try {
         console.log('Loading recipes...');
         const [recipesRes, ingredientsRes] = await Promise.all([
-            fetch(`${API_URL}/api/recipes`),      // ← DODAJ ()
-            fetch(`${API_URL}/api/ingredients`)    // ← DODAJ ()
+            fetch(`${API_URL}/api/recipes`),
+            fetch(`${API_URL}/api/ingredients`)
         ]);
-                
-                allRecipes = await recipesRes.json();
-                allIngredients = await ingredientsRes.json();
-                
-                renderRecipes();
-            } catch (err) {
-                document.getElementById('recipeGrid').innerHTML = 
-                    '<div class="loading">Błąd ładowania danych</div>';
-            }
-        }
+        
+        console.log('Responses received'); // DODAJ
+        
+        allRecipes = await recipesRes.json();
+        allIngredients = await ingredientsRes.json();
+        
+        console.log('Data parsed:', allRecipes.length, 'recipes'); // DODAJ
+        
+        renderRecipes();
+    } catch (err) {
+        console.error('loadData error:', err); // DODAJ
+        document.getElementById('recipeGrid').innerHTML = 
+            '<div class="loading">Błąd ładowania danych</div>';
+    }
+}
         
         function renderRecipes() {
+            console.log('renderRecipes called'); // DODAJ
     const grid = document.getElementById('recipeGrid');
     
     // Filtruj według statusu
@@ -431,9 +437,9 @@ async function loadData() {  // ← USUŃ JEDNO "a"
                     📋
                 </button>
                 
-                <button class="action-btn btn-edit" 
-        onclick="openEditRecipe(${d.id})"  // ← ZMIEŃ NAZWĘ
-        title="Edytuj Recepturę">
+               <button class="action-btn btn-edit" 
+        onclick="editRecipe(${r.id})"
+        title="Edytuj recepturę">
     ✏️
 </button>
                 
