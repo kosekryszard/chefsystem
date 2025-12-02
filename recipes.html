@@ -576,23 +576,12 @@ function renumberSteps() {
 async function saveRecipe(e) {
     e.preventDefault();
     
-    // ... zbieranie danych ...
-    
-    const data = {
-        nazwa: document.getElementById('nazwa').value,
-        // ... reszta pól ...
-        skladniki: ingredients,
-        instrukcja: steps
-    };
-    
-    console.log('Saving recipe with data:', data); // DEBUG
-    console.log('Ingredients count:', ingredients.length); // DEBUG
-    
-    const id = document.getElementById('editId').value;
-    const url = (id && id !== '') ? `${API_URL}/api/recipes/${id}` : `${API_URL}/api/recipes`;
-    const method = (id && id !== '') ? 'PUT' : 'POST';
-    
-    console.log('Method:', method, 'URL:', url); // DEBUG
+    // Zbierz składniki
+    const ingredients = [];
+    document.querySelectorAll('.ingredient-row').forEach(row => {
+        const ingId = row.querySelector('.ing-select').value;
+        const amount = row.querySelector('.ing-amount').value;
+        const unit = row.querySelector('.ing-unit').value;
         
         if (ingId && amount) {
             ingredients.push({
@@ -613,17 +602,21 @@ async function saveRecipe(e) {
     });
     
     const data = {
-        nazwa: document.getElementById('nazwa').value,
-        typ: document.getElementById('typ').value,
-        wydajnosc_ilosc: parseFloat(document.getElementById('wydajnosc_ilosc').value) || null,
-        wydajnosc_jm: document.getElementById('wydajnosc_jm').value,
-        opis: document.getElementById('opis').value || null,
-        wegetarianski: document.getElementById('wegetarianski').checked,
-        weganski: document.getElementById('weganski').checked,
-        alergeny: [],
-        skladniki: ingredients,
-        instrukcja: steps
-    };
+    nazwa: document.getElementById('nazwa').value,
+    typ: document.getElementById('typ').value,
+    wydajnosc_ilosc: parseFloat(document.getElementById('wydajnosc_ilosc').value) || null,
+    wydajnosc_jm: document.getElementById('wydajnosc_jm').value,
+    opis: document.getElementById('opis').value || null,
+    wegetarianski: document.getElementById('wegetarianski').checked,
+    weganski: document.getElementById('weganski').checked,
+    alergeny: [],
+    skladniki: ingredients,
+    instrukcja: steps
+};
+
+console.log('Saving recipe - ingredients:', ingredients); // DEBUG
+console.log('Saving recipe - steps:', steps); // DEBUG
+console.log('Full data:', data); // DEBUG
     
     const id = document.getElementById('editId').value;
 const url = (id && id !== '') ? `${API_URL}/api/recipes/${id}` : `${API_URL}/api/recipes`;
