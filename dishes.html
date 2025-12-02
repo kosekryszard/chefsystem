@@ -311,23 +311,18 @@ let allRecipes = [];
         
 async function loadData() {
     try {
-        console.log('Loading recipes...');
-        const [recipesRes, ingredientsRes] = await Promise.all([
-            fetch(`${API_URL}/api/recipes`),
-            fetch(`${API_URL}/api/ingredients`)
+        const [dishesRes, recipesRes] = await Promise.all([
+            fetch(`${API_URL}/api/dishes`),      // ← ZMIEŃ
+            fetch(`${API_URL}/api/recipes`)
         ]);
         
-        console.log('Responses received'); // DODAJ
-        
+        allDishes = await dishesRes.json();       // ← ZMIEŃ
         allRecipes = await recipesRes.json();
-        allIngredients = await ingredientsRes.json();
-        
-        console.log('Data parsed:', allRecipes.length, 'recipes'); // DODAJ
         
         renderDishes();
     } catch (err) {
-        console.error('loadData error:', err); // DODAJ
-        document.getElementById('recipeGrid').innerHTML = 
+        console.error('loadData error:', err);
+        document.getElementById('dishGrid').innerHTML = 
             '<div class="loading">Błąd ładowania danych</div>';
     }
 }
