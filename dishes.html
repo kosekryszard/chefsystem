@@ -453,7 +453,7 @@ function updateUnitForRecipe(selectElement) {
                     });
                 }
             });
-            
+            console.log('Components to save:', components); // DEBUG
             const data = {
                 nazwa: document.getElementById('nazwa').value,
                 nazwa_karta: document.getElementById('nazwa_karta').value || null,
@@ -464,7 +464,7 @@ function updateUnitForRecipe(selectElement) {
                 weganski: document.getElementById('weganski').checked,
                 komponenty: components
             };
-            
+            console.log('Full data to save:', data); // DEBUG
             const id = document.getElementById('editId').value;
             const url = (id && id.trim() !== '') ? `${API_URL}/api/dishes/${id}` : `${API_URL}/api/dishes`;
             const method = (id && id.trim() !== '') ? 'PUT' : 'POST';
