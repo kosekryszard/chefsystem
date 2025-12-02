@@ -475,17 +475,20 @@ function updateUnitForRecipe(selectElement) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-                
+                console.log('Response status:', res.status); // DODAJ
+    const responseData = await res.json(); // ZMIEŃ - pobierz dane
+    console.log('Response data:', responseData); // DODAJ
+    
                 if (res.ok) {
-    alert(id ? 'Danie zaktualizowane!' : 'Danie dodane!');
-    closeFormModal();
-    loadData();
+             alert(id ? 'Danie zaktualizowane!' : 'Danie dodane!');
+            closeFormModal();
+              loadData(); // ← DODAJ
 } else {
     const error = await res.json();  // ← DODAJ
-    alert('Błąd zapisu: ' + (error.error || 'Nieznany błąd'));  // ← ZMIEŃ
+    alert('Błąd zapisu: ' + (error.error || 'Nieznany błąd'));  // ← DODAJ
     console.error('Save error:', error);  // ← DODAJ
 }
-            } catch (err) {
+} catch (err) {
                 alert('Błąd: ' + err.message);
             }
         }
