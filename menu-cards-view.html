@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChefSystent - Podgląd Karty Menu</title>
+    <link rel="stylesheet" href="chefsystent-brand.css">
+    <link rel="icon" type="image/png" href="piktogram.png">
+    <style>
+        .view-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 0;
+            min-height: calc(100vh - 180px);
+        }
+
+        .menu-cards-sidebar {
+            background: #f8f9fa;
+            border-right: 2px solid #e0e0e0;
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(100vh - 180px);
+        }
+
+        .sidebar-search {
+            margin-bottom: 15px;
+        }
+
+        .sidebar-search input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .sidebar-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar-item {
+            padding: 10px 12px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .sidebar-item:hover {
+            border-color: #D4AF37;
+            background: #fffef7;
+        }
+
+        .sidebar-item.active {
+            border-color: #0A1F44;
+            background: #e3f2fd;
+            font-weight: 600;
+        }
+
+        .sidebar-item-name {
+            font-weight: 600;
+            color: #0A1F44;
+            margin-bottom: 3px;
+        }
+
+        .sidebar-item-meta {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .menu-card-content {
+            padding: 30px;
+            overflow-y: auto;
+            max-height: calc(100vh - 180px);
+        }
+
+        .menu-card-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .nav-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .btn-back {
+            background: #0A1F44;
+        }
+
+        .btn-back:hover {
+            background: #1a3a6b;
+        }
+
+        .menu-card-header {
+            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .menu-card-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .menu-card-meta-header {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .menu-card-section {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .menu-card-section h3 {
+            color: #0A1F44;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #D4AF37;
+            padding-bottom: 10px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 16px;
+            color: #0A1F44;
+            font-weight: 700;
+        }
+
+        .menu-card-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        @media (max-width: 1024px) {
+            .view-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .menu-cards-sidebar {
+                display: none;
+            }
+
+            .menu-card-content {
+                max-height: none;
+            }
+        }
+
+        .loading-view {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .error-view {
+            text-align: center;
+            padding: 60px 20px;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-logo">
+                <img src="LOGO_chefsystent.png" alt="Chefsystent Logo">
+            </div>
+            <p>System Zarządzania Kuchnią - Podgląd Karty Menu</p>
+            
+            <nav>
+                <a href="index.html">🏠 Start</a>
+                <a href="ingredients.html">Surowce</a>
+                <a href="recipes.html">Receptury</a>
+                <a href="dishes.html">Dania</a>
+                <a href="groups.html">Grupy</a>
+                <a href="events.html">Eventy</a>
+                <a href="menu-cards.html" class="active">Karty</a>
+                <a href="shopping.html">Zakupy</a>
+            </nav>
+        </header>
+
+        <div class="content">
+            <div class="view-layout">
+                <!-- Sidebar -->
+                <div class="menu-cards-sidebar">
+                    <h3 style="margin-bottom: 15px; color: #0A1F44;">Wszystkie karty</h3>
+                    
+                    <div class="sidebar-search">
+                        <input type="text" id="sidebarSearch" placeholder="🔍 Szukaj..." onkeyup="filterSidebar()">
+                    </div>
+
+                    <div class="sidebar-list" id="sidebarList">
+                        <div class="loading">Ładowanie...</div>
+                    </div>
+                </div>
+
+                <!-- Main content -->
+                <div class="menu-card-content">
+                    <!-- Loading -->
+                    <div id="loadingState" class="loading-view">
+                        <div class="spinner"></div>
+                        <p>Ładowanie karty menu...</p>
+                    </div>
+
+                    <!-- Error -->
+                    <div id="errorState" class="error-view" style="display: none;">
+                        <h2>❌ Błąd</h2>
+                        <p id="errorMessage"></p>
+                        <button class="btn btn-primary" onclick="location.href='menu-cards.html'">
+                            Powrót do listy
+                        </button>
+                    </div>
+
+                    <!-- Menu card view -->
+                    <div id="menuCardView" style="display: none;">
+                        <!-- Navigation -->
+                        <div class="menu-card-nav">
+                            <button class="nav-btn btn-back" onclick="location.href='menu-cards.html'">
+                                ← Powrót do listy
+                            </button>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="nav-btn" id="prevBtn" onclick="navigateMenuCard('prev')">
+                                    ← Poprzednia
+                                </button>
+                                <button class="nav-btn" id="nextBtn" onclick="navigateMenuCard('next')">
+                                    Następna →
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Header -->
+                        <div class="menu-card-header">
+                            <div class="menu-card-title" id="menuCardName"></div>
+                            <div class="menu-card-meta-header" id="menuCardMeta"></div>
+                        </div>
+
+                        <!-- Basic Info -->
+                        <div class="menu-card-section">
+                            <h3>📋 Informacje podstawowe</h3>
+                            <div class="info-grid" id="basicInfo"></div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="menu-card-section" id="descriptionSection" style="display: none;">
+                            <h3>📝 Opis</h3>
+                            <p id="menuCardDescription"></p>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="menu-card-actions">
+                            <button class="action-btn btn-edit" onclick="editMenuCard()">
+                                ✏️ Edytuj
+                            </button>
+                            <button class="action-btn btn-duplicate" onclick="duplicateMenuCard()">
+                                📋 Duplikuj
+                            </button>
+                            <button class="action-btn btn-status" onclick="showStatusMenu(event)">
+                                📊 Zmień status
+                            </button>
+                            <button class="action-btn btn-delete" onclick="deleteMenuCard()">
+                                🗑️ Usuń
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://chefsystem.vercel.app';
+        
+        let currentMenuCard = null;
+        let allMenuCards = [];
+        let filteredSidebarMenuCards = [];
+        let currentMenuCardId = null;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        currentMenuCardId = parseInt(urlParams.get('id'));
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!currentMenuCardId) {
+                showError('Brak ID karty menu');
+                return;
+            }
+
+            await loadAllMenuCards();
+            await loadMenuCard(currentMenuCardId);
+        });
+
+        async function loadAllMenuCards() {
+            try {
+                const response = await fetch(`${API_URL}/api/menu-cards`);
+                if (!response.ok) throw new Error('Błąd ładowania listy');
+                
+                allMenuCards = await response.json();
+                filteredSidebarMenuCards = [...allMenuCards];
+                renderSidebar();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById('sidebarList');
+            
+            if (filteredSidebarMenuCards.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #666;">Brak wyników</div>';
+                return;
+            }
+
+            list.innerHTML = filteredSidebarMenuCards.map(card => {
+                const isActive = card.id === currentMenuCardId;
+                const seasonEmoji = {
+                    'wiosna': '🌸',
+                    'lato': '☀️',
+                    'jesien': '🍂',
+                    'zima': '❄️'
+                };
+                return `
+                    <div class="sidebar-item ${isActive ? 'active' : ''}" onclick="loadMenuCard(${card.id})">
+                        <div class="sidebar-item-name">${card.nazwa}</div>
+                        <div class="sidebar-item-meta">
+                            ${card.sezon ? `${seasonEmoji[card.sezon] || ''} ${card.sezon.charAt(0).toUpperCase() + card.sezon.slice(1)}` : 'Brak sezonu'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterSidebar() {
+            const searchTerm = document.getElementById('sidebarSearch').value.toLowerCase();
+            filteredSidebarMenuCards = allMenuCards.filter(c => 
+                c.nazwa.toLowerCase().includes(searchTerm) ||
+                (c.typ && c.typ.toLowerCase().includes(searchTerm))
+            );
+            renderSidebar();
+        }
+
+        async function loadMenuCard(cardId) {
+            currentMenuCardId = cardId;
+            window.history.replaceState(null, '', `menu-cards-view.html?id=${cardId}`);
+            
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('errorState').style.display = 'none';
+            document.getElementById('menuCardView').style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_URL}/api/menu-cards/${cardId}`);
+                if (!response.ok) throw new Error('Karta menu nie znaleziona');
+                
+                currentMenuCard = await response.json();
+                renderMenuCard();
+                updateNavButtons();
+                renderSidebar();
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            }
+        }
+
+        function renderMenuCard() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('menuCardView').style.display = 'block';
+
+            // Name
+            document.getElementById('menuCardName').textContent = currentMenuCard.nazwa;
+
+            // Meta badges
+            const metaBadges = [];
+            
+            const statusBadges = {
+                'draft': '<span class="badge badge-status-draft">📝 Robocze</span>',
+                'active': '<span class="badge badge-status-active">✅ Aktywne</span>',
+                'archived': '<span class="badge badge-status-archived">📦 Archiwum</span>'
+            };
+            metaBadges.push(statusBadges[currentMenuCard.status] || '');
+            
+            if (currentMenuCard.typ) {
+                metaBadges.push(`<span class="badge badge-type">${currentMenuCard.typ}</span>`);
+            }
+            
+            const seasonEmoji = {
+                'wiosna': '🌸',
+                'lato': '☀️',
+                'jesien': '🍂',
+                'zima': '❄️'
+            };
+            if (currentMenuCard.sezon) {
+                metaBadges.push(`<span class="badge badge-type">${seasonEmoji[currentMenuCard.sezon] || ''} ${currentMenuCard.sezon.charAt(0).toUpperCase() + currentMenuCard.sezon.slice(1)}</span>`);
+            }
+            
+            document.getElementById('menuCardMeta').innerHTML = metaBadges.join('');
+
+            // Basic info
+            let basicInfo = '';
+            
+            if (currentMenuCard.typ) {
+                basicInfo += `<div class="info-item">
+                    <div class="info-label">Typ karty</div>
+                    <div class="info-value">${currentMenuCard.typ}</div>
+                </div>`;
+            }
+            
+            if (currentMenuCard.sezon) {
+                basicInfo += `<div class="info-item">
+                    <div class="info-label">Sezon</div>
+                    <div class="info-value">${currentMenuCard.sezon.charAt(0).toUpperCase() + currentMenuCard.sezon.slice(1)}</div>
+                </div>`;
+            }
+            
+            if (currentMenuCard.data_od) {
+                basicInfo += `<div class="info-item">
+                    <div class="info-label">Obowiązuje od</div>
+                    <div class="info-value">${new Date(currentMenuCard.data_od).toLocaleDateString('pl-PL')}</div>
+                </div>`;
+            }
+            
+            if (currentMenuCard.data_do) {
+                basicInfo += `<div class="info-item">
+                    <div class="info-label">Obowiązuje do</div>
+                    <div class="info-value">${new Date(currentMenuCard.data_do).toLocaleDateString('pl-PL')}</div>
+                </div>`;
+            }
+            
+            if (currentMenuCard.created_at) {
+                basicInfo += `<div class="info-item">
+                    <div class="info-label">Utworzono</div>
+                    <div class="info-value">${new Date(currentMenuCard.created_at).toLocaleDateString('pl-PL')}</div>
+                </div>`;
+            }
+
+            document.getElementById('basicInfo').innerHTML = basicInfo;
+
+            // Description
+            if (currentMenuCard.opis) {
+                document.getElementById('descriptionSection').style.display = 'block';
+                document.getElementById('menuCardDescription').textContent = currentMenuCard.opis;
+            } else {
+                document.getElementById('descriptionSection').style.display = 'none';
+            }
+        }
+
+        function updateNavButtons() {
+            const currentIndex = allMenuCards.findIndex(c => c.id === currentMenuCardId);
+            
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.disabled = currentIndex <= 0;
+            nextBtn.disabled = currentIndex >= allMenuCards.length - 1;
+        }
+
+        function navigateMenuCard(direction) {
+            const currentIndex = allMenuCards.findIndex(c => c.id === currentMenuCardId);
+            let newIndex;
+            
+            if (direction === 'prev') {
+                newIndex = currentIndex - 1;
+            } else {
+                newIndex = currentIndex + 1;
+            }
+            
+            if (newIndex >= 0 && newIndex < allMenuCards.length) {
+                loadMenuCard(allMenuCards[newIndex].id);
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('menuCardView').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        // === ACTIONS ===
+        function editMenuCard() {
+            location.href = `menu-cards.html?edit=${currentMenuCardId}`;
+        }
+
+        async function duplicateMenuCard() {
+            if (!confirm(`Duplikować kartę "${currentMenuCard.nazwa}"?`)) return;
+            
+            const newCard = {
+                nazwa: currentMenuCard.nazwa + ' (kopia)',
+                typ: currentMenuCard.typ,
+                sezon: currentMenuCard.sezon,
+                opis: currentMenuCard.opis,
+                data_od: currentMenuCard.data_od,
+                data_do: currentMenuCard.data_do,
+                status: 'draft'
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/api/menu-cards`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newCard)
+                });
+                
+                if (!response.ok) throw new Error('Błąd duplikowania');
+                
+                const created = await response.json();
+                alert('Zduplikowano kartę menu (bez dań)');
+                location.href = `menu-cards-view.html?id=${created.id}`;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd duplikowania: ' + error.message);
+            }
+        }
+
+        function showStatusMenu(event) {
+            event.stopPropagation();
+            
+            const existing = document.getElementById('floatingStatusMenu');
+            if (existing) existing.remove();
+            
+            const menu = document.createElement('div');
+            menu.id = 'floatingStatusMenu';
+            menu.className = 'floating-status-menu';
+            menu.innerHTML = `
+                <div onclick="changeStatus('draft')">📝 Robocze</div>
+                <div onclick="changeStatus('active')">✅ Aktywne</div>
+                <div onclick="changeStatus('archived')">📦 Archiwum</div>
+            `;
+            
+            document.body.appendChild(menu);
+            
+            const buttonRect = event.target.getBoundingClientRect();
+            const menuRect = menu.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
+            
+            let top, left;
+            
+            if (buttonRect.bottom + menuRect.height + 10 < viewportHeight) {
+                top = buttonRect.bottom + 5;
+            } else {
+                top = buttonRect.top - menuRect.height - 5;
+            }
+            
+            if (buttonRect.left + menuRect.width > viewportWidth) {
+                left = buttonRect.right - menuRect.width;
+            } else {
+                left = buttonRect.left;
+            }
+            
+            menu.style.top = `${top}px`;
+            menu.style.left = `${left}px`;
+            
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!menu.contains(e.target)) {
+                        menu.remove();
+                        document.removeEventListener('click', closeMenu);
+                    }
+                });
+            }, 10);
+        }
+
+        async function changeStatus(newStatus) {
+            try {
+                const response = await fetch(`${API_URL}/api/menu-cards/${currentMenuCardId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                if (!response.ok) throw new Error('Błąd zmiany statusu');
+                
+                document.getElementById('floatingStatusMenu')?.remove();
+                loadMenuCard(currentMenuCardId);
+                loadAllMenuCards();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd zmiany statusu');
+            }
+        }
+
+        async function deleteMenuCard() {
+            if (!confirm(`Czy na pewno usunąć "${currentMenuCard.nazwa}"?`)) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/menu-cards/${currentMenuCardId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Błąd usuwania');
+                
+                alert('Usunięto kartę menu');
+                location.href = 'menu-cards.html';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd usuwania: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
