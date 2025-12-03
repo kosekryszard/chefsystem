@@ -364,13 +364,15 @@
     nazwa: document.getElementById('nazwa').value,
     typ: document.getElementById('typ').value,
     lokal: document.getElementById('lokal').value,
-    status: 'draft', // Nowe karty zawsze draft
+    status: 'draft',
     data_od: document.getElementById('data_od').value || null,
     data_do: document.getElementById('data_do').value || null
 };
-            
-            try {
-                const url = id ? `${API_URL}/api/menu-cards/${id}` : `${API_URL}/api/menu-cards`;
+
+console.log('Sending data:', data); // DODAJ TĘ LINIĘ
+
+try {
+    const url = id ? `${API_URL}/api/menu-cards/${id}` : `${API_URL}/api/menu-cards`;
                 const method = id ? 'PUT' : 'POST';
                 
                 const response = await fetch(url, {
