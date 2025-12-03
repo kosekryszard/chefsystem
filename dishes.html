@@ -647,45 +647,47 @@ function closeStatusMenus() {
 }
 
 function toggleStatusMenu(id) {
-    const menu = document.getElementById(`statusMenu-${id}`);
+    // Usuń poprzednie menu jeśli istnieje
+    const existingMenu = document.getElementById('floating-status-menu');
+    if (existingMenu) {
+        existingMenu.remove();
+    }
     
-    // Zamknij inne otwarte menu
-    document.querySelectorAll('.status-menu').forEach(m => {
-        if (m.id !== `statusMenu-${id}`) {
-            m.style.display = 'none';
-        }
-    });
+    // Znajdź przycisk który wywołał
+    const button = event.target.closest('button');
+    const rect = button.getBoundingClientRect();
     
-    const isVisible = menu.style.display === 'block';
-    menu.style.display = isVisible ? 'none' : 'block';
+    // Stwórz nowe menu na końcu body
+    const menu = document.createElement('div');
+    menu.id = 'floating-status-menu';
+    menu.className = 'status-menu';
+    menu.style.position = 'fixed';
+    menu.style.left = rect.left + 'px';
+    menu.style.zIndex = '999999';
+    menu.innerHTML = `
+        <div onclick="changeStatus(${id}, 'draft')">📝 Robocze</div>
+        <div onclick="changeStatus(${id}, 'active')">✅ Aktywne</div>
+        <div onclick="changeStatus(${id}, 'archived')">📦 Archiwum</div>
+    `;
     
-    // Sprawdź czy menu wychodzi poza ekran i ustaw pozycję
-    if (!isVisible) {
+    // Ustaw pozycję - nad lub pod przyciskiem
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceBelow < 150) {
+        menu.style.bottom = (window.innerHeight - rect.top) + 'px';
+        menu.style.top = 'auto';
+    } else {
+        menu.style.top = rect.bottom + 'px';
+        menu.style.bottom = 'auto';
+    }
+    
+    document.body.appendChild(menu);
+    
     setTimeout(() => {
-        const rect = menu.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        
-     
-        
-        if (rect.bottom > viewportHeight - 20) {
-         
-            menu.style.top = '';
-            menu.style.bottom = '100%';
-            menu.style.marginBottom = '5px';
-            menu.style.marginTop = '';
-        } else {
-          
-            menu.style.bottom = '';
-            menu.style.top = '100%';
-            menu.style.marginTop = '5px';
-            menu.style.marginBottom = '';
-        }
-    }, 50); // ← ZWIĘKSZ z 10 na 50
-    
-    setTimeout(() => {
-        document.addEventListener('click', closeStatusMenus);
+        document.addEventListener('click', () => {
+            menu.remove();
+        }, { once: true });
     }, 0);
-}}
+}
 
 
 
