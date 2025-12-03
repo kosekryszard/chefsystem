@@ -2151,11 +2151,11 @@ app.get('/api/menu-cards/:id', async (req, res) => {
 // POST /api/menu-cards - Dodaj kartę
 app.post('/api/menu-cards', async (req, res) => {
   try {
-      const { nazwa, lokal, status, data_od, data_do } = req.body;
+      const { nazwa, lokal, typ, status, data_od, data_do } = req.body;
       
       const { data, error } = await supabase
           .from('menu_cards')
-          .insert([{ nazwa, lokal, status, data_od, data_do }])
+          .insert([{ nazwa, lokal, typ, status, data_od, data_do }])
           .select()
           .single();
       
@@ -2172,11 +2172,11 @@ app.post('/api/menu-cards', async (req, res) => {
 app.put('/api/menu-cards/:id', async (req, res) => {
   try {
       const { id } = req.params;
-      const { nazwa, lokal, status, data_od, data_do } = req.body;
+      const { nazwa, lokal, typ, status, data_od, data_do } = req.body;
       
       const { data, error } = await supabase
           .from('menu_cards')
-          .update({ nazwa, lokal, status, data_od, data_do })
+          .update({ nazwa, lokal, typ, status, data_od, data_do })
           .eq('id', id)
           .select()
           .single();
