@@ -33,13 +33,19 @@
                 <button class="filter-btn active" data-filter="all" onclick="filterMenuCards('all')">
                     Wszystkie
                 </button>
-                <button class="filter-btn" data-filter="draft" onclick="filterMenuCards('draft')">
+                <button class="filter-btn" data-filter="robocza" onclick="filterMenuCards('robocza')">
                     📝 Robocze
                 </button>
-                <button class="filter-btn" data-filter="active" onclick="filterMenuCards('active')">
-                    ✅ Aktywne
+                <button class="filter-btn" data-filter="stała" onclick="filterMenuCards('stała')">
+                    ✅ Stałe
                 </button>
-                <button class="filter-btn" data-filter="archived" onclick="filterMenuCards('archived')">
+                <button class="filter-btn" data-filter="sezonowa" onclick="filterMenuCards('sezonowa')">
+                    🌸 Sezonowe
+                </button>
+                <button class="filter-btn" data-filter="eventowa" onclick="filterMenuCards('eventowa')">
+                    🎉 Eventowe
+                </button>
+                <button class="filter-btn" data-filter="archiwalna" onclick="filterMenuCards('archiwalna')">
                     📦 Archiwum
                 </button>
             </div>
@@ -79,8 +85,13 @@
                     <input type="hidden" id="editId">
                     
                     <div class="form-group">
-                        <label>Nazwa karty *</label>
-                        <input type="text" id="nazwa" required>
+                        <label>Lokal *</label>
+                        <select id="lokal" required>
+                            <option value="Szczelinka">Szczelinka</option>
+                            <option value="Pasterka">Pasterka</option>
+                            <option value="Stolove">Stolove</option>
+                            <option value="Szczeliniec">Szczeliniec</option>
+                        </select>
                     </div>
 
                     <div class="form-row">
@@ -189,7 +200,7 @@
             grid.innerHTML = filteredMenuCards.map(card => {
                 // Status badge
                 const statusBadges = {
-                    'draft': '<span class="badge badge-status-draft">📝 Robocze</span>',
+                    'robocza': '<span class="badge badge-status-robocza">📝 Robocze</span>',
                     'active': '<span class="badge badge-status-active">✅ Aktywne</span>',
                     'archived': '<span class="badge badge-status-archived">📦 Archiwum</span>'
                 };
@@ -262,7 +273,7 @@
             menu.id = 'floatingStatusMenu';
             menu.className = 'floating-status-menu';
             menu.innerHTML = `
-                <div onclick="changeStatus(${cardId}, 'draft')">📝 Robocze</div>
+                <div onclick="changeStatus(${cardId}, 'robocza')">📝 Robocze</div>
                 <div onclick="changeStatus(${cardId}, 'active')">✅ Aktywne</div>
                 <div onclick="changeStatus(${cardId}, 'archived')">📦 Archiwum</div>
             `;
