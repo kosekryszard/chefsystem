@@ -3,235 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chefsystent - Wydarzenia i Eventy</title>
+    <title>ChefSystent - Eventy</title>
     <link rel="stylesheet" href="chefsystent-brand.css">
     <link rel="icon" type="image/png" href="piktogram.png">
-    <style>
-        body {
-            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }
-        .content { padding: 30px; }
-        
-        /* Karty eventów */
-        .events-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-        .event-card {
-            background: white;
-            border: 2px solid #f0f0f0;
-            border-radius: 12px;
-            padding: 20px;
-            transition: all 0.3s;
-        }
-        .event-card:hover {
-            border-color: #D4AF37;
-            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
-            transform: translateY(-3px);
-        }
-        .event-card h3 {
-            color: #0A1F44;
-            margin-bottom: 10px;
-        }
-        .event-info {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 10px;
-            font-size: 14px;
-            color: #666;
-        }
-        .event-info-row {
-            display: flex;
-            gap: 10px;
-        }
-        .event-info-row strong {
-            min-width: 120px;
-            color: #0A1F44;
-        }
-        .event-status {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 10px;
-        }
-        .status-roboczy { background: #f0f0f0; color: #666; }
-        .status-aktywny { background: #e8f5e9; color: #388e3c; }
-        .status-odwolany { background: #ffebee; color: #c62828; }
-        .status-archiwum { background: #fff3e0; color: #e65100; }
-        
-        /* Przyciski akcji */
-        .action-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 15px;
-        }
-        
-        .action-btn {
-            flex: 0 0 auto;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-        
-        .btn-plan {
-            background: #28a745;
-            color: white;
-        }
-        .btn-plan:hover {
-            background: #218838;
-            transform: translateY(-2px);
-        }
-        
-        .btn-edit {
-            background: #17A2B8;
-            color: white;
-        }
-        .btn-edit:hover { 
-            background: #138496;
-            transform: translateY(-2px);
-        }
-        
-        .btn-duplicate {
-            background: #6c757d;
-            color: white;
-        }
-        .btn-duplicate:hover {
-            background: #5a6268;
-            transform: translateY(-2px);
-        }
-        
-        .btn-status {
-            background: #1a3a6b;
-            color: white;
-            position: relative;
-        }
-        .btn-status:hover {
-            background: #0A1F44;
-            transform: translateY(-2px);
-        }
-        
-        .btn-delete {
-            background: #dc3545;
-            color: white;
-        }
-        .btn-delete:hover {
-            background: #c82333;
-            transform: translateY(-2px);
-        }
-
-        /* Filtry */
-        .filters {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .filter-btn {
-            padding: 8px 20px;
-            border: 2px solid #e0e0e0;
-            background: white;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 600;
-        }
-        .filter-btn.active {
-            background: #D4AF37;
-            color: #0A1F44;
-            border-color: #D4AF37;
-        }
-        .filter-btn:hover:not(.active) {
-            border-color: #D4AF37;
-        }
-
-        /* Menu statusów */
-        .btn-status {
-            position: relative; /* Rodzic musi być relative */
-        }
-        .status-menu {
-            position: absolute;
-            bottom: 100%; /* Wyświetl NAD przyciskiem */
-            left: 0;
-            background: white;
-            border: 2px solid #0A1F44;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 1000;
-            min-width: 180px;
-            margin-bottom: 5px;
-        }
-        .status-menu div {
-            padding: 12px 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .status-menu div:last-child {
-            border-bottom: none;
-        }
-        .status-menu div:hover {
-            background: #f8f9fa;
-            color: #D4AF37;
-            font-weight: 600;
-        }
-
-        /* Formularz */
-        .form-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .form-section h3 {
-            color: #0A1F44;
-            margin-bottom: 15px;
-        }
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #0A1F44;
-            font-size: 14px;
-        }
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #D4AF37;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -239,7 +13,7 @@
             <div class="header-logo">
                 <img src="LOGO_chefsystent.png" alt="Chefsystent Logo">
             </div>
-            <p>System Zarządzania Kuchnią - Wydarzenia i Eventy</p>
+            <p>System Zarządzania Kuchnią - Eventy</p>
             
             <nav>
                 <a href="index.html">🏠 Start</a>
@@ -247,129 +21,100 @@
                 <a href="recipes.html">Receptury</a>
                 <a href="dishes.html">Dania</a>
                 <a href="groups.html">Grupy</a>
-                <a href="events.html">Eventy</a>
+                <a href="events.html" class="active">Eventy</a>
                 <a href="menu-cards.html">Karty</a>
                 <a href="shopping.html">Zakupy</a>
             </nav>
         </header>
 
         <div class="content">
-            <!-- Nagłówek z przyciskiem -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>Lista wydarzeń</h2>
+            <!-- Filtry statusów -->
+            <div class="filters-bar">
+                <button class="filter-btn active" data-filter="all" onclick="filterEvents('all')">
+                    Wszystkie
+                </button>
+                <button class="filter-btn" data-filter="draft" onclick="filterEvents('draft')">
+                    📝 Robocze
+                </button>
+                <button class="filter-btn" data-filter="active" onclick="filterEvents('active')">
+                    ✅ Aktywne
+                </button>
+                <button class="filter-btn" data-filter="completed" onclick="filterEvents('completed')">
+                    ✔️ Zakończone
+                </button>
+                <button class="filter-btn" data-filter="archived" onclick="filterEvents('archived')">
+                    📦 Archiwum
+                </button>
+            </div>
+
+            <!-- Controls -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <h2>Lista eventów</h2>
                 <button class="btn btn-primary" onclick="openAddModal()">➕ Dodaj event</button>
             </div>
 
-            <!-- Filtry -->
-            <div class="filters">
-                <button class="filter-btn active" onclick="filterEvents('wszystkie')">Wszystkie</button>
-                <button class="filter-btn" onclick="filterEvents('roboczy')">Robocze</button>
-                <button class="filter-btn" onclick="filterEvents('aktywny')">Aktywne</button>
-                <button class="filter-btn" onclick="filterEvents('odwolany')">Odwołane</button>
-                <button class="filter-btn" onclick="filterEvents('archiwum')">Archiwum</button>
+            <!-- Search -->
+            <div class="controls">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Wyszukaj event..." onkeyup="applyFilters()">
+                </div>
             </div>
-
-            <!-- Siatka eventów -->
-            <div class="events-grid" id="eventsGrid">
-                <!-- Karty eventów dynamicznie -->
-            </div>
-
-            <!-- Spinner -->
-            <div id="loader" style="text-align: center; padding: 40px; display: none;">
-                <div class="spinner"></div>
-                <p>Ładowanie wydarzeń...</p>
-            </div>
-
-            <!-- Komunikat o braku eventów -->
-            <div id="noEvents" style="text-align: center; padding: 40px; color: #666; display: none;">
-                <p>Nie znaleziono wydarzeń. Dodaj pierwszy event!</p>
+            
+            <!-- Grid eventów -->
+            <div class="items-grid" id="eventsGrid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Ładowanie eventów...
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal dodawania/edycji eventu -->
-    <div class="modal" id="eventModal">
-        <div class="modal-content" style="max-width: 800px;">
+    <!-- Modal dodawania/edycji (uproszczony - zachowaj pełny z obecnego events.html) -->
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitle">Dodaj event</h2>
                 <span class="close" onclick="closeModal()">&times;</span>
             </div>
             <div class="modal-body">
                 <form id="eventForm" onsubmit="saveEvent(event)">
-                    <!-- Podstawowe dane -->
-                    <div class="form-section">
-                        <h3>Podstawowe informacje</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="eventNazwa">Nazwa eventu *</label>
-                                <input type="text" id="eventNazwa" name="nazwa" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="eventTyp">Typ eventu</label>
-                                <select id="eventTyp" name="typ">
-                                    <option value="event">Event</option>
-                                    <option value="catering">Catering</option>
-                                    <option value="delivery">Delivery</option>
-                                </select>
-                            </div>
+                    <input type="hidden" id="editId">
+                    
+                    <div class="form-group">
+                        <label>Nazwa eventu *</label>
+                        <input type="text" id="nazwa" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Data rozpoczęcia *</label>
+                            <input type="date" id="data_rozpoczecia" required>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="eventDataStart">Data rozpoczęcia *</label>
-                                <input type="date" id="eventDataStart" name="data_rozpoczecia" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="eventDataEnd">Data zakończenia *</label>
-                                <input type="date" id="eventDataEnd" name="data_zakonczenia" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="eventLokalizacja">Lokalizacja</label>
-                                <input type="text" id="eventLokalizacja" name="lokalizacja" placeholder="np. Sala konferencyjna A">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="eventNotatki">Notatki</label>
-                                <textarea id="eventNotatki" name="notatki" rows="3" placeholder="Dodatkowe informacje..."></textarea>
-                            </div>
+                        <div class="form-group">
+                            <label>Data zakończenia *</label>
+                            <input type="date" id="data_zakonczenia" required>
                         </div>
                     </div>
 
-                    <!-- Liczba uczestników -->
-                    <div class="form-section">
-                        <h3>Liczba uczestników</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="eventOsobDoroslych">Dorośli</label>
-                                <input type="number" id="eventOsobDoroslych" name="liczba_osob_doroslych" min="0" value="0">
-                            </div>
-                            <div class="form-group">
-                                <label for="eventDzieci0_3">Dzieci 0-3 lat</label>
-                                <input type="number" id="eventDzieci0_3" name="liczba_dzieci_0_3" min="0" value="0">
-                            </div>
-                            <div class="form-group">
-                                <label for="eventDzieci4_12">Dzieci 4-12 lat</label>
-                                <input type="number" id="eventDzieci4_12" name="liczba_dzieci_4_12" min="0" value="0">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="eventDzieci12_18">Młodzież 12-18 lat</label>
-                                <input type="number" id="eventDzieci12_18" name="liczba_dzieci_12_18" min="0" value="0">
-                            </div>
-                            <div class="form-group">
-                                <label for="eventOsob18Plus">Osoby 18+ (specjalna dieta)</label>
-                                <input type="number" id="eventOsob18Plus" name="liczba_osob_18_plus" min="0" value="0">
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label>Lokalizacja</label>
+                        <input type="text" id="lokalizacja">
                     </div>
 
-                    <!-- Przyciski -->
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
-                        <button type="submit" class="btn btn-primary" id="saveBtn">Zapisz event</button>
+                    <div class="form-group">
+                        <label>Klient</label>
+                        <input type="text" id="klient">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Opis</label>
+                        <textarea id="opis" rows="3"></textarea>
+                    </div>
+                    
+                    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" class="btn" onclick="closeModal()">Anuluj</button>
+                        <button type="submit" class="btn btn-success">Zapisz</button>
                     </div>
                 </form>
             </div>
@@ -377,382 +122,342 @@
     </div>
 
     <script>
-        // ============================================
-        // ZMIENNE GLOBALNE
-        // ============================================
+        const API_URL = 'https://chefsystem.vercel.app';
+        
         let allEvents = [];
-        let currentFilter = 'wszystkie';
-        let editingEventId = null;
+        let filteredEvents = [];
+        let currentFilter = 'all';
 
-        // ============================================
-        // INICJALIZACJA
-        // ============================================
-        document.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', () => {
             loadEvents();
         });
 
-        // ============================================
-        // ŁADOWANIE EVENTÓW
-        // ============================================
         async function loadEvents() {
-            showLoader();
-            
             try {
-                const response = await fetch('/api/events');
-                if (!response.ok) throw new Error('Błąd pobierania eventów');
+                const response = await fetch(`${API_URL}/api/events`);
+                if (!response.ok) throw new Error('Błąd ładowania');
                 
                 allEvents = await response.json();
-                renderEvents();
+                filteredEvents = [...allEvents];
+                
+                renderGrid();
             } catch (error) {
-                console.error('Błąd:', error);
-                alert('Błąd ładowania eventów: ' + error.message);
-            } finally {
-                hideLoader();
+                console.error('Error:', error);
+                document.getElementById('eventsGrid').innerHTML = 
+                    '<div class="loading">❌ Błąd ładowania danych</div>';
             }
         }
 
-        // ============================================
-        // RENDEROWANIE EVENTÓW
-        // ============================================
-        function renderEvents() {
-            const grid = document.getElementById('eventsGrid');
-            const noEventsMsg = document.getElementById('noEvents');
+        function filterEvents(filter) {
+            currentFilter = filter;
             
-            // Filtruj eventy
-            let filteredEvents = allEvents;
-            if (currentFilter !== 'wszystkie') {
-                filteredEvents = allEvents.filter(e => e.status === currentFilter);
-            }
-            
-            // Sortuj po dacie rozpoczęcia (najbliższe na górze)
-            filteredEvents.sort((a, b) => new Date(a.data_rozpoczecia) - new Date(b.data_rozpoczecia));
-            
-            // Wyświetl komunikat jeśli brak
-            if (filteredEvents.length === 0) {
-                grid.style.display = 'none';
-                noEventsMsg.style.display = 'block';
-                return;
-            }
-            
-            grid.style.display = 'grid';
-            noEventsMsg.style.display = 'none';
-            
-            // Generuj karty
-            grid.innerHTML = filteredEvents.map(event => `
-                <div class="event-card">
-                    <h3>${event.nazwa}</h3>
-                    <div class="event-info">
-                        <div class="event-info-row">
-                            <strong>Typ:</strong>
-                            <span>${getEventTypeName(event.typ)}</span>
-                        </div>
-                        <div class="event-info-row">
-                            <strong>Termin:</strong>
-                            <span>${formatDate(event.data_rozpoczecia)} - ${formatDate(event.data_zakonczenia)}</span>
-                        </div>
-                        <div class="event-info-row">
-                            <strong>Liczba osób:</strong>
-                            <span>${getTotalPeople(event)}</span>
-                        </div>
-                        ${event.lokalizacja ? `
-                        <div class="event-info-row">
-                            <strong>Lokalizacja:</strong>
-                            <span>${event.lokalizacja}</span>
-                        </div>
-                        ` : ''}
-                    </div>
-                    <span class="event-status status-${event.status}">${getStatusName(event.status)}</span>
-                    
-                    <div class="action-buttons">
-                        <button class="action-btn btn-plan" onclick="planEvent(${event.id})" title="Planuj">
-                            📅 Planuj
-                        </button>
-                        <button class="action-btn btn-edit" onclick="editEvent(${event.id})" title="Edytuj">
-                            ✏️
-                        </button>
-                        <button class="action-btn btn-duplicate" onclick="duplicateEvent(${event.id})" title="Duplikuj">
-                            📋
-                        </button>
-                        <button class="action-btn btn-status" onclick="toggleStatusMenu(event, ${event.id})" title="Zmień status">
-                            📦
-                        </button>
-                        <button class="action-btn btn-delete" onclick="deleteEvent(${event.id})" title="Usuń">
-                            🗑️
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // ============================================
-        // FUNKCJE POMOCNICZE - FORMATOWANIE
-        // ============================================
-        function getEventTypeName(typ) {
-            const types = {
-                'event': 'Wydarzenie',
-                'catering': 'Catering',
-                'delivery': 'Dostawa'
-            };
-            return types[typ] || typ;
-        }
-
-        function getStatusName(status) {
-            const statuses = {
-                'roboczy': 'Roboczy',
-                'aktywny': 'Aktywny',
-                'odwolany': 'Odwołany',
-                'archiwum': 'Archiwum'
-            };
-            return statuses[status] || status;
-        }
-
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('pl-PL', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-            });
-        }
-
-        function getTotalPeople(event) {
-            const total = (event.liczba_osob_doroslych || 0) +
-                         (event.liczba_dzieci_0_3 || 0) +
-                         (event.liczba_dzieci_4_12 || 0) +
-                         (event.liczba_dzieci_12_18 || 0) +
-                         (event.liczba_osob_18_plus || 0);
-            return total;
-        }
-
-        // ============================================
-        // FILTROWANIE
-        // ============================================
-        function filterEvents(status) {
-            currentFilter = status;
-            
-            // Aktualizuj przyciski
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             event.target.classList.add('active');
             
-            renderEvents();
+            applyFilters();
         }
 
-        // ============================================
-        // MODAL - OTWIERANIE/ZAMYKANIE
-        // ============================================
-        function openAddModal() {
-            editingEventId = null;
-            document.getElementById('modalTitle').textContent = 'Dodaj event';
-            document.getElementById('eventForm').reset();
-            document.getElementById('eventModal').style.display = 'flex';
-        }
-
-        function closeModal() {
-            document.getElementById('eventModal').style.display = 'none';
-            editingEventId = null;
-        }
-
-        // ============================================
-        // ZAPISYWANIE EVENTU
-        // ============================================
-        async function saveEvent(e) {
-            e.preventDefault();
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-            
-            // Konwersja liczb
-            ['liczba_osob_doroslych', 'liczba_dzieci_0_3', 'liczba_dzieci_4_12', 
-             'liczba_dzieci_12_18', 'liczba_osob_18_plus'].forEach(field => {
-                data[field] = parseInt(data[field]) || 0;
+            filteredEvents = allEvents.filter(evt => {
+                // Search
+                const matchesSearch = evt.nazwa.toLowerCase().includes(searchTerm) ||
+                    (evt.klient && evt.klient.toLowerCase().includes(searchTerm)) ||
+                    (evt.lokalizacja && evt.lokalizacja.toLowerCase().includes(searchTerm));
+                
+                // Status filter
+                let matchesStatus = true;
+                if (currentFilter !== 'all') {
+                    matchesStatus = evt.status === currentFilter;
+                }
+                
+                return matchesSearch && matchesStatus;
             });
             
-            // Dodaj status
-            if (!editingEventId) {
-                data.status = 'roboczy';
-            }
-            
-            try {
-                const url = editingEventId 
-                    ? `/api/events/${editingEventId}` 
-                    : '/api/events';
-                const method = editingEventId ? 'PUT' : 'POST';
-                
-                const response = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                if (!response.ok) throw new Error('Błąd zapisu');
-                
-                closeModal();
-                loadEvents();
-            } catch (error) {
-                console.error('Błąd:', error);
-                alert('Błąd zapisu eventu: ' + error.message);
-            }
+            renderGrid();
         }
 
-        // ============================================
-        // EDYCJA EVENTU
-        // ============================================
-        async function editEvent(id) {
-            try {
-                const response = await fetch(`/api/events/${id}`);
-                if (!response.ok) throw new Error('Błąd pobierania eventu');
-                
-                const event = await response.json();
-                editingEventId = id;
-                
-                // Wypełnij formularz
-                document.getElementById('modalTitle').textContent = 'Edytuj event';
-                document.getElementById('eventNazwa').value = event.nazwa || '';
-                document.getElementById('eventTyp').value = event.typ || 'event';
-                document.getElementById('eventDataStart').value = event.data_rozpoczecia || '';
-                document.getElementById('eventDataEnd').value = event.data_zakonczenia || '';
-                document.getElementById('eventLokalizacja').value = event.lokalizacja || '';
-                document.getElementById('eventNotatki').value = event.notatki || '';
-                document.getElementById('eventOsobDoroslych').value = event.liczba_osob_doroslych || 0;
-                document.getElementById('eventDzieci0_3').value = event.liczba_dzieci_0_3 || 0;
-                document.getElementById('eventDzieci4_12').value = event.liczba_dzieci_4_12 || 0;
-                document.getElementById('eventDzieci12_18').value = event.liczba_dzieci_12_18 || 0;
-                document.getElementById('eventOsob18Plus').value = event.liczba_osob_18_plus || 0;
-                
-                document.getElementById('eventModal').style.display = 'flex';
-            } catch (error) {
-                console.error('Błąd:', error);
-                alert('Błąd ładowania eventu: ' + error.message);
-            }
-        }
-
-        // ============================================
-        // USUWANIE EVENTU
-        // ============================================
-        async function deleteEvent(id) {
-            const event = allEvents.find(e => e.id === id);
-            if (!event) return;
+        function renderGrid() {
+            const grid = document.getElementById('eventsGrid');
             
-            if (!confirm(`Czy na pewno usunąć event "${event.nazwa}"?\n\nTa operacja jest nieodwracalna i usunie wszystkie powiązane dni, sekcje i zadania!`)) {
+            if (filteredEvents.length === 0) {
+                grid.innerHTML = '<div class="loading">Brak wyników</div>';
                 return;
             }
             
-            if (!confirm('OSTATECZNE POTWIERDZENIE\n\nNaprawdę usunąć ten event? To nie może być cofnięte!')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/events/${id}`, {
-                    method: 'DELETE'
-                });
+            grid.innerHTML = filteredEvents.map(evt => {
+                // Status badge
+                const statusBadges = {
+                    'draft': '<span class="badge badge-status-draft">📝 Robocze</span>',
+                    'active': '<span class="badge badge-status-active">✅ Aktywne</span>',
+                    'completed': '<span class="badge badge-status-completed">✔️ Zakończone</span>',
+                    'archived': '<span class="badge badge-status-archived">📦 Archiwum</span>'
+                };
+                const statusBadge = statusBadges[evt.status] || '';
                 
-                if (!response.ok) throw new Error('Błąd usuwania');
+                // Dates
+                const dateStart = evt.data_rozpoczecia ? new Date(evt.data_rozpoczecia).toLocaleDateString('pl-PL') : '';
+                const dateEnd = evt.data_zakonczenia ? new Date(evt.data_zakonczenia).toLocaleDateString('pl-PL') : '';
+                const datesStr = dateStart && dateEnd ? `${dateStart} - ${dateEnd}` : '';
                 
-                loadEvents();
-            } catch (error) {
-                console.error('Błąd:', error);
-                alert('Błąd usuwania eventu: ' + error.message);
-            }
+                // Description parts
+                const descParts = [];
+                if (evt.klient) descParts.push(`Klient: ${evt.klient}`);
+                if (evt.lokalizacja) descParts.push(`Lokalizacja: ${evt.lokalizacja}`);
+                const descStr = descParts.length > 0 ? descParts.join(' | ') : evt.opis || '';
+                
+                return `
+                    <div class="item-card" data-id="${evt.id}">
+                        <!-- Header (klikalne) -->
+                        <div class="item-card-header" onclick="viewEvent(${evt.id})">
+                            <h3 class="item-card-title">${evt.nazwa}</h3>
+                        </div>
+                        
+                        <!-- Body -->
+                        <div class="item-card-body">
+                            <!-- Opis -->
+                            ${descStr ? `<p class="item-card-description">${descStr}</p>` : ''}
+                            
+                            <!-- Metadane -->
+                            <div class="item-card-meta">
+                                ${datesStr ? `<span class="badge badge-type">📅 ${datesStr}</span>` : ''}
+                                ${statusBadge}
+                            </div>
+                            
+                            <!-- Przyciski akcji -->
+                            <div class="action-buttons">
+                                <button class="action-btn btn-edit" onclick="event.stopPropagation(); editEvent(${evt.id})">
+                                    ✏️ Edytuj
+                                </button>
+                                <button class="action-btn btn-duplicate" onclick="event.stopPropagation(); duplicateEvent(${evt.id})">
+                                    📋 Duplikuj
+                                </button>
+                                <button class="action-btn btn-status" onclick="showStatusMenu(event, ${evt.id})">
+                                    📊 Status
+                                </button>
+                                <button class="action-btn btn-plan" onclick="event.stopPropagation(); planEvent(${evt.id})">
+                                    📅 Planuj
+                                </button>
+                                <button class="action-btn btn-delete" onclick="event.stopPropagation(); deleteEvent(${evt.id})">
+                                    🗑️ Usuń
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
-        // ============================================
-        // DUPLIKACJA EVENTU
-        // ============================================
-        async function duplicateEvent(id) {
-            if (!confirm('Czy utworzyć kopię tego eventu?')) return;
+        // === FLOATING STATUS MENU === 
+        function showStatusMenu(event, eventId) {
+            event.stopPropagation();
             
-            try {
-                const response = await fetch(`/api/events/${id}/duplicate`, {
-                    method: 'POST'
-                });
-                
-                if (!response.ok) throw new Error('Błąd duplikacji');
-                
-                loadEvents();
-            } catch (error) {
-                console.error('Błąd:', error);
-                alert('Błąd duplikacji eventu: ' + error.message);
-            }
-        }
-
-        // ============================================
-        // MENU STATUSÓW
-        // ============================================
-        function toggleStatusMenu(e, eventId) {
-            e.stopPropagation();
+            const existing = document.getElementById('floatingStatusMenu');
+            if (existing) existing.remove();
             
-            // Usuń istniejące menu
-            document.querySelectorAll('.status-menu').forEach(m => m.remove());
-            
-            // Utwórz nowe menu
             const menu = document.createElement('div');
-            menu.className = 'status-menu';
+            menu.id = 'floatingStatusMenu';
+            menu.className = 'floating-status-menu';
             menu.innerHTML = `
-                <div onclick="changeStatus(${eventId}, 'roboczy')">📝 Roboczy</div>
-                <div onclick="changeStatus(${eventId}, 'aktywny')">✅ Aktywny</div>
-                <div onclick="changeStatus(${eventId}, 'odwolany')">❌ Odwołany</div>
-                <div onclick="changeStatus(${eventId}, 'archiwum')">📦 Archiwum</div>
+                <div onclick="changeStatus(${eventId}, 'draft')">📝 Robocze</div>
+                <div onclick="changeStatus(${eventId}, 'active')">✅ Aktywne</div>
+                <div onclick="changeStatus(${eventId}, 'completed')">✔️ Zakończone</div>
+                <div onclick="changeStatus(${eventId}, 'archived')">📦 Archiwum</div>
             `;
             
-            // Pozycjonowanie menu (pozycję ustala CSS)
-            const btn = e.target.closest('.btn-status');
-            btn.appendChild(menu);
+            document.body.appendChild(menu);
             
-            // Zamknij menu po kliknięciu poza
+            const buttonRect = event.target.getBoundingClientRect();
+            const menuRect = menu.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
+            
+            let top, left;
+            
+            if (buttonRect.bottom + menuRect.height + 10 < viewportHeight) {
+                top = buttonRect.bottom + 5;
+            } else {
+                top = buttonRect.top - menuRect.height - 5;
+            }
+            
+            if (buttonRect.left + menuRect.width > viewportWidth) {
+                left = buttonRect.right - menuRect.width;
+            } else {
+                left = buttonRect.left;
+            }
+            
+            menu.style.top = `${top}px`;
+            menu.style.left = `${left}px`;
+            
             setTimeout(() => {
-                document.addEventListener('click', function closeMenu() {
-                    menu.remove();
-                    document.removeEventListener('click', closeMenu);
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!menu.contains(e.target)) {
+                        menu.remove();
+                        document.removeEventListener('click', closeMenu);
+                    }
                 });
-            }, 100);
+            }, 10);
         }
 
         async function changeStatus(eventId, newStatus) {
             try {
-                const response = await fetch(`/api/events/${eventId}/status`, {
-                    method: 'PATCH',
+                const response = await fetch(`${API_URL}/api/events/${eventId}`, {
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: newStatus })
                 });
                 
                 if (!response.ok) throw new Error('Błąd zmiany statusu');
                 
+                document.getElementById('floatingStatusMenu')?.remove();
                 loadEvents();
             } catch (error) {
-                console.error('Błąd:', error);
-                alert('Błąd zmiany statusu: ' + error.message);
+                console.error('Error:', error);
+                alert('Błąd zmiany statusu');
             }
         }
 
-        // ============================================
-        // PRZEKIEROWANIE DO PLANNERA
-        // ============================================
-        function planEvent(id) {
-            window.location.href = `event-planning.html?id=${id}`;
+        // Podgląd eventu (nowa strona)
+        function viewEvent(eventId) {
+            window.location.href = `events-view.html?id=${eventId}`;
         }
 
-        // ============================================
-        // LOADER
-        // ============================================
-        function showLoader() {
-            document.getElementById('loader').style.display = 'block';
-            document.getElementById('eventsGrid').style.display = 'none';
-            document.getElementById('noEvents').style.display = 'none';
+        // Planowanie eventu (istniejąca strona)
+        function planEvent(eventId) {
+            window.location.href = `event-planning.html?id=${eventId}`;
         }
 
-        function hideLoader() {
-            document.getElementById('loader').style.display = 'none';
+        // === CRUD OPERATIONS ===
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Dodaj event';
+            document.getElementById('eventForm').reset();
+            document.getElementById('editId').value = '';
+            document.getElementById('eventModal').style.display = 'block';
         }
 
-        // Zamknij modal po kliknięciu poza nim
+        function closeModal() {
+            document.getElementById('eventModal').style.display = 'none';
+        }
+
+        async function editEvent(id) {
+            const evt = allEvents.find(e => e.id === id);
+            if (!evt) return;
+            
+            document.getElementById('modalTitle').textContent = 'Edytuj event';
+            document.getElementById('editId').value = evt.id;
+            document.getElementById('nazwa').value = evt.nazwa || '';
+            document.getElementById('lokalizacja').value = evt.lokalizacja || '';
+            document.getElementById('klient').value = evt.klient || '';
+            document.getElementById('opis').value = evt.opis || '';
+            
+            if (evt.data_rozpoczecia) {
+                document.getElementById('data_rozpoczecia').value = evt.data_rozpoczecia.split('T')[0];
+            }
+            if (evt.data_zakonczenia) {
+                document.getElementById('data_zakonczenia').value = evt.data_zakonczenia.split('T')[0];
+            }
+            
+            document.getElementById('eventModal').style.display = 'block';
+        }
+
+        async function saveEvent(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('editId').value;
+            const data = {
+                nazwa: document.getElementById('nazwa').value,
+                data_rozpoczecia: document.getElementById('data_rozpoczecia').value,
+                data_zakonczenia: document.getElementById('data_zakonczenia').value,
+                lokalizacja: document.getElementById('lokalizacja').value,
+                klient: document.getElementById('klient').value,
+                opis: document.getElementById('opis').value
+            };
+            
+            try {
+                const url = id ? `${API_URL}/api/events/${id}` : `${API_URL}/api/events`;
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Błąd zapisu');
+                
+                alert(id ? 'Zapisano zmiany' : 'Dodano event');
+                closeModal();
+                loadEvents();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd zapisu: ' + error.message);
+            }
+        }
+
+        async function duplicateEvent(id) {
+            const evt = allEvents.find(e => e.id === id);
+            if (!evt) return;
+            
+            if (!confirm(`Duplikować event "${evt.nazwa}"?`)) return;
+            
+            const newEvent = {
+                nazwa: evt.nazwa + ' (kopia)',
+                data_rozpoczecia: evt.data_rozpoczecia,
+                data_zakonczenia: evt.data_zakonczenia,
+                lokalizacja: evt.lokalizacja,
+                klient: evt.klient,
+                opis: evt.opis,
+                status: 'draft'
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/api/events`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newEvent)
+                });
+                
+                if (!response.ok) throw new Error('Błąd duplikowania');
+                
+                alert('Zduplikowano event (bez dni i grup)');
+                loadEvents();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd duplikowania: ' + error.message);
+            }
+        }
+
+        async function deleteEvent(id) {
+            const evt = allEvents.find(e => e.id === id);
+            if (!evt) return;
+            
+            if (!confirm(`Czy na pewno usunąć "${evt.nazwa}"?`)) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/events/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Błąd usuwania');
+                
+                alert('Usunięto event');
+                loadEvents();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd usuwania: ' + error.message);
+            }
+        }
+
+        // Zamykanie modala kliknięciem poza
         window.onclick = function(event) {
             const modal = document.getElementById('eventModal');
             if (event.target === modal) {
                 closeModal();
             }
-        };
+        }
     </script>
 </body>
 </html>
