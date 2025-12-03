@@ -127,7 +127,7 @@
     border: 1px solid #ddd;
     border-radius: 6px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    z-index: 1000;
+    z-index: 9999 !important;
     min-width: 150px;
     margin-top: 4px; /* ← DODAJ */
 }
@@ -662,12 +662,12 @@ function toggleStatusMenu(id) {
             // Jeśli menu wychodzi poza dolną krawędź ekranu, pokaż w górę
             if (rect.bottom > viewportHeight - 20) {
                 menu.style.bottom = '100%';
-                menu.style.top = 'auto';
+                menu.style.top = '';
                 menu.style.marginBottom = '5px';
                 menu.style.marginTop = '0';
             } else {
                 menu.style.top = '100%';
-                menu.style.bottom = 'auto';
+                menu.style.bottom = '';
                 menu.style.marginTop = '5px';
                 menu.style.marginBottom = '0';
             }
