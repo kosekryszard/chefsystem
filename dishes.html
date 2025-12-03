@@ -441,7 +441,7 @@ async function saveDish(e) {
     
     const components = [];
     const rows = document.querySelectorAll('.component-row');
-    console.log('Found component rows:', rows.length);
+ 
     
     rows.forEach(row => {
     const recipeSelect = row.querySelector('.comp-recipe');
@@ -453,7 +453,7 @@ async function saveDish(e) {
     const amount = amountInput?.value;
     const unit = unitInput?.value;
     const category = categorySelect?.value;
-    console.log('Recipe:', recipeId, 'Amount:', amount, 'Unit:', unit, 'Category:', category);
+   
 
         if (recipeId && amount) {
             components.push({
@@ -466,7 +466,7 @@ async function saveDish(e) {
         }
     });
     
-    console.log('Components to save:', components);
+ 
     
     const data = {
         nazwa: document.getElementById('nazwa').value,
@@ -479,7 +479,7 @@ async function saveDish(e) {
         komponenty: components
     };
     
-    console.log('Full data to save:', data);
+
     
     const id = document.getElementById('editId').value;
     const url = (id && id.trim() !== '') ? `${API_URL}/api/dishes/${id}` : `${API_URL}/api/dishes`;
@@ -492,9 +492,9 @@ async function saveDish(e) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-                console.log('Response status:', res.status); // DODAJ
+         
     const responseData = await res.json(); // ZMIEŃ - pobierz dane
-    console.log('Response data:', responseData); // DODAJ
+ 
 
                 if (res.ok) {
              alert(id ? 'Danie zaktualizowane!' : 'Danie dodane!');
@@ -511,14 +511,13 @@ async function saveDish(e) {
         }
         
         async function editDish(id) {
-    console.log('editDish called with id:', id); // DODAJ
+
   
     try {
         const res = await fetch(`${API_URL}/api/dishes/${id}`);
         const dish = await res.json();
         
-        console.log('Dish loaded:', dish); // DODAJ
-        console.log('Komponenty:', dish.komponenty); // DODAJ
+     
         
         document.getElementById('formTitle').textContent = 'Edytuj danie';
         document.getElementById('editId').value = id;
@@ -532,15 +531,15 @@ async function saveDish(e) {
         
         document.getElementById('componentsList').innerHTML = '';
         if (dish.komponenty && dish.komponenty.length > 0) {
-    console.log('Loading components:', dish.komponenty); // DODAJ
+
     dish.komponenty.forEach(k => {
-        console.log('Component:', k); // DODAJ
+ 
         const row = addComponentRow();
         row.querySelector('.comp-recipe').value = k.recipes.id;
         row.querySelector('.comp-amount').value = k.ilosc;
         row.querySelector('.comp-unit').value = k.jm;
         row.querySelector('.comp-category').value = k.kategoria;
-        console.log('Row populated with recipe ID:', k.recipes.id); // DEBUG
+ 
     });
         } else {
             addComponentRow();
@@ -666,18 +665,16 @@ function toggleStatusMenu(id) {
         const rect = menu.getBoundingClientRect();
         const viewportHeight = window.innerHeight;
         
-        console.log('Menu rect:', rect); // DEBUG
-        console.log('Viewport height:', viewportHeight); // DEBUG
-        console.log('Menu bottom:', rect.bottom, 'Needs flip:', rect.bottom > viewportHeight - 20); // DEBUG
+     
         
         if (rect.bottom > viewportHeight - 20) {
-            console.log('Flipping to top'); // DEBUG
+         
             menu.style.top = '';
             menu.style.bottom = '100%';
             menu.style.marginBottom = '5px';
             menu.style.marginTop = '';
         } else {
-            console.log('Keeping at bottom'); // DEBUG
+          
             menu.style.bottom = '';
             menu.style.top = '100%';
             menu.style.marginTop = '5px';

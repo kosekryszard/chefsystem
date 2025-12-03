@@ -728,7 +728,10 @@ function getStatusLabel(status) {
     };
     return labels[status] || status;
 }
-
+function closeStatusMenus() {
+    document.querySelectorAll('.status-menu').forEach(m => m.style.display = 'none');
+    document.removeEventListener('click', closeStatusMenus);
+}
 function toggleStatusMenu(id) {
     const menu = document.getElementById(`statusMenu-${id}`);
     
