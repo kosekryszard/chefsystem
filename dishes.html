@@ -640,6 +640,11 @@ async function importDishes(event) {
   }
 }
 
+function closeStatusMenus() {
+    document.querySelectorAll('.status-menu').forEach(m => m.style.display = 'none');
+    document.removeEventListener('click', closeStatusMenus);
+}
+
 function toggleStatusMenu(id) {
     const menu = document.getElementById(`statusMenu-${id}`);
     
@@ -683,10 +688,7 @@ function toggleStatusMenu(id) {
     }, 0);
 }}
 
-function closeStatusMenus() {
-    document.querySelectorAll('.status-menu').forEach(m => m.style.display = 'none');
-    document.removeEventListener('click', closeStatusMenus);
-}
+
 
 async function changeStatus(id, newStatus) {
     try {
