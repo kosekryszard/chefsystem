@@ -73,7 +73,7 @@
         </div>
     </div>
 
-    <!-- Modal dodawania/edycji (uproszczony - zachowaj pełny z obecnego menu-cards.html) -->
+    <!-- Modal dodawania/edycji -->
     <div id="menuCardModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -85,13 +85,8 @@
                     <input type="hidden" id="editId">
                     
                     <div class="form-group">
-                        <label>Lokal *</label>
-                        <select id="lokal" required>
-                            <option value="Szczelinka">Szczelinka</option>
-                            <option value="Pasterka">Pasterka</option>
-                            <option value="Stolove">Stolove</option>
-                            <option value="Szczeliniec">Szczeliniec</option>
-                        </select>
+                        <label>Nazwa karty *</label>
+                        <input type="text" id="nazwa" required>
                     </div>
 
                     <div class="form-row">
@@ -105,8 +100,13 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Lokal</label>
-                            <input type="text" id="lokal" placeholder="Nazwa lokalu/restauracji">
+                            <label>Lokal *</label>
+                            <select id="lokal" required>
+                                <option value="Szczelinka">Szczelinka</option>
+                                <option value="Pasterka">Pasterka</option>
+                                <option value="Stolove">Stolove</option>
+                                <option value="Szczeliniec">Szczeliniec</option>
+                            </select>
                         </div>
                     </div>
 
@@ -136,6 +136,15 @@
         let allMenuCards = [];
         let filteredMenuCards = [];
         let currentFilter = 'all';
+
+        // Mapowanie statusów na wyświetlanie
+        const statusLabels = {
+            'robocza': { badge: 'badge-status-draft', text: '📝 Robocze' },
+            'stała': { badge: 'badge-status-active', text: '✅ Stałe' },
+            'sezonowa': { badge: 'badge-status-active', text: '🌸 Sezonowe' },
+            'eventowa': { badge: 'badge-status-active', text: '🎉 Eventowe' },
+            'archiwalna': { badge: 'badge-status-archived', text: '📦 Archiwum' }
+        };
 
         window.addEventListener('DOMContentLoaded', () => {
             loadMenuCards();
@@ -199,12 +208,8 @@
             
             grid.innerHTML = filteredMenuCards.map(card => {
                 // Status badge
-                const statusBadges = {
-                    'robocza': '<span class="badge badge-status-robocza">📝 Robocze</span>',
-                    'active': '<span class="badge badge-status-active">✅ Aktywne</span>',
-                    'archived': '<span class="badge badge-status-archived">📦 Archiwum</span>'
-                };
-                const statusBadge = statusBadges[card.status] || '';
+                const statusInfo = statusLabels[card.status] || { badge: 'badge-status-draft', text: card.status };
+                const statusBadge = `<span class="badge ${statusInfo.badge}">${statusInfo.text}</span>`;
                 
                 // Description
                 const descParts = [];
@@ -274,8 +279,10 @@
             menu.className = 'floating-status-menu';
             menu.innerHTML = `
                 <div onclick="changeStatus(${cardId}, 'robocza')">📝 Robocze</div>
-                <div onclick="changeStatus(${cardId}, 'active')">✅ Aktywne</div>
-                <div onclick="changeStatus(${cardId}, 'archived')">📦 Archiwum</div>
+                <div onclick="changeStatus(${cardId}, 'stała')">✅ Stałe</div>
+                <div onclick="changeStatus(${cardId}, 'sezonowa')">🌸 Sezonowe</div>
+                <div onclick="changeStatus(${cardId}, 'eventowa')">🎉 Eventowe</div>
+                <div onclick="changeStatus(${cardId}, 'archiwalna')">📦 Archiwum</div>
             `;
             
             document.body.appendChild(menu);
@@ -355,7 +362,7 @@
             document.getElementById('editId').value = card.id;
             document.getElementById('nazwa').value = card.nazwa || '';
             document.getElementById('typ').value = card.typ || 'stała';
-            document.getElementById('lokal').value = card.lokal || '';
+            document.getElementById('lokal').value = card.lokal || 'Szczelinka';
             
             if (card.data_od) {
                 document.getElementById('data_od').value = card.data_od.split('T')[0];
@@ -372,18 +379,21 @@
             
             const id = document.getElementById('editId').value;
             const data = {
-    nazwa: document.getElementById('nazwa').value,
-    typ: document.getElementById('typ').value,
-    lokal: document.getElementById('lokal').value,
-    status: 'active',
-    data_od: document.getElementById('data_od').value || null,
-    data_do: document.getElementById('data_do').value || null
-};
-
-console.log('Sending data:', data); // DODAJ TĘ LINIĘ
-
-try {
-    const url = id ? `${API_URL}/api/menu-cards/${id}` : `${API_URL}/api/menu-cards`;
+                nazwa: document.getElementById('nazwa').value,
+                typ: document.getElementById('typ').value,
+                lokal: document.getElementById('lokal').value,
+                status: id ? undefined : 'robocza', // Nowe = robocza, edycja = nie zmieniaj
+                data_od: document.getElementById('data_od').value || null,
+                data_do: document.getElementById('data_do').value || null
+            };
+            
+            // Usuń undefined
+            if (data.status === undefined) delete data.status;
+            
+            console.log('Sending data:', data);
+            
+            try {
+                const url = id ? `${API_URL}/api/menu-cards/${id}` : `${API_URL}/api/menu-cards`;
                 const method = id ? 'PUT' : 'POST';
                 
                 const response = await fetch(url, {
@@ -393,17 +403,17 @@ try {
                 });
                 
                 if (!response.ok) {
-    const errorData = await response.json();
-    console.error('Backend error:', errorData);
-    throw new Error('Błąd zapisu: ' + (errorData.error || response.statusText));
-}
+                    const errorData = await response.json();
+                    console.error('Backend error:', errorData);
+                    throw new Error('Błąd zapisu: ' + (errorData.error || response.statusText));
+                }
                 
                 alert(id ? 'Zapisano zmiany' : 'Dodano kartę menu');
                 closeModal();
                 loadMenuCards();
             } catch (error) {
                 console.error('Error:', error);
-                alert('Błąd zapisu: ' + error.message);
+                alert(error.message);
             }
         }
 
@@ -419,7 +429,7 @@ try {
                 lokal: card.lokal,
                 data_od: card.data_od,
                 data_do: card.data_do,
-                status: 'active'
+                status: 'robocza'
             };
             
             try {
