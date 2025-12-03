@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChefSystent - Podgląd Receptury</title>
+    <link rel="stylesheet" href="chefsystent-brand.css">
+    <link rel="icon" type="image/png" href="piktogram.png">
+    <style>
+        /* Layout: Sidebar + Content */
+        .view-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 0;
+            min-height: calc(100vh - 180px);
+        }
+
+        /* Sidebar */
+        .recipes-sidebar {
+            background: #f8f9fa;
+            border-right: 2px solid #e0e0e0;
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(100vh - 180px);
+        }
+
+        .sidebar-search {
+            margin-bottom: 15px;
+        }
+
+        .sidebar-search input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .sidebar-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar-item {
+            padding: 10px 12px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .sidebar-item:hover {
+            border-color: #D4AF37;
+            background: #fffef7;
+        }
+
+        .sidebar-item.active {
+            border-color: #0A1F44;
+            background: #e3f2fd;
+            font-weight: 600;
+        }
+
+        .sidebar-item-name {
+            font-weight: 600;
+            color: #0A1F44;
+            margin-bottom: 3px;
+        }
+
+        .sidebar-item-meta {
+            font-size: 11px;
+            color: #666;
+        }
+
+        /* Main content */
+        .recipe-content {
+            padding: 30px;
+            overflow-y: auto;
+            max-height: calc(100vh - 180px);
+        }
+
+        /* Navigation buttons */
+        .recipe-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .nav-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .btn-back {
+            background: #0A1F44;
+        }
+
+        .btn-back:hover {
+            background: #1a3a6b;
+        }
+
+        /* Recipe header */
+        .recipe-header {
+            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .recipe-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .recipe-meta-header {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Recipe sections */
+        .recipe-section {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .recipe-section h3 {
+            color: #0A1F44;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #D4AF37;
+            padding-bottom: 10px;
+        }
+
+        /* Ingredients table */
+        .ingredients-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .ingredients-table th {
+            background: #f8f9fa;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .ingredients-table td {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        /* Instructions */
+        .instruction-step {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .step-number {
+            background: #0A1F44;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            flex: 1;
+            line-height: 1.6;
+        }
+
+        /* Action buttons */
+        .recipe-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 1024px) {
+            .view-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .recipes-sidebar {
+                display: none;
+            }
+
+            .recipe-content {
+                max-height: none;
+            }
+        }
+
+        /* Loading */
+        .loading-view {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .error-view {
+            text-align: center;
+            padding: 60px 20px;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-logo">
+                <img src="LOGO_chefsystent.png" alt="Chefsystent Logo">
+            </div>
+            <p>System Zarządzania Kuchnią - Podgląd Receptury</p>
+            
+            <nav>
+                <a href="index.html">🏠 Start</a>
+                <a href="ingredients.html">Surowce</a>
+                <a href="recipes.html" class="active">Receptury</a>
+                <a href="dishes.html">Dania</a>
+                <a href="groups.html">Grupy</a>
+                <a href="events.html">Eventy</a>
+                <a href="menu-cards.html">Karty</a>
+                <a href="shopping.html">Zakupy</a>
+            </nav>
+        </header>
+
+        <div class="content">
+            <div class="view-layout">
+                <!-- Sidebar z listą receptur -->
+                <div class="recipes-sidebar">
+                    <h3 style="margin-bottom: 15px; color: #0A1F44;">Wszystkie receptury</h3>
+                    
+                    <div class="sidebar-search">
+                        <input type="text" id="sidebarSearch" placeholder="🔍 Szukaj..." onkeyup="filterSidebar()">
+                    </div>
+
+                    <div class="sidebar-list" id="sidebarList">
+                        <div class="loading">Ładowanie...</div>
+                    </div>
+                </div>
+
+                <!-- Main content -->
+                <div class="recipe-content">
+                    <!-- Loading state -->
+                    <div id="loadingState" class="loading-view">
+                        <div class="spinner"></div>
+                        <p>Ładowanie receptury...</p>
+                    </div>
+
+                    <!-- Error state -->
+                    <div id="errorState" class="error-view" style="display: none;">
+                        <h2>❌ Błąd</h2>
+                        <p id="errorMessage"></p>
+                        <button class="btn btn-primary" onclick="location.href='recipes.html'">
+                            Powrót do listy
+                        </button>
+                    </div>
+
+                    <!-- Recipe view -->
+                    <div id="recipeView" style="display: none;">
+                        <!-- Navigation -->
+                        <div class="recipe-nav">
+                            <button class="nav-btn btn-back" onclick="location.href='recipes.html'">
+                                ← Powrót do listy
+                            </button>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="nav-btn" id="prevBtn" onclick="navigateRecipe('prev')">
+                                    ← Poprzednia
+                                </button>
+                                <button class="nav-btn" id="nextBtn" onclick="navigateRecipe('next')">
+                                    Następna →
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Recipe Header -->
+                        <div class="recipe-header">
+                            <div class="recipe-title" id="recipeName"></div>
+                            <div class="recipe-meta-header" id="recipeMeta"></div>
+                        </div>
+
+                        <!-- Basic Info -->
+                        <div class="recipe-section" id="basicInfoSection">
+                            <h3>📋 Informacje podstawowe</h3>
+                            <div id="basicInfo"></div>
+                        </div>
+
+                        <!-- Ingredients -->
+                        <div class="recipe-section" id="ingredientsSection" style="display: none;">
+                            <h3>🥕 Składniki</h3>
+                            <table class="ingredients-table" id="ingredientsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Składnik</th>
+                                        <th>Ilość</th>
+                                        <th>JM</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ingredientsBody"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Instructions -->
+                        <div class="recipe-section" id="instructionsSection" style="display: none;">
+                            <h3>👨‍🍳 Instrukcje przygotowania</h3>
+                            <div id="instructionsList"></div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="recipe-actions">
+                            <button class="action-btn btn-edit" onclick="editRecipe()">
+                                ✏️ Edytuj
+                            </button>
+                            <button class="action-btn btn-duplicate" onclick="duplicateRecipe()">
+                                📋 Duplikuj
+                            </button>
+                            <button class="action-btn btn-status" onclick="showStatusMenu(event)">
+                                📊 Zmień status
+                            </button>
+                            <button class="action-btn btn-delete" id="deleteBtn" onclick="deleteRecipe()">
+                                🗑️ Usuń
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://chefsystem.vercel.app';
+        
+        let currentRecipe = null;
+        let allRecipes = [];
+        let filteredSidebarRecipes = [];
+        let currentRecipeId = null;
+
+        // Pobierz ID z URL
+        const urlParams = new URLSearchParams(window.location.search);
+        currentRecipeId = parseInt(urlParams.get('id'));
+
+        // Ładowanie danych
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!currentRecipeId) {
+                showError('Brak ID receptury');
+                return;
+            }
+
+            await loadAllRecipes();
+            await loadRecipe(currentRecipeId);
+        });
+
+        // Załaduj wszystkie receptury (dla sidebara)
+        async function loadAllRecipes() {
+            try {
+                const response = await fetch(`${API_URL}/api/recipes`);
+                if (!response.ok) throw new Error('Błąd ładowania listy');
+                
+                allRecipes = await response.json();
+                filteredSidebarRecipes = [...allRecipes];
+                renderSidebar();
+            } catch (error) {
+                console.error('Error loading recipes:', error);
+            }
+        }
+
+        // Renderuj sidebar
+        function renderSidebar() {
+            const list = document.getElementById('sidebarList');
+            
+            if (filteredSidebarRecipes.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #666;">Brak wyników</div>';
+                return;
+            }
+
+            list.innerHTML = filteredSidebarRecipes.map(recipe => {
+                const isActive = recipe.id === currentRecipeId;
+                return `
+                    <div class="sidebar-item ${isActive ? 'active' : ''}" onclick="loadRecipe(${recipe.id})">
+                        <div class="sidebar-item-name">${recipe.nazwa}</div>
+                        <div class="sidebar-item-meta">
+                            ${recipe.typ || 'Brak typu'} ${recipe.wydajnosc_ilosc ? `| ${recipe.wydajnosc_ilosc} ${recipe.wydajnosc_jm || 'porcji'}` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Filtruj sidebar
+        function filterSidebar() {
+            const searchTerm = document.getElementById('sidebarSearch').value.toLowerCase();
+            filteredSidebarRecipes = allRecipes.filter(r => 
+                r.nazwa.toLowerCase().includes(searchTerm)
+            );
+            renderSidebar();
+        }
+
+        // Załaduj recepturę
+        async function loadRecipe(recipeId) {
+            currentRecipeId = recipeId;
+            
+            // Update URL
+            window.history.replaceState(null, '', `recipes-view.html?id=${recipeId}`);
+            
+            // Show loading
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('errorState').style.display = 'none';
+            document.getElementById('recipeView').style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_URL}/api/recipes/${recipeId}`);
+                if (!response.ok) throw new Error('Receptura nie znaleziona');
+                
+                currentRecipe = await response.json();
+                renderRecipe();
+                updateNavButtons();
+                renderSidebar(); // Update active state
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            }
+        }
+
+        // Renderuj recepturę
+        function renderRecipe() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('recipeView').style.display = 'block';
+
+            // Name
+            document.getElementById('recipeName').textContent = currentRecipe.nazwa;
+
+            // Meta badges
+            const metaBadges = [];
+            if (currentRecipe.typ) metaBadges.push(`<span class="badge badge-type">${currentRecipe.typ}</span>`);
+            if (currentRecipe.wydajnosc_ilosc) metaBadges.push(`<span class="badge badge-yield">${currentRecipe.wydajnosc_ilosc} ${currentRecipe.wydajnosc_jm || 'porcji'}</span>`);
+            
+            const statusBadges = {
+                'draft': '<span class="badge badge-status-draft">📝 Robocze</span>',
+                'active': '<span class="badge badge-status-active">✅ Aktywne</span>',
+                'archived': '<span class="badge badge-status-archived">📦 Archiwum</span>'
+            };
+            metaBadges.push(statusBadges[currentRecipe.status] || '');
+            
+            if (currentRecipe.in_use) metaBadges.push('<span class="badge badge-in-use">🔒 W użyciu</span>');
+            if (currentRecipe.weganski) metaBadges.push('<span class="badge badge-vegan">🌱 Vegan</span>');
+            if (currentRecipe.wegetarianski) metaBadges.push('<span class="badge badge-vegetarian">🥬 Wege</span>');
+            
+            document.getElementById('recipeMeta').innerHTML = metaBadges.join('');
+
+            // Basic info
+            let basicInfo = '';
+            if (currentRecipe.opis) basicInfo += `<p><strong>Opis:</strong> ${currentRecipe.opis}</p>`;
+            if (currentRecipe.created_at) basicInfo += `<p><strong>Utworzono:</strong> ${new Date(currentRecipe.created_at).toLocaleDateString('pl-PL')}</p>`;
+            
+            document.getElementById('basicInfo').innerHTML = basicInfo || '<p style="color: #666;">Brak dodatkowych informacji</p>';
+
+            // Ingredients (TODO: załaduj z API gdy będzie endpoint)
+            // Na razie ukryj sekcję jeśli nie ma danych
+            document.getElementById('ingredientsSection').style.display = 'none';
+
+            // Instructions
+            if (currentRecipe.instrukcja && Array.isArray(currentRecipe.instrukcja) && currentRecipe.instrukcja.length > 0) {
+                document.getElementById('instructionsSection').style.display = 'block';
+                document.getElementById('instructionsList').innerHTML = currentRecipe.instrukcja.map(instr => `
+                    <div class="instruction-step">
+                        <div class="step-number">${instr.krok}</div>
+                        <div class="step-text">${instr.tekst}</div>
+                    </div>
+                `).join('');
+            } else {
+                document.getElementById('instructionsSection').style.display = 'none';
+            }
+
+            // Delete button
+            const deleteBtn = document.getElementById('deleteBtn');
+            if (currentRecipe.in_use) {
+                deleteBtn.disabled = true;
+                deleteBtn.title = 'Nie można usunąć - receptura jest w użyciu';
+            } else {
+                deleteBtn.disabled = false;
+                deleteBtn.title = '';
+            }
+        }
+
+        // Update navigation buttons
+        function updateNavButtons() {
+            const currentIndex = allRecipes.findIndex(r => r.id === currentRecipeId);
+            
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.disabled = currentIndex <= 0;
+            nextBtn.disabled = currentIndex >= allRecipes.length - 1;
+        }
+
+        // Navigate between recipes
+        function navigateRecipe(direction) {
+            const currentIndex = allRecipes.findIndex(r => r.id === currentRecipeId);
+            let newIndex;
+            
+            if (direction === 'prev') {
+                newIndex = currentIndex - 1;
+            } else {
+                newIndex = currentIndex + 1;
+            }
+            
+            if (newIndex >= 0 && newIndex < allRecipes.length) {
+                loadRecipe(allRecipes[newIndex].id);
+            }
+        }
+
+        // Show error
+        function showError(message) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('recipeView').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        // === ACTIONS ===
+        function editRecipe() {
+            // Redirect do recipes.html z parametrem edit
+            location.href = `recipes.html?edit=${currentRecipeId}`;
+        }
+
+        async function duplicateRecipe() {
+            if (!confirm(`Duplikować recepturę "${currentRecipe.nazwa}"?`)) return;
+            
+            const newRecipe = {
+                nazwa: currentRecipe.nazwa + ' (kopia)',
+                typ: currentRecipe.typ,
+                opis: currentRecipe.opis,
+                wydajnosc_ilosc: currentRecipe.wydajnosc_ilosc,
+                wydajnosc_jm: currentRecipe.wydajnosc_jm,
+                wegetarianski: currentRecipe.wegetarianski,
+                weganski: currentRecipe.weganski,
+                instrukcja: currentRecipe.instrukcja,
+                status: 'draft'
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/api/recipes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newRecipe)
+                });
+                
+                if (!response.ok) throw new Error('Błąd duplikowania');
+                
+                const created = await response.json();
+                alert('Zduplikowano recepturę');
+                location.href = `recipes-view.html?id=${created.id}`;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd duplikowania: ' + error.message);
+            }
+        }
+
+        function showStatusMenu(event) {
+            event.stopPropagation();
+            
+            const existing = document.getElementById('floatingStatusMenu');
+            if (existing) existing.remove();
+            
+            const menu = document.createElement('div');
+            menu.id = 'floatingStatusMenu';
+            menu.className = 'floating-status-menu';
+            menu.innerHTML = `
+                <div onclick="changeStatus('draft')">📝 Robocze</div>
+                <div onclick="changeStatus('active')">✅ Aktywne</div>
+                <div onclick="changeStatus('archived')">📦 Archiwum</div>
+            `;
+            
+            document.body.appendChild(menu);
+            
+            const buttonRect = event.target.getBoundingClientRect();
+            const menuRect = menu.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
+            
+            let top, left;
+            
+            if (buttonRect.bottom + menuRect.height + 10 < viewportHeight) {
+                top = buttonRect.bottom + 5;
+            } else {
+                top = buttonRect.top - menuRect.height - 5;
+            }
+            
+            if (buttonRect.left + menuRect.width > viewportWidth) {
+                left = buttonRect.right - menuRect.width;
+            } else {
+                left = buttonRect.left;
+            }
+            
+            menu.style.top = `${top}px`;
+            menu.style.left = `${left}px`;
+            
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!menu.contains(e.target)) {
+                        menu.remove();
+                        document.removeEventListener('click', closeMenu);
+                    }
+                });
+            }, 10);
+        }
+
+        async function changeStatus(newStatus) {
+            try {
+                const response = await fetch(`${API_URL}/api/recipes/${currentRecipeId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                if (!response.ok) throw new Error('Błąd zmiany statusu');
+                
+                document.getElementById('floatingStatusMenu')?.remove();
+                loadRecipe(currentRecipeId);
+                loadAllRecipes();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd zmiany statusu');
+            }
+        }
+
+        async function deleteRecipe() {
+            if (currentRecipe.in_use) {
+                alert('Nie można usunąć receptury która jest w użyciu');
+                return;
+            }
+            
+            if (!confirm(`Czy na pewno usunąć "${currentRecipe.nazwa}"?`)) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/recipes/${currentRecipeId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Błąd usuwania');
+                
+                alert('Usunięto recepturę');
+                location.href = 'recipes.html';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd usuwania: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
