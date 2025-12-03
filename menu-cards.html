@@ -364,7 +364,7 @@
     nazwa: document.getElementById('nazwa').value,
     typ: document.getElementById('typ').value,
     lokal: document.getElementById('lokal').value,
-    status: 'draft',
+    status: 'active',
     data_od: document.getElementById('data_od').value || null,
     data_do: document.getElementById('data_do').value || null
 };
@@ -408,7 +408,7 @@ try {
                 lokal: card.lokal,
                 data_od: card.data_od,
                 data_do: card.data_do,
-                status: 'draft'
+                status: 'active'
             };
             
             try {
