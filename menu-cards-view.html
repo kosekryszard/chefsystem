@@ -295,12 +295,6 @@
                             <div class="info-grid" id="basicInfo"></div>
                         </div>
 
-                        <!-- Description -->
-                        <div class="menu-card-section" id="descriptionSection" style="display: none;">
-                            <h3>📝 Opis</h3>
-                            <p id="menuCardDescription"></p>
-                        </div>
-
                         <!-- Actions -->
                         <div class="menu-card-actions">
                             <button class="action-btn btn-edit" onclick="editMenuCard()">
@@ -366,17 +360,11 @@
 
             list.innerHTML = filteredSidebarMenuCards.map(card => {
                 const isActive = card.id === currentMenuCardId;
-                const seasonEmoji = {
-                    'wiosna': '🌸',
-                    'lato': '☀️',
-                    'jesien': '🍂',
-                    'zima': '❄️'
-                };
                 return `
                     <div class="sidebar-item ${isActive ? 'active' : ''}" onclick="loadMenuCard(${card.id})">
                         <div class="sidebar-item-name">${card.nazwa}</div>
                         <div class="sidebar-item-meta">
-                            ${card.sezon ? `${seasonEmoji[card.sezon] || ''} ${card.sezon.charAt(0).toUpperCase() + card.sezon.slice(1)}` : 'Brak sezonu'}
+                            ${card.typ ? `${card.typ.charAt(0).toUpperCase() + card.typ.slice(1)}` : 'Brak typu'} ${card.lokal ? `| ${card.lokal}` : ''}
                         </div>
                     </div>
                 `;
@@ -432,17 +420,7 @@
             metaBadges.push(statusBadges[currentMenuCard.status] || '');
             
             if (currentMenuCard.typ) {
-                metaBadges.push(`<span class="badge badge-type">${currentMenuCard.typ}</span>`);
-            }
-            
-            const seasonEmoji = {
-                'wiosna': '🌸',
-                'lato': '☀️',
-                'jesien': '🍂',
-                'zima': '❄️'
-            };
-            if (currentMenuCard.sezon) {
-                metaBadges.push(`<span class="badge badge-type">${seasonEmoji[currentMenuCard.sezon] || ''} ${currentMenuCard.sezon.charAt(0).toUpperCase() + currentMenuCard.sezon.slice(1)}</span>`);
+                metaBadges.push(`<span class="badge badge-type">${currentMenuCard.typ.charAt(0).toUpperCase() + currentMenuCard.typ.slice(1)}</span>`);
             }
             
             document.getElementById('menuCardMeta').innerHTML = metaBadges.join('');
@@ -453,14 +431,14 @@
             if (currentMenuCard.typ) {
                 basicInfo += `<div class="info-item">
                     <div class="info-label">Typ karty</div>
-                    <div class="info-value">${currentMenuCard.typ}</div>
+                    <div class="info-value">${currentMenuCard.typ.charAt(0).toUpperCase() + currentMenuCard.typ.slice(1)}</div>
                 </div>`;
             }
             
-            if (currentMenuCard.sezon) {
+            if (currentMenuCard.lokal) {
                 basicInfo += `<div class="info-item">
-                    <div class="info-label">Sezon</div>
-                    <div class="info-value">${currentMenuCard.sezon.charAt(0).toUpperCase() + currentMenuCard.sezon.slice(1)}</div>
+                    <div class="info-label">Lokal</div>
+                    <div class="info-value">${currentMenuCard.lokal}</div>
                 </div>`;
             }
             
@@ -486,14 +464,6 @@
             }
 
             document.getElementById('basicInfo').innerHTML = basicInfo;
-
-            // Description
-            if (currentMenuCard.opis) {
-                document.getElementById('descriptionSection').style.display = 'block';
-                document.getElementById('menuCardDescription').textContent = currentMenuCard.opis;
-            } else {
-                document.getElementById('descriptionSection').style.display = 'none';
-            }
         }
 
         function updateNavButtons() {
@@ -539,8 +509,7 @@
             const newCard = {
                 nazwa: currentMenuCard.nazwa + ' (kopia)',
                 typ: currentMenuCard.typ,
-                sezon: currentMenuCard.sezon,
-                opis: currentMenuCard.opis,
+                lokal: currentMenuCard.lokal,
                 data_od: currentMenuCard.data_od,
                 data_do: currentMenuCard.data_do,
                 status: 'draft'
