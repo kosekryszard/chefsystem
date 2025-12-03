@@ -143,7 +143,25 @@
 .status-menu div:hover {
     background: #f0f0f0;
 }
+.floating-status-menu {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    min-width: 150px;
+    max-width: 200px;
+}
 
+.floating-status-menu div {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+.floating-status-menu div:hover {
+    background: #f0f0f0;
+}
 </style>
 </head>
 <body>
@@ -660,7 +678,7 @@ function toggleStatusMenu(id) {
     // Stwórz nowe menu na końcu body
     const menu = document.createElement('div');
     menu.id = 'floating-status-menu';
-    menu.className = 'status-menu';
+    menu.className = 'floating-status-menu';
     menu.style.position = 'fixed';
     menu.style.left = rect.left + 'px';
     menu.style.zIndex = '999999';
