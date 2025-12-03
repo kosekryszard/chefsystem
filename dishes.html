@@ -693,6 +693,7 @@ async function changeStatus(id, newStatus) {
         });
         
         if (res.ok) {
+            document.getElementById(`statusMenu-${id}`).style.display = 'none';
             loadData();
         }
     } catch (err) {
