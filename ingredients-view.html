@@ -235,8 +235,10 @@
 
     <script>
         const API_URL = 'https://chefsystem.vercel.app';
-        let currentIngredientId = 1; // Przykładowe ID
+        const urlParams = new URLSearchParams(window.location.search);
+let currentIngredientId = parseInt(urlParams.get('id')) || 1; // Przykładowe ID
         let allIngredients = [];
+        let currentIngredient = null;
 
         // === LOAD DATA ===
         async function loadAllIngredients() {
@@ -245,10 +247,21 @@
         }
 
         async function loadSubstitutes() {
-            const response = await fetch(`${API_URL}/api/ingredients/${currentIngredientId}/substitutes`);
-            const substitutes = await response.json();
-            renderSubstitutes(substitutes);
-        }
+    try {
+        // Pobierz dane surowca
+        const ingResponse = await fetch(`${API_URL}/api/ingredients/${currentIngredientId}`);
+        currentIngredient = await ingResponse.json();
+        
+        // Pobierz zamienniki
+        const response = await fetch(`${API_URL}/api/ingredients/${currentIngredientId}/substitutes`);
+        currentIngredient.substitutes = await response.json();
+        
+        renderSubstitutes(currentIngredient.substitutes);
+    } catch (error) {
+        console.error('Error loading substitutes:', error);
+        alert(error.message);
+    }
+}
 
         function renderSubstitutes(substitutes) {
     const list = document.getElementById('substitutesList');
