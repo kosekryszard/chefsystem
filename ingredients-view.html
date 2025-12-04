@@ -391,9 +391,12 @@
             });
             
             if (!response.ok) {
-                alert('Błąd zapisu');
-                return;
-            }
+    const errorData = await response.json();
+    if (errorData.error.includes('duplicate key')) {
+        throw new Error('Ten zamiennik już istnieje!');
+    }
+    throw new Error('Błąd zapisu: ' + errorData.error);
+}
             
             alert('Dodano zamiennik');
             closeSubstituteModal();
