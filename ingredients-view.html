@@ -141,14 +141,13 @@
             </nav>
         </header>
 
-        <div class="content">
-            <div class="ingredient-section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0;">🔄 Zamienniki</h3>
-                    <button class="btn btn-primary" onclick="openAddSubstituteModal()">
-                        ➕ Dodaj zamiennik
-                    </button>
-                </div>
+        <div class="ingredient-section" id="substitutesSection">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0;">🔄 Zamienniki dla: <span id="currentIngredientTitle" style="color: #D4AF37;"></span></h3>
+                <button class="btn btn-primary" onclick="openAddSubstituteModal()">
+                    ➕ Dodaj zamiennik
+                </button>
+            </div>
                 
                 <div class="substitutes-list" id="substitutesList">
                     <div class="empty-state">Brak zamienników</div>
@@ -254,26 +253,45 @@
         function renderSubstitutes(substitutes) {
     const list = document.getElementById('substitutesList');
     
+    // Ustaw nazwę bieżącego składnika w nagłówku
+    const currentName = allIngredients.find(i => i.id === currentIngredientId)?.nazwa || 'Surowiec';
+    document.getElementById('currentIngredientTitle').textContent = currentName;
+    
     if (!substitutes || substitutes.length === 0) {
         list.innerHTML = '<div class="empty-state">Brak zamienników</div>';
         return;
     }
     
-    // Pobierz nazwę bieżącego składnika
-    const currentName = allIngredients.find(i => i.id === currentIngredientId)?.nazwa || 'Surowiec';
-    
     list.innerHTML = substitutes.map(sub => `
         <div class="substitute-item">
-            <div class="substitute-info">
-                <div class="substitute-name">${sub.substitute.nazwa}</div>
-                <div class="substitute-ratio">
-                    <strong>${currentName}:</strong> ${sub.ilosc_bazowa} ${sub.jm_bazowa} 
-                    = 
-                    <strong>${sub.substitute.nazwa}:</strong> ${sub.ilosc_zamienna} ${sub.jm_zamienna}
-                    ${sub.uwagi ? `<br><small style="color: #666;">ℹ️ ${sub.uwagi}</small>` : ''}
-                </div>
+            <div class="substitute-info" style="flex: 1;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f8f9fa; border-bottom: 2px solid #e0e0e0;">
+                            <th style="padding: 8px; text-align: left; width: 25%; font-size: 12px; color: #666;">SUROWIEC</th>
+                            <th style="padding: 8px; text-align: center; width: 15%; font-size: 12px; color: #666;">ILOŚĆ</th>
+                            <th style="padding: 8px; text-align: center; width: 10%; font-size: 12px; color: #666;">JM</th>
+                            <th style="padding: 8px; text-align: center; width: 5%;"></th>
+                            <th style="padding: 8px; text-align: center; width: 15%; font-size: 12px; color: #666;">ILOŚĆ</th>
+                            <th style="padding: 8px; text-align: center; width: 10%; font-size: 12px; color: #666;">JM</th>
+                            <th style="padding: 8px; text-align: left; width: 25%; font-size: 12px; color: #666;">ZAMIENNIK</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 8px; font-weight: 600; color: #0A1F44;">${currentName}</td>
+                            <td style="padding: 8px; text-align: center; font-weight: 700;">${sub.ilosc_bazowa}</td>
+                            <td style="padding: 8px; text-align: center;">${sub.jm_bazowa}</td>
+                            <td style="padding: 8px; text-align: center; font-size: 20px; font-weight: 700;">=</td>
+                            <td style="padding: 8px; text-align: center; font-weight: 700;">${sub.ilosc_zamienna}</td>
+                            <td style="padding: 8px; text-align: center;">${sub.jm_zamienna}</td>
+                            <td style="padding: 8px; font-weight: 600; color: #0A1F44;">${sub.substitute.nazwa}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                ${sub.uwagi ? `<div style="margin-top: 8px; padding: 8px; background: #fff9e6; border-left: 3px solid #D4AF37; font-size: 12px; color: #666;">ℹ️ ${sub.uwagi}</div>` : ''}
             </div>
-            <div class="substitute-actions" style="display: flex; gap: 8px;">
+            <div class="substitute-actions" style="display: flex; gap: 8px; margin-left: 15px;">
                 <button class="action-btn btn-edit" onclick="editSubstitute(${sub.id})" 
                         style="padding: 8px 12px; font-size: 13px;">
                     ✏️
@@ -286,6 +304,7 @@
         </div>
     `).join('');
 }
+
         // === ADD SUBSTITUTE ===
         async function openAddSubstituteModal() {
             await loadAllIngredients();
