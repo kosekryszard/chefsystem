@@ -229,25 +229,30 @@ app.delete('/api/conversions/:id', async (req, res) => {
 // ========================================
 // ZAMIENNIKI
 // ========================================
-// GET wszystkie zamienniki dla surowca
+// GET /api/ingredients/:id/substitutes - Zamienniki składnika
 app.get('/api/ingredients/:id/substitutes', async (req, res) => {
-  const { data, error } = await supabase
-    .from('ingredient_substitutes')
-    .select(`
-      id,
-      ratio,
-      from_unit,
-      to_unit,
-      notes,
-      substitute:substitute_id (
-        id,
-        nazwa,
-        jm_podstawowa
-      )
-    `)
-    .eq('ingredient_id', req.params.id);
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .from('ingredient_substitutes')
+          .select(`
+              *,
+              substitute:ingredients!ingredient_substitutes_substitute_id_fkey(
+                  id,
+                  nazwa,
+                  jm_podstawowa
+              )
+          `)
+          .eq('ingredient_id', id)
+          .order('priorytet', { ascending: true });
+      
+      if (error) throw error;
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
 });
 // POST nowy zamiennik
 app.post('/api/substitutes', async (req, res) => {
