@@ -236,7 +236,7 @@
     <script>
         const API_URL = 'https://chefsystem.vercel.app';
         const urlParams = new URLSearchParams(window.location.search);
-let currentIngredientId = parseInt(urlParams.get('id')) || 1; // Przykładowe ID
+        let currentIngredientId = parseInt(urlParams.get('id')) || 1; // Przykładowe ID
         let allIngredients = [];
         let currentIngredient = null;
 
@@ -383,38 +383,43 @@ let currentIngredientId = parseInt(urlParams.get('id')) || 1; // Przykładowe ID
         }
 
         async function saveSubstitute(event) {
-            event.preventDefault();
-            
-            const data = {
-                ingredient_id: currentIngredientId,
-                substitute_id: parseInt(document.getElementById('substituteSelect').value),
-                ilosc_bazowa: parseFloat(document.getElementById('iloscBazowa').value),
-                jm_bazowa: document.getElementById('jmBazowa').value,
-                ilosc_zamienna: parseFloat(document.getElementById('iloscZamienna').value),
-                jm_zamienna: document.getElementById('jmZamienna').value,
-                uwagi: document.getElementById('uwagi').value,
-                priorytet: parseInt(document.getElementById('priorytet').value),
-                dwukierunkowa: document.getElementById('dwukierunkowa').checked
-            };
-            
-            const response = await fetch(`${API_URL}/api/ingredients/substitutes`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            
-            if (!response.ok) {
-    const errorData = await response.json();
-    if (errorData.error.includes('duplicate key')) {
-        throw new Error('Ten zamiennik już istnieje!');
-    }
-    throw new Error('Błąd zapisu: ' + errorData.error);
-}
-            
-            alert('Dodano zamiennik');
-            closeSubstituteModal();
-            loadSubstitutes();
+    event.preventDefault();
+    
+    try {
+        const data = {
+            ingredient_id: currentIngredientId,
+            substitute_id: parseInt(document.getElementById('substituteSelect').value),
+            ilosc_bazowa: parseFloat(document.getElementById('iloscBazowa').value),
+            jm_bazowa: document.getElementById('jmBazowa').value,
+            ilosc_zamienna: parseFloat(document.getElementById('iloscZamienna').value),
+            jm_zamienna: document.getElementById('jmZamienna').value,
+            uwagi: document.getElementById('uwagi').value,
+            priorytet: parseInt(document.getElementById('priorytet').value),
+            dwukierunkowa: document.getElementById('dwukierunkowa').checked
+        };
+        
+        const response = await fetch(`${API_URL}/api/ingredients/substitutes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            if (errorData.error.includes('duplicate key')) {
+                throw new Error('Ten zamiennik już istnieje!');
+            }
+            throw new Error('Błąd zapisu: ' + errorData.error);
         }
+        
+        alert('Dodano zamiennik');
+        closeSubstituteModal();
+        loadSubstitutes();
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message);
+    }
+}
 
         function editSubstitute(id) {
     // TODO: Otwórz modal edycji
