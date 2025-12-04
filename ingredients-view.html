@@ -252,31 +252,40 @@
         }
 
         function renderSubstitutes(substitutes) {
-            const list = document.getElementById('substitutesList');
-            
-            if (!substitutes || substitutes.length === 0) {
-                list.innerHTML = '<div class="empty-state">Brak zamienników</div>';
-                return;
-            }
-            
-            list.innerHTML = substitutes.map(sub => `
-                <div class="substitute-item">
-                    <div class="substitute-info">
-                        <div class="substitute-name">${sub.substitute.nazwa}</div>
-                        <div class="substitute-ratio">
-                            ${sub.ilosc_bazowa} ${sub.jm_bazowa} = ${sub.ilosc_zamienna} ${sub.jm_zamienna}
-                            ${sub.uwagi ? `<br><small>${sub.uwagi}</small>` : ''}
-                        </div>
-                    </div>
-                    <div>
-                        <button class="action-btn btn-delete" onclick="deleteSubstitute(${sub.id})">
-                            🗑️
-                        </button>
-                    </div>
+    const list = document.getElementById('substitutesList');
+    
+    if (!substitutes || substitutes.length === 0) {
+        list.innerHTML = '<div class="empty-state">Brak zamienników</div>';
+        return;
+    }
+    
+    // Pobierz nazwę bieżącego składnika
+    const currentName = allIngredients.find(i => i.id === currentIngredientId)?.nazwa || 'Surowiec';
+    
+    list.innerHTML = substitutes.map(sub => `
+        <div class="substitute-item">
+            <div class="substitute-info">
+                <div class="substitute-name">${sub.substitute.nazwa}</div>
+                <div class="substitute-ratio">
+                    <strong>${currentName}:</strong> ${sub.ilosc_bazowa} ${sub.jm_bazowa} 
+                    = 
+                    <strong>${sub.substitute.nazwa}:</strong> ${sub.ilosc_zamienna} ${sub.jm_zamienna}
+                    ${sub.uwagi ? `<br><small style="color: #666;">ℹ️ ${sub.uwagi}</small>` : ''}
                 </div>
-            `).join('');
-        }
-
+            </div>
+            <div class="substitute-actions" style="display: flex; gap: 8px;">
+                <button class="action-btn btn-edit" onclick="editSubstitute(${sub.id})" 
+                        style="padding: 8px 12px; font-size: 13px;">
+                    ✏️
+                </button>
+                <button class="action-btn btn-delete" onclick="deleteSubstitute(${sub.id})"
+                        style="padding: 8px 12px; font-size: 13px;">
+                    🗑️
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
         // === ADD SUBSTITUTE ===
         async function openAddSubstituteModal() {
             await loadAllIngredients();
@@ -367,6 +376,11 @@
             loadSubstitutes();
         }
 
+        function editSubstitute(id) {
+    // TODO: Otwórz modal edycji
+    alert('Edycja zamiennika - do zrobienia');
+}
+        
         async function deleteSubstitute(id) {
             if (!confirm('Czy na pewno usunąć ten zamiennik?')) return;
             
