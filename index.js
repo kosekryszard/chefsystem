@@ -2970,6 +2970,7 @@ app.get('/api/allergens', async (req, res) => {
       const { data, error } = await supabase
           .from('allergens')
           .select('*')
+          .eq('aktywny', true)
           .order('kolejnosc', { ascending: true });
       
       if (error) throw error;
