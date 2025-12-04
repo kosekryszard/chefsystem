@@ -253,9 +253,14 @@
         function renderSubstitutes(substitutes) {
     const list = document.getElementById('substitutesList');
     
-    // Ustaw nazwę bieżącego składnika w nagłówku
-    const currentName = allIngredients.find(i => i.id === currentIngredientId)?.nazwa || 'Surowiec';
-    document.getElementById('currentIngredientTitle').textContent = currentName;
+    // Pobierz nazwę z bieżącego składnika (już załadowanego)
+    const currentName = currentIngredient?.nazwa || 'Surowiec';
+    
+    // Ustaw nazwę w nagłówku
+    const titleElement = document.getElementById('currentIngredientTitle');
+    if (titleElement) {
+        titleElement.textContent = currentName;
+    }
     
     if (!substitutes || substitutes.length === 0) {
         list.innerHTML = '<div class="empty-state">Brak zamienników</div>';
