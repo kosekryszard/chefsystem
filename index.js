@@ -2955,5 +2955,400 @@ app.patch('/api/recipes/:id', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
+// ============================================
+// BACKEND ENDPOINTS - Zamienniki i rozszerzenia ingredients
+// Dodaj to do index.js
+// ============================================
+
+// ============================================
+// ALERGENY
+// ============================================
+
+// GET /api/allergens - Lista wszystkich alergenów
+app.get('/api/allergens', async (req, res) => {
+  try {
+      const { data, error } = await supabase
+          .from('allergens')
+          .select('*')
+          .order('kolejnosc', { ascending: true });
+      
+      if (error) throw error;
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/ingredients/:id/allergens - Alergeny składnika
+app.get('/api/ingredients/:id/allergens', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .from('ingredient_allergens')
+          .select(`
+              id,
+              allergen_id,
+              allergens (
+                  kod,
+                  nazwa,
+                  kategoria,
+                  badge_color,
+                  badge_icon
+              )
+          `)
+          .eq('ingredient_id', id);
+      
+      if (error) throw error;
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/ingredients/:id/allergens - Dodaj alergen do składnika
+app.post('/api/ingredients/:id/allergens', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { allergen_id } = req.body;
+      
+      const { data, error } = await supabase
+          .from('ingredient_allergens')
+          .insert([{ ingredient_id: id, allergen_id }])
+          .select()
+          .single();
+      
+      if (error) throw error;
+      res.status(201).json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/ingredients/:id/allergens/:allergen_id - Usuń alergen
+app.delete('/api/ingredients/:id/allergens/:allergen_id', async (req, res) => {
+  try {
+      const { id, allergen_id } = req.params;
+      
+      const { error } = await supabase
+          .from('ingredient_allergens')
+          .delete()
+          .eq('ingredient_id', id)
+          .eq('allergen_id', allergen_id);
+      
+      if (error) throw error;
+      res.json({ message: 'Usunięto alergen' });
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/ingredients/:id/diet-badges - Badge'e dietetyczne
+app.get('/api/ingredients/:id/diet-badges', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .rpc('get_ingredient_diet_badges', { p_ingredient_id: parseInt(id) });
+      
+      if (error) throw error;
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// JEDNOSTKI MIAR
+// ============================================
+
+// GET /api/ingredients/:id/units - Dostępne jednostki składnika
+app.get('/api/ingredients/:id/units', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .from('ingredient_units')
+          .select('*')
+          .eq('ingredient_id', id)
+          .order('domyslna_w_recepturach', { ascending: false });
+      
+      if (error) throw error;
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/ingredients/:id/units - Dodaj jednostkę
+app.post('/api/ingredients/:id/units', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { jm, typ, wspolczynnik_do_podstawowej, domyslna_w_recepturach } = req.body;
+      
+      const { data, error } = await supabase
+          .from('ingredient_units')
+          .insert([{
+              ingredient_id: id,
+              jm,
+              typ,
+              wspolczynnik_do_podstawowej,
+              domyslna_w_recepturach
+          }])
+          .select()
+          .single();
+      
+      if (error) throw error;
+      res.status(201).json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/ingredients/:id/units/:unit_id - Usuń jednostkę
+app.delete('/api/ingredients/:id/units/:unit_id', async (req, res) => {
+  try {
+      const { unit_id } = req.params;
+      
+      const { error } = await supabase
+          .from('ingredient_units')
+          .delete()
+          .eq('id', unit_id);
+      
+      if (error) throw error;
+      res.json({ message: 'Usunięto jednostkę' });
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// CENY HISTORYCZNE
+// ============================================
+
+// GET /api/ingredients/:id/price-stats - Statystyki cen
+app.get('/api/ingredients/:id/price-stats', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const months = parseInt(req.query.months) || 3;
+      
+      const { data, error } = await supabase
+          .rpc('get_ingredient_price_stats', { 
+              p_ingredient_id: parseInt(id),
+              p_months: months
+          });
+      
+      if (error) throw error;
+      res.json(data[0] || {});
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/ingredients/:id/prices - Dodaj cenę
+app.post('/api/ingredients/:id/prices', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { cena, data_dostawy, dostawca, nr_dokumentu, uwagi } = req.body;
+      
+      const { data, error } = await supabase
+          .from('ingredient_prices')
+          .insert([{
+              ingredient_id: id,
+              cena,
+              data_dostawy,
+              dostawca,
+              nr_dokumentu,
+              uwagi
+          }])
+          .select()
+          .single();
+      
+      if (error) throw error;
+      res.status(201).json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// ZAMIENNIKI
+// ============================================
+
+// GET /api/ingredients/:id/substitutes - Zamienniki składnika
+app.get('/api/ingredients/:id/substitutes', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+          .from('ingredient_substitutes')
+          .select(`
+              *,
+              substitute:ingredients!ingredient_substitutes_substitute_id_fkey(
+                  id,
+                  nazwa,
+                  jm_podstawowa
+              )
+          `)
+          .eq('ingredient_id', id)
+          .order('priorytet', { ascending: true });
+      
+      if (error) throw error;
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/ingredients/substitutes - Dodaj zamiennik
+app.post('/api/ingredients/substitutes', async (req, res) => {
+  try {
+      const {
+          ingredient_id,
+          substitute_id,
+          ilosc_bazowa,
+          jm_bazowa,
+          ilosc_zamienna,
+          jm_zamienna,
+          uwagi,
+          priorytet,
+          dwukierunkowa
+      } = req.body;
+      
+      // Wstaw główny wiersz
+      const { data: sub1, error: err1 } = await supabase
+          .from('ingredient_substitutes')
+          .insert([{
+              ingredient_id,
+              substitute_id,
+              ilosc_bazowa,
+              jm_bazowa,
+              ilosc_zamienna,
+              jm_zamienna,
+              uwagi,
+              priorytet,
+              dwukierunkowa
+          }])
+          .select()
+          .single();
+      
+      if (err1) throw err1;
+      
+      // Jeśli dwukierunkowa - dodaj odwrotny
+      if (dwukierunkowa) {
+          const { error: err2 } = await supabase
+              .from('ingredient_substitutes')
+              .insert([{
+                  ingredient_id: substitute_id,
+                  substitute_id: ingredient_id,
+                  ilosc_bazowa: ilosc_zamienna,
+                  jm_bazowa: jm_zamienna,
+                  ilosc_zamienna: ilosc_bazowa,
+                  jm_zamienna: jm_bazowa,
+                  uwagi: (uwagi || '') + ' (odwrotna)',
+                  priorytet,
+                  dwukierunkowa: true
+              }]);
+          
+          if (err2) throw err2;
+      }
+      
+      res.status(201).json(sub1);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/ingredients/substitutes/:id - Usuń zamiennik
+app.delete('/api/ingredients/substitutes/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      // Pobierz info o zamienniku
+      const { data: sub, error: fetchErr } = await supabase
+          .from('ingredient_substitutes')
+          .select('*')
+          .eq('id', id)
+          .single();
+      
+      if (fetchErr) throw fetchErr;
+      
+      // Usuń główny wiersz
+      const { error: err1 } = await supabase
+          .from('ingredient_substitutes')
+          .delete()
+          .eq('id', id);
+      
+      if (err1) throw err1;
+      
+      // Jeśli był dwukierunkowy - usuń odwrotny
+      if (sub.dwukierunkowa) {
+          const { error: err2 } = await supabase
+              .from('ingredient_substitutes')
+              .delete()
+              .eq('ingredient_id', sub.substitute_id)
+              .eq('substitute_id', sub.ingredient_id);
+          
+          if (err2) console.error('Error deleting reverse:', err2);
+      }
+      
+      res.json({ message: 'Usunięto zamiennik' });
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/ingredients/substitutes/:id - Edytuj zamiennik
+app.put('/api/ingredients/substitutes/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const {
+          ilosc_bazowa,
+          jm_bazowa,
+          ilosc_zamienna,
+          jm_zamienna,
+          uwagi,
+          priorytet
+      } = req.body;
+      
+      const { data, error } = await supabase
+          .from('ingredient_substitutes')
+          .update({
+              ilosc_bazowa,
+              jm_bazowa,
+              ilosc_zamienna,
+              jm_zamienna,
+              uwagi,
+              priorytet
+          })
+          .eq('id', id)
+          .select()
+          .single();
+      
+      if (error) throw error;
+      res.json(data);
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// KONIEC ENDPOINTS
+// ============================================
+
 // Start serwera
 app.listen(3000, () => console.log('Serwer działa na http://localhost:3000'));

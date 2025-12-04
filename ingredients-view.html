@@ -22,16 +22,13 @@
             max-height: calc(100vh - 180px);
         }
 
-        .sidebar-search {
-            margin-bottom: 15px;
-        }
-
         .sidebar-search input {
             width: 100%;
             padding: 8px 12px;
             border: 2px solid #e0e0e0;
             border-radius: 6px;
             font-size: 13px;
+            margin-bottom: 15px;
         }
 
         .sidebar-list {
@@ -61,80 +58,10 @@
             font-weight: 600;
         }
 
-        .sidebar-item-name {
-            font-weight: 600;
-            color: #0A1F44;
-            margin-bottom: 3px;
-        }
-
-        .sidebar-item-meta {
-            font-size: 11px;
-            color: #666;
-        }
-
         .ingredient-content {
             padding: 30px;
             overflow-y: auto;
             max-height: calc(100vh - 180px);
-        }
-
-        .ingredient-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .nav-btn {
-            padding: 10px 20px;
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .nav-btn:hover:not(:disabled) {
-            background: #5a6268;
-            transform: translateY(-1px);
-        }
-
-        .nav-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .btn-back {
-            background: #0A1F44;
-        }
-
-        .btn-back:hover {
-            background: #1a3a6b;
-        }
-
-        .ingredient-header {
-            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-        }
-
-        .ingredient-title {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 15px;
-        }
-
-        .ingredient-meta-header {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
         }
 
         .ingredient-section {
@@ -153,64 +80,44 @@
             padding-bottom: 10px;
         }
 
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        .substitutes-list {
+            display: flex;
+            flex-direction: column;
             gap: 15px;
+            margin-top: 15px;
         }
 
-        .info-item {
+        .substitute-item {
             padding: 15px;
             background: #f8f9fa;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .info-label {
-            font-size: 12px;
-            color: #666;
-            font-weight: 600;
-            text-transform: uppercase;
+        .substitute-info {
+            flex: 1;
+        }
+
+        .substitute-name {
+            font-weight: 700;
+            color: #0A1F44;
+            font-size: 16px;
             margin-bottom: 5px;
         }
 
-        .info-value {
-            font-size: 16px;
-            color: #0A1F44;
-            font-weight: 700;
+        .substitute-ratio {
+            color: #666;
+            font-size: 14px;
         }
 
-        .ingredient-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid #e0e0e0;
-        }
-
-        @media (max-width: 1024px) {
-            .view-layout {
-                grid-template-columns: 1fr;
-            }
-
-            .ingredients-sidebar {
-                display: none;
-            }
-
-            .ingredient-content {
-                max-height: none;
-            }
-        }
-
-        .loading-view {
+        .empty-state {
             text-align: center;
-            padding: 60px 20px;
-        }
-
-        .error-view {
-            text-align: center;
-            padding: 60px 20px;
-            color: #dc3545;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
         }
     </style>
 </head>
@@ -235,327 +142,251 @@
         </header>
 
         <div class="content">
-            <div class="view-layout">
-                <!-- Sidebar -->
-                <div class="ingredients-sidebar">
-                    <h3 style="margin-bottom: 15px; color: #0A1F44;">Wszystkie surowce</h3>
-                    
-                    <div class="sidebar-search">
-                        <input type="text" id="sidebarSearch" placeholder="🔍 Szukaj..." onkeyup="filterSidebar()">
-                    </div>
-
-                    <div class="sidebar-list" id="sidebarList">
-                        <div class="loading">Ładowanie...</div>
-                    </div>
+            <div class="ingredient-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">🔄 Zamienniki</h3>
+                    <button class="btn btn-primary" onclick="openAddSubstituteModal()">
+                        ➕ Dodaj zamiennik
+                    </button>
                 </div>
+                
+                <div class="substitutes-list" id="substitutesList">
+                    <div class="empty-state">Brak zamienników</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <!-- Main content -->
-                <div class="ingredient-content">
-                    <!-- Loading -->
-                    <div id="loadingState" class="loading-view">
-                        <div class="spinner"></div>
-                        <p>Ładowanie surowca...</p>
+    <!-- Modal: Dodaj zamiennik -->
+    <div id="substituteModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Dodaj zamiennik dla: <span id="currentIngredientName"></span></h2>
+                <span class="close" onclick="closeSubstituteModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="substituteForm" onsubmit="saveSubstitute(event)">
+                    <div class="form-group">
+                        <label>Wybierz zamiennik *</label>
+                        <select id="substituteSelect" required onchange="loadSubstituteUnits()">
+                            <option value="">-- Wybierz surowiec --</option>
+                        </select>
                     </div>
 
-                    <!-- Error -->
-                    <div id="errorState" class="error-view" style="display: none;">
-                        <h2>❌ Błąd</h2>
-                        <p id="errorMessage"></p>
-                        <button class="btn btn-primary" onclick="location.href='ingredients.html'">
-                            Powrót do listy
-                        </button>
-                    </div>
-
-                    <!-- Ingredient view -->
-                    <div id="ingredientView" style="display: none;">
-                        <!-- Navigation -->
-                        <div class="ingredient-nav">
-                            <button class="nav-btn btn-back" onclick="location.href='ingredients.html'">
-                                ← Powrót do listy
-                            </button>
-                            <div style="display: flex; gap: 10px;">
-                                <button class="nav-btn" id="prevBtn" onclick="navigateIngredient('prev')">
-                                    ← Poprzedni
-                                </button>
-                                <button class="nav-btn" id="nextBtn" onclick="navigateIngredient('next')">
-                                    Następny →
-                                </button>
+                    <div class="form-group" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h4 style="margin-top: 0; color: #0A1F44;">Proporcje zamiany</h4>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <input type="number" id="iloscBazowa" value="1" step="0.001" required style="width: 100px;">
+                            </div>
+                            <div class="form-group">
+                                <select id="jmBazowa" required style="width: 150px;"></select>
+                            </div>
+                            <div style="display: flex; align-items: center; padding: 0 10px;">
+                                <span id="bazowaNazwa" style="color: #0A1F44; font-weight: 600;"></span>
                             </div>
                         </div>
-
-                        <!-- Header -->
-                        <div class="ingredient-header">
-                            <div class="ingredient-title" id="ingredientName"></div>
-                            <div class="ingredient-meta-header" id="ingredientMeta"></div>
-                        </div>
-
-                        <!-- Basic Info -->
-                        <div class="ingredient-section">
-                            <h3>📋 Informacje podstawowe</h3>
-                            <div class="info-grid" id="basicInfo"></div>
-                        </div>
-
-                        <!-- Allergens -->
-                        <div class="ingredient-section" id="allergensSection" style="display: none;">
-                            <h3>⚠️ Alergeny</h3>
-                            <div id="allergensList"></div>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="ingredient-actions">
-                            <button class="action-btn btn-edit" onclick="editIngredient()">
-                                ✏️ Edytuj
-                            </button>
-                            <button class="action-btn btn-duplicate" onclick="duplicateIngredient()">
-                                📋 Duplikuj
-                            </button>
-                            <button class="action-btn btn-delete" onclick="deleteIngredient()">
-                                🗑️ Usuń
-                            </button>
+                        
+                        <div style="text-align: center; font-size: 24px; margin: 10px 0; font-weight: 700;">=</div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <input type="number" id="iloscZamienna" step="0.001" required style="width: 100px;">
+                            </div>
+                            <div class="form-group">
+                                <select id="jmZamienna" required style="width: 150px;"></select>
+                            </div>
+                            <div style="display: flex; align-items: center; padding: 0 10px;">
+                                <span id="zamienna Nazwa" style="color: #0A1F44; font-weight: 600;"></span>
+                            </div>
                         </div>
                     </div>
-                </div>
+
+                    <div class="form-group">
+                        <label>Uwagi</label>
+                        <textarea id="uwagi" rows="2" placeholder="np. Liofilizat, regeneracja 1:6"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Priorytet</label>
+                            <select id="priorytet">
+                                <option value="1">1 (pierwszy)</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: center; padding-top: 25px;">
+                            <label style="margin: 0; display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" id="dwukierunkowa" checked style="margin-right: 8px;">
+                                Dwukierunkowa (dodaj także odwrotnie)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" class="btn" onclick="closeSubstituteModal()">Anuluj</button>
+                        <button type="submit" class="btn btn-success">Dodaj zamiennik</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
     <script>
         const API_URL = 'https://chefsystem.vercel.app';
-        
-        let currentIngredient = null;
+        let currentIngredientId = 1; // Przykładowe ID
         let allIngredients = [];
-        let filteredSidebarIngredients = [];
-        let currentIngredientId = null;
 
-        const ALLERGENS = {
-            1: { kod: 'GLU', nazwa: 'Gluten' },
-            2: { kod: 'SKO', nazwa: 'Skorupiaki' },
-            3: { kod: 'JAJ', nazwa: 'Jaja' },
-            4: { kod: 'RYB', nazwa: 'Ryby' },
-            5: { kod: 'ORZ', nazwa: 'Orzeszki' },
-            6: { kod: 'SOJ', nazwa: 'Soja' },
-            7: { kod: 'MLE', nazwa: 'Mleko' },
-            8: { kod: 'ORS', nazwa: 'Orzechy' },
-            9: { kod: 'SEL', nazwa: 'Seler' },
-            10: { kod: 'GOR', nazwa: 'Gorczyca' },
-            11: { kod: 'SEZ', nazwa: 'Sezam' },
-            12: { kod: 'SIA', nazwa: 'Dwutlenek siarki' },
-            13: { kod: 'LUB', nazwa: 'Łubin' },
-            14: { kod: 'MIE', nazwa: 'Mięczaki' }
-        };
-
-        const urlParams = new URLSearchParams(window.location.search);
-        currentIngredientId = parseInt(urlParams.get('id'));
-
-        window.addEventListener('DOMContentLoaded', async () => {
-            if (!currentIngredientId) {
-                showError('Brak ID surowca');
-                return;
-            }
-
-            await loadAllIngredients();
-            await loadIngredient(currentIngredientId);
-        });
-
+        // === LOAD DATA ===
         async function loadAllIngredients() {
-            try {
-                const response = await fetch(`${API_URL}/api/ingredients`);
-                if (!response.ok) throw new Error('Błąd ładowania listy');
-                
-                allIngredients = await response.json();
-                filteredSidebarIngredients = [...allIngredients];
-                renderSidebar();
-            } catch (error) {
-                console.error('Error:', error);
-            }
+            const response = await fetch(`${API_URL}/api/ingredients`);
+            allIngredients = await response.json();
         }
 
-        function renderSidebar() {
-            const list = document.getElementById('sidebarList');
+        async function loadSubstitutes() {
+            const response = await fetch(`${API_URL}/api/ingredients/${currentIngredientId}/substitutes`);
+            const substitutes = await response.json();
+            renderSubstitutes(substitutes);
+        }
+
+        function renderSubstitutes(substitutes) {
+            const list = document.getElementById('substitutesList');
             
-            if (filteredSidebarIngredients.length === 0) {
-                list.innerHTML = '<div style="text-align: center; color: #666;">Brak wyników</div>';
+            if (!substitutes || substitutes.length === 0) {
+                list.innerHTML = '<div class="empty-state">Brak zamienników</div>';
                 return;
             }
-
-            list.innerHTML = filteredSidebarIngredients.map(ing => {
-                const isActive = ing.id === currentIngredientId;
-                return `
-                    <div class="sidebar-item ${isActive ? 'active' : ''}" onclick="loadIngredient(${ing.id})">
-                        <div class="sidebar-item-name">${ing.nazwa}</div>
-                        <div class="sidebar-item-meta">
-                            ${ing.typ || 'Brak typu'} | ${ing.jm_podstawowa || '-'}
+            
+            list.innerHTML = substitutes.map(sub => `
+                <div class="substitute-item">
+                    <div class="substitute-info">
+                        <div class="substitute-name">${sub.substitute.nazwa}</div>
+                        <div class="substitute-ratio">
+                            ${sub.ilosc_bazowa} ${sub.jm_bazowa} = ${sub.ilosc_zamienna} ${sub.jm_zamienna}
+                            ${sub.uwagi ? `<br><small>${sub.uwagi}</small>` : ''}
                         </div>
                     </div>
-                `;
-            }).join('');
+                    <div>
+                        <button class="action-btn btn-delete" onclick="deleteSubstitute(${sub.id})">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        function filterSidebar() {
-            const searchTerm = document.getElementById('sidebarSearch').value.toLowerCase();
-            filteredSidebarIngredients = allIngredients.filter(i => 
-                i.nazwa.toLowerCase().includes(searchTerm)
-            );
-            renderSidebar();
-        }
-
-        async function loadIngredient(ingredientId) {
-            currentIngredientId = ingredientId;
-            window.history.replaceState(null, '', `ingredients-view.html?id=${ingredientId}`);
+        // === ADD SUBSTITUTE ===
+        async function openAddSubstituteModal() {
+            await loadAllIngredients();
             
-            document.getElementById('loadingState').style.display = 'block';
-            document.getElementById('errorState').style.display = 'none';
-            document.getElementById('ingredientView').style.display = 'none';
-
-            try {
-                const response = await fetch(`${API_URL}/api/ingredients/${ingredientId}`);
-                if (!response.ok) throw new Error('Surowiec nie znaleziony');
-                
-                currentIngredient = await response.json();
-                renderIngredient();
-                updateNavButtons();
-                renderSidebar();
-            } catch (error) {
-                console.error('Error:', error);
-                showError(error.message);
-            }
-        }
-
-        function renderIngredient() {
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('ingredientView').style.display = 'block';
-
-            // Name
-            document.getElementById('ingredientName').textContent = currentIngredient.nazwa;
-
-            // Meta badges
-            const metaBadges = [];
-            if (currentIngredient.typ) metaBadges.push(`<span class="badge badge-type">${currentIngredient.typ}</span>`);
-            if (currentIngredient.jm_podstawowa) metaBadges.push(`<span class="badge badge-jm">${currentIngredient.jm_podstawowa}</span>`);
-            if (currentIngredient.weganski) metaBadges.push('<span class="badge badge-vegan">🌱 Vegan</span>');
-            if (currentIngredient.wegetarianski) metaBadges.push('<span class="badge badge-vegetarian">🥬 Wege</span>');
+            // Ustaw nazwę bieżącego składnika
+            const current = allIngredients.find(i => i.id === currentIngredientId);
+            document.getElementById('currentIngredientName').textContent = current ? current.nazwa : '';
+            document.getElementById('bazowaNazwa').textContent = current ? current.nazwa : '';
             
-            document.getElementById('ingredientMeta').innerHTML = metaBadges.join('');
-
-            // Basic info
-            let basicInfo = '';
-            if (currentIngredient.grupa) {
-                basicInfo += `<div class="info-item"><div class="info-label">Grupa</div><div class="info-value">${currentIngredient.grupa}</div></div>`;
-            }
-            if (currentIngredient.dzial) {
-                basicInfo += `<div class="info-item"><div class="info-label">Dział</div><div class="info-value">${currentIngredient.dzial}</div></div>`;
-            }
-            if (currentIngredient.cena_aktualna) {
-                basicInfo += `<div class="info-item"><div class="info-label">Cena</div><div class="info-value">${currentIngredient.cena_aktualna} PLN</div></div>`;
-            }
-            if (currentIngredient.jm_podstawowa) {
-                basicInfo += `<div class="info-item"><div class="info-label">Jednostka</div><div class="info-value">${currentIngredient.jm_podstawowa}</div></div>`;
-            }
-            if (currentIngredient.created_at) {
-                basicInfo += `<div class="info-item"><div class="info-label">Utworzono</div><div class="info-value">${new Date(currentIngredient.created_at).toLocaleDateString('pl-PL')}</div></div>`;
-            }
-
-            document.getElementById('basicInfo').innerHTML = basicInfo || '<p style="color: #666;">Brak dodatkowych informacji</p>';
-
-            // Allergens
-            if (currentIngredient.alergeny && Array.isArray(currentIngredient.alergeny) && currentIngredient.alergeny.length > 0) {
-                document.getElementById('allergensSection').style.display = 'block';
-                document.getElementById('allergensList').innerHTML = currentIngredient.alergeny.map(id => {
-                    const allergen = ALLERGENS[id];
-                    return allergen ? `<span class="allergen-tag">${allergen.kod} - ${allergen.nazwa}</span>` : '';
-                }).join(' ');
-            } else {
-                document.getElementById('allergensSection').style.display = 'none';
-            }
-        }
-
-        function updateNavButtons() {
-            const currentIndex = allIngredients.findIndex(i => i.id === currentIngredientId);
+            // Załaduj dostępne JM dla bieżącego składnika
+            const unitsResp = await fetch(`${API_URL}/api/ingredients/${currentIngredientId}/units`);
+            let units = await unitsResp.json();
             
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            
-            prevBtn.disabled = currentIndex <= 0;
-            nextBtn.disabled = currentIndex >= allIngredients.length - 1;
-        }
-
-        function navigateIngredient(direction) {
-            const currentIndex = allIngredients.findIndex(i => i.id === currentIngredientId);
-            let newIndex;
-            
-            if (direction === 'prev') {
-                newIndex = currentIndex - 1;
-            } else {
-                newIndex = currentIndex + 1;
+            if (units.length === 0) {
+                units = [{ jm: current.jm_podstawowa, typ: 'robocza' }];
             }
             
-            if (newIndex >= 0 && newIndex < allIngredients.length) {
-                loadIngredient(allIngredients[newIndex].id);
-            }
-        }
-
-        function showError(message) {
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('ingredientView').style.display = 'none';
-            document.getElementById('errorState').style.display = 'block';
-            document.getElementById('errorMessage').textContent = message;
-        }
-
-        // === ACTIONS ===
-        function editIngredient() {
-            location.href = `ingredients.html?edit=${currentIngredientId}`;
-        }
-
-        async function duplicateIngredient() {
-            if (!confirm(`Duplikować surowiec "${currentIngredient.nazwa}"?`)) return;
+            document.getElementById('jmBazowa').innerHTML = units.map(u => 
+                `<option value="${u.jm}">${u.jm}</option>`
+            ).join('');
             
-            const newIngredient = {
-                nazwa: currentIngredient.nazwa + ' (kopia)',
-                typ: currentIngredient.typ,
-                grupa: currentIngredient.grupa,
-                dzial: currentIngredient.dzial,
-                jm_podstawowa: currentIngredient.jm_podstawowa,
-                cena_aktualna: currentIngredient.cena_aktualna,
-                alergeny: currentIngredient.alergeny,
-                wegetarianski: currentIngredient.wegetarianski,
-                weganski: currentIngredient.weganski
+            // Załaduj listę składników (oprócz bieżącego)
+            const available = allIngredients.filter(i => i.id !== currentIngredientId);
+            document.getElementById('substituteSelect').innerHTML = 
+                '<option value="">-- Wybierz surowiec --</option>' +
+                available.map(i => `<option value="${i.id}">${i.nazwa}</option>`).join('');
+            
+            // Reset form
+            document.getElementById('substituteForm').reset();
+            document.getElementById('iloscBazowa').value = 1;
+            document.getElementById('dwukierunkowa').checked = true;
+            document.getElementById('zamiennaNazwa').textContent = '';
+            
+            document.getElementById('substituteModal').style.display = 'block';
+        }
+
+        async function loadSubstituteUnits() {
+            const substituteId = document.getElementById('substituteSelect').value;
+            if (!substituteId) return;
+            
+            const sub = allIngredients.find(i => i.id == substituteId);
+            document.getElementById('zamiennaNazwa').textContent = sub ? sub.nazwa : '';
+            
+            const unitsResp = await fetch(`${API_URL}/api/ingredients/${substituteId}/units`);
+            let units = await unitsResp.json();
+            
+            if (units.length === 0) {
+                units = [{ jm: sub.jm_podstawowa, typ: 'robocza' }];
+            }
+            
+            document.getElementById('jmZamienna').innerHTML = units.map(u => 
+                `<option value="${u.jm}">${u.jm}</option>`
+            ).join('');
+        }
+
+        function closeSubstituteModal() {
+            document.getElementById('substituteModal').style.display = 'none';
+        }
+
+        async function saveSubstitute(event) {
+            event.preventDefault();
+            
+            const data = {
+                ingredient_id: currentIngredientId,
+                substitute_id: parseInt(document.getElementById('substituteSelect').value),
+                ilosc_bazowa: parseFloat(document.getElementById('iloscBazowa').value),
+                jm_bazowa: document.getElementById('jmBazowa').value,
+                ilosc_zamienna: parseFloat(document.getElementById('iloscZamienna').value),
+                jm_zamienna: document.getElementById('jmZamienna').value,
+                uwagi: document.getElementById('uwagi').value,
+                priorytet: parseInt(document.getElementById('priorytet').value),
+                dwukierunkowa: document.getElementById('dwukierunkowa').checked
             };
             
-            try {
-                const response = await fetch(`${API_URL}/api/ingredients`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newIngredient)
-                });
-                
-                if (!response.ok) throw new Error('Błąd duplikowania');
-                
-                const created = await response.json();
-                alert('Zduplikowano surowiec');
-                location.href = `ingredients-view.html?id=${created.id}`;
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Błąd duplikowania: ' + error.message);
+            const response = await fetch(`${API_URL}/api/ingredients/substitutes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (!response.ok) {
+                alert('Błąd zapisu');
+                return;
             }
+            
+            alert('Dodano zamiennik');
+            closeSubstituteModal();
+            loadSubstitutes();
         }
 
-        async function deleteIngredient() {
-            if (!confirm(`Czy na pewno usunąć "${currentIngredient.nazwa}"?`)) return;
+        async function deleteSubstitute(id) {
+            if (!confirm('Czy na pewno usunąć ten zamiennik?')) return;
             
-            try {
-                const response = await fetch(`${API_URL}/api/ingredients/${currentIngredientId}`, {
-                    method: 'DELETE'
-                });
-                
-                if (!response.ok) throw new Error('Błąd usuwania');
-                
-                alert('Usunięto surowiec');
-                location.href = 'ingredients.html';
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Błąd usuwania: ' + error.message);
+            const response = await fetch(`${API_URL}/api/ingredients/substitutes/${id}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                alert('Błąd usuwania');
+                return;
             }
+            
+            alert('Usunięto zamiennik');
+            loadSubstitutes();
         }
+
+        // Init
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSubstitutes();
+        });
     </script>
 </body>
 </html>
