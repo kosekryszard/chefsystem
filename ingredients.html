@@ -28,16 +28,28 @@
         </header>
 
         <div class="content">
-            <!-- Filtry podstawowe (diety) -->
+            <!-- Filtry podstawowe (sezony i alergeny) -->
             <div class="filters-bar">
                 <button class="filter-btn active" data-filter="all" onclick="filterIngredients('all')">
                     Wszystkie
                 </button>
-                <button class="filter-btn" data-filter="vegan" onclick="filterIngredients('vegan')">
-                    🌱 Wegańskie
+                <button class="filter-btn" data-filter="SEZON_WIOSNA" onclick="filterIngredients('SEZON_WIOSNA')">
+                    🌸 Wiosna
                 </button>
-                <button class="filter-btn" data-filter="vegetarian" onclick="filterIngredients('vegetarian')">
-                    🥬 Wegetariańskie
+                <button class="filter-btn" data-filter="SEZON_LATO" onclick="filterIngredients('SEZON_LATO')">
+                    ☀️ Lato
+                </button>
+                <button class="filter-btn" data-filter="SEZON_JESIEN" onclick="filterIngredients('SEZON_JESIEN')">
+                    🍂 Jesień
+                </button>
+                <button class="filter-btn" data-filter="SEZON_ZIMA" onclick="filterIngredients('SEZON_ZIMA')">
+                    ❄️ Zima
+                </button>
+                <button class="filter-btn" data-filter="BIO" onclick="filterIngredients('BIO')">
+                    🌱 BIO
+                </button>
+                <button class="filter-btn" data-filter="LOKAL" onclick="filterIngredients('LOKAL')">
+                    🏠 Lokal
                 </button>
             </div>
 
@@ -78,10 +90,18 @@
                         <label>Bez alergenów</label>
                         <select id="filterAllergen" onchange="applyFilters()">
                             <option value="">Wszystkie</option>
-                            <option value="1">Bez glutenu</option>
-                            <option value="3">Bez jaj</option>
-                            <option value="7">Bez mleka</option>
-                            <option value="5">Bez orzeszków</option>
+                            <option value="GLU">Bez glutenu</option>
+                            <option value="MOLU">Bez skorupiaków</option>
+                            <option value="JAJ">Bez jaj</option>
+                            <option value="RYB">Bez ryb</option>
+                            <option value="ORS">Bez orzeszków</option>
+                            <option value="SOJ">Bez soi</option>
+                            <option value="MLE">Bez mleka</option>
+                            <option value="SEL">Bez selera</option>
+                            <option value="GORCZ">Bez gorczycy</option>
+                            <option value="SEZAM">Bez sezamu</option>
+                            <option value="LUPINA">Bez łubinu</option>
+                            <option value="SO2">Bez dwutlenku siarki</option>
                         </select>
                     </div>
                     
@@ -339,28 +359,27 @@
                 // Grupa
                 const matchesGrupa = !grupaFilter || ing.grupa === grupaFilter;
                 
-                // Diet
-                let matchesDiet = true;
-                if (currentFilter === 'vegan') {
-                    matchesDiet = ing.weganski === true;
-                } else if (currentFilter === 'vegetarian') {
-                    matchesDiet = ing.wegetarianski === true;
+                // Tag (sezony, BIO, LOKAL, etc.)
+                let matchesTag = true;
+                if (currentFilter !== 'all') {
+                    // Sprawdź czy tag jest w tagi_kody
+                    matchesTag = ing.tagi_kody && ing.tagi_kody.includes(currentFilter);
                 }
                 
-                // Allergen (bez wybranego alergenu)
+                // Allergen (bez wybranego alergenu) - teraz z pola alergeny_kody (TEXT)
                 let matchesAllergen = true;
                 if (allergenFilter) {
-                    const allergenId = parseInt(allergenFilter);
-                    matchesAllergen = !ing.alergeny || !ing.alergeny.includes(allergenId);
+                    // allergenFilter to kod np. "GLU", "MLE", "RYB"
+                    matchesAllergen = !ing.alergeny_kody || !ing.alergeny_kody.includes(allergenFilter);
                 }
                 
-                // Price
+                // Price - TODO: to pole nie istnieje już w v3.0, trzeba będzie dodać później
                 let matchesPrice = true;
-                if (priceFilter && ing.cena_aktualna) {
-                    matchesPrice = ing.cena_aktualna <= priceFilter;
-                }
+                // if (priceFilter && ing.cena) {
+                //     matchesPrice = ing.cena <= priceFilter;
+                // }
                 
-                return matchesSearch && matchesType && matchesGrupa && matchesDiet && matchesAllergen && matchesPrice;
+                return matchesSearch && matchesType && matchesGrupa && matchesTag && matchesAllergen && matchesPrice;
             });
             
             renderGrid();
@@ -383,17 +402,34 @@
             }
             
             grid.innerHTML = filteredIngredients.map(ing => {
-                // Alergeny
-                const allergens = Array.isArray(ing.alergeny) ? 
-                    ing.alergeny.map(id => {
-                        const allergen = ALLERGENS[id];
-                        return allergen ? `<span class="allergen-tag">${allergen.kod}</span>` : '';
-                    }).join('') : '';
+                // Alergeny z nowego pola alergeny_kody (TEXT)
+                let allergens = '';
+                if (ing.alergeny_kody && ing.alergeny_kody.trim() !== '') {
+                    const kodList = ing.alergeny_kody.split(';').filter(k => k.trim());
+                    allergens = kodList.map(kod => 
+                        `<span class="allergen-tag" style="background: #ffebee; color: #c62828; padding: 3px 8px; border-radius: 8px; font-size: 10px; margin-right: 4px; display: inline-block;">${kod}</span>`
+                    ).join('');
+                }
                 
-                // Diet badges
-                const dietBadges = [];
-                if (ing.weganski) dietBadges.push('<span class="badge badge-vegan">🌱 Vegan</span>');
-                if (ing.wegetarianski) dietBadges.push('<span class="badge badge-vegetarian">🥬 Wege</span>');
+                // Tagi z pola tagi_kody
+                let tagiBadges = '';
+                if (ing.tagi_kody && ing.tagi_kody.trim() !== '') {
+                    const tagiList = ing.tagi_kody.split(';').filter(t => t.trim());
+                    tagiBadges = tagiList.map(tag => {
+                        // Kolory dla różnych tagów
+                        let bgColor = '#e3f2fd';
+                        let textColor = '#1976d2';
+                        
+                        if (tag.includes('SEZON_WIOSNA')) { bgColor = '#e8f5e9'; textColor = '#2e7d32'; }
+                        else if (tag.includes('SEZON_LATO')) { bgColor = '#fff3e0'; textColor = '#f57c00'; }
+                        else if (tag.includes('SEZON_JESIEN')) { bgColor = '#fff3e0'; textColor = '#e65100'; }
+                        else if (tag.includes('SEZON_ZIMA')) { bgColor = '#e1f5fe'; textColor = '#0277bd'; }
+                        else if (tag === 'BIO') { bgColor = '#e8f5e9'; textColor = '#388e3c'; }
+                        else if (tag === 'LOKAL') { bgColor = '#f3e5f5'; textColor = '#7b1fa2'; }
+                        
+                        return `<span class="badge" style="background: ${bgColor}; color: ${textColor}; padding: 3px 8px; border-radius: 8px; font-size: 10px; margin-right: 4px;">${tag}</span>`;
+                    }).join('');
+                }
                 
                 return `
                     <div class="item-card" data-id="${ing.id}">
@@ -404,29 +440,34 @@
                         
                         <!-- Body -->
                         <div class="item-card-body">
-                            <!-- Metadane -->
-                            <div class="item-card-meta">
-                                ${ing.typ ? `<span class="badge badge-type">${ing.typ}</span>` : ''}
+                            <!-- Metadane - linia 1: dział i JM -->
+                            <div class="item-card-meta" style="margin-bottom: 8px;">
+                                ${ing.dzial ? `<span class="badge badge-type">${ing.dzial}</span>` : ''}
                                 ${ing.jm_podstawowa ? `<span class="badge badge-jm">${ing.jm_podstawowa}</span>` : ''}
-                                ${ing.cena_aktualna ? `<span class="badge badge-price">${ing.cena_aktualna} PLN</span>` : ''}
-                                ${dietBadges.join('')}
                             </div>
                             
-                            ${allergens ? `<div style="margin-top: 10px;">
-                                <small style="color: #666;">Alergeny:</small><br>
-                                ${allergens}
-                            </div>` : ''}
+                            <!-- Tagi - linia 2 -->
+                            ${tagiBadges ? `<div style="margin-bottom: 8px; min-height: 22px;">${tagiBadges}</div>` : '<div style="margin-bottom: 8px; min-height: 22px;"></div>'}
                             
-                            <!-- Przyciski akcji -->
-                            <div class="action-buttons">
-                                <button class="action-btn btn-edit" onclick="event.stopPropagation(); editIngredient(${ing.id})">
-                                    ✏️ Edytuj
+                            <!-- Alergeny - linia 3 -->
+                            ${allergens ? `<div style="margin-bottom: 8px; min-height: 22px;">
+                                <small style="color: #666; font-size: 10px;">Alergeny:</small><br>
+                                ${allergens}
+                            </div>` : '<div style="margin-bottom: 8px; min-height: 22px;"></div>'}
+                            
+                            <!-- Przyciski akcji - kompaktowe w jednej linii -->
+                            <div style="display: flex; gap: 4px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
+                                <button class="action-btn btn-edit" onclick="event.stopPropagation(); editIngredient(${ing.id})" 
+                                        style="padding: 5px 8px; font-size: 12px; flex: 1; min-width: 0;" title="Edytuj">
+                                    ✏️
                                 </button>
-                                <button class="action-btn btn-duplicate" onclick="event.stopPropagation(); duplicateIngredient(${ing.id})">
-                                    📋 Duplikuj
+                                <button class="action-btn btn-duplicate" onclick="event.stopPropagation(); duplicateIngredient(${ing.id})"
+                                        style="padding: 5px 8px; font-size: 12px; flex: 1; min-width: 0;" title="Duplikuj">
+                                    📋
                                 </button>
-                                <button class="action-btn btn-delete" onclick="event.stopPropagation(); deleteIngredient(${ing.id})">
-                                    🗑️ Usuń
+                                <button class="action-btn btn-delete" onclick="event.stopPropagation(); deleteIngredient(${ing.id})"
+                                        style="padding: 5px 8px; font-size: 12px; flex: 1; min-width: 0;" title="Usuń">
+                                    🗑️
                                 </button>
                             </div>
                         </div>
