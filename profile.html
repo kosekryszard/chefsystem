@@ -254,7 +254,7 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
         
         async function loadProfile() {
             try {
-                const { data: profile, error } = await supabase
+                const { data: profile, error } = await supabaseClient
                     .from('user_profiles')
                     .select('*')
                     .eq('id', currentUser.id)
@@ -289,7 +289,7 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
         async function loadStats() {
             try {
                 // Liczba receptur
-                const { count: recipeCount } = await supabase
+                const { count: recipeCount } = await supabaseClient
                     .from('recipes')
                     .select('*', { count: 'exact', head: true })
                     .eq('created_by_user_id', currentUser.id);
@@ -297,7 +297,7 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
                 document.getElementById('recipeCount').textContent = recipeCount || 0;
                 
                 // Liczba dań
-                const { count: dishCount } = await supabase
+                const { count: dishCount } = await supabaseClient
                     .from('dishes')
                     .select('*', { count: 'exact', head: true })
                     .eq('created_by_user_id', currentUser.id);
