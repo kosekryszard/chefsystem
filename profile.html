@@ -226,7 +226,8 @@
         const SUPABASE_URL = 'https://pvdtkrduggbwmyenjdsc.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2ZHRrcmR1Z2did215ZW5qZHNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjg5NTksImV4cCI6MjA3ODk0NDk1OX0.FfA2cYguwKKkRdQ2e2mAn8MyufI6Ccgz84M_MLc9bsY';
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
         
         let currentUser = null;
         
@@ -235,7 +236,7 @@
         
         async function init() {
             // Sprawdź czy zalogowany
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseClient.auth.getSession();
             
             if (!session) {
                 window.location.href = 'login.html';
@@ -309,7 +310,7 @@
         }
         
         async function logout() {
-            await supabase.auth.signOut();
+            await supabaseClient.auth.signOut();
             window.location.href = 'login.html';
         }
         

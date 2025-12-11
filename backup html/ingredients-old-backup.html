@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChefSystent - Surowce</title>
+    <link rel="stylesheet" href="chefsystent-brand.css">
+    <link rel="icon" type="image/png" href="piktogram.png">
+    <style>
+    /* Dodatkowe style dla surowców */
+    body {
+        background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+    }
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        overflow: hidden;
+    }
+    .content { padding: 30px; }
+    
+    /* Filtry statusów */
+    .filters-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    .filter-btn {
+        padding: 8px 20px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 600;
+        font-size: 14px;
+    }
+    .filter-btn.active {
+        background: #D4AF37;
+        color: #0A1F44;
+        border-color: #D4AF37;
+    }
+    .filter-btn:hover:not(.active) {
+        border-color: #D4AF37;
+    }
+    
+    /* Grid surowców */
+    .ingredients-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+    }
+    
+    .ingredient-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        border: 2px solid #f0f0f0;
+        transition: all 0.3s;
+        position: relative;
+        overflow: visible;
+    }
+    
+    .ingredient-card:hover {
+        border-color: #D4AF37;
+        box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+        transform: translateY(-3px);
+    }
+    
+    .ingredient-card h3 {
+        color: #0A1F44;
+        margin-bottom: 10px;
+        font-size: 18px;
+    }
+    
+    .ingredient-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 10px 0;
+    }
+    
+    .badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    
+    .badge-type { background: #e3f2fd; color: #1976d2; }
+    .badge-jm { background: #f3e5f5; color: #7b1fa2; }
+    .badge-vegan { background: #e8f5e9; color: #388e3c; }
+    .badge-vegetarian { background: #fff3e0; color: #f57c00; }
+    
+    .allergen-tag {
+        display: inline-block;
+        background: #ff9800;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+        margin: 2px;
+    }
+    
+    /* Przyciski akcji */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e0e0e0;
+    }
+    
+    .action-btn {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+        font-weight: 600;
+    }
+    
+    .btn-edit {
+        background: #ffc107;
+        color: #000;
+    }
+    
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-edit:hover { background: #ffb300; }
+    .btn-delete:hover { background: #c82333; }
+    
+    /* Controls (search, export, import) */
+    .controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    
+    .search-box {
+        flex: 1;
+        min-width: 250px;
+    }
+    
+    .search-box input {
+        width: 100%;
+        padding: 10px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+    
+    /* Loading */
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+    }
+    
+    /* Mobile bottom nav (jeśli potrzebne) */
+    @media (max-width: 768px) {
+        .ingredients-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .controls {
+            flex-direction: column;
+        }
+        
+        .search-box {
+            width: 100%;
+        }
+    }
+    /* Import CSV modal styles */
+    #importPreviewTable {
+        width: 100%;
+        max-height: 400px;
+        overflow-y: auto;
+        margin: 20px 0;
+    }
+    #importPreviewTable table {
+        font-size: 13px;
+    }
+    #importPreviewTable td {
+        padding: 8px;
+    }
+    .duplicate-row {
+        background: #fff3cd !important;
+        border-left: 3px solid #ffc107;
+    }
+    .error-row {
+        background: #f8d7da !important;
+        border-left: 3px solid #dc3545;
+    }
+    .import-options {
+        margin: 20px 0;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    .import-options label {
+        display: block;
+        margin: 10px 0;
+        font-weight: 500;
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-logo">
+                <img src="LOGO_chefsystent.png" alt="Chefsystent Logo">
+            </div>
+            <p>System Zarządzania Kuchnią - Surowce</p>
+            
+            <nav>
+                <a href="index.html">🏠 Start</a>
+                <a href="ingredients.html" class="active">Surowce</a>
+                <a href="recipes.html">Receptury</a>
+                <a href="dishes.html">Dania</a>
+                <a href="groups.html">Grupy</a>
+                <a href="events.html">Eventy</a>
+                <a href="menu-cards.html">Karty</a>
+                <a href="shopping.html">Zakupy</a>
+            </nav>
+        </header>
+
+        <!-- Filtry statusów (przygotowane na przyszłość) -->
+        <div class="filters-bar">
+            <button class="filter-btn active" data-filter="all" onclick="filterIngredients('all')">
+                Wszystkie
+            </button>
+            <button class="filter-btn" data-filter="vegan" onclick="filterIngredients('vegan')">
+                🌱 Wegańskie
+            </button>
+            <button class="filter-btn" data-filter="vegetarian" onclick="filterIngredients('vegetarian')">
+                🥬 Wegetariańskie
+            </button>
+        </div>
+
+        <div class="content">
+            <!-- Controls -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <h2>Baza surowców</h2>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="openImportModal()">📤 Import CSV</button>
+                    <button class="btn btn-secondary" onclick="exportIngredients()">📥 Eksport CSV</button>
+                    <button class="btn btn-primary" onclick="openAddModal()">➕ Dodaj surowiec</button>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="controls">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Wyszukaj surowiec..." onkeyup="applyFilters()">
+                </div>
+                <select id="typeFilter" onchange="applyFilters()" class="btn btn-secondary">
+                    <option value="">Wszystkie typy</option>
+                </select>
+            </div>
+            
+            <!-- Grid surowców -->
+            <div class="ingredients-grid" id="ingredientsGrid">
+                <div class="loading">Ładowanie surowców...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Dodaj/Edytuj -->
+    <div id="ingredientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Dodaj nowy surowiec</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="ingredientForm" onsubmit="saveIngredient(event)">
+                <input type="hidden" id="editId">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Nazwa *</label>
+                        <input type="text" id="nazwa" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Jednostka miary *</label>
+                        <select id="jm_podstawowa" required>
+                            <option value="kg">kg</option>
+                            <option value="g">g</option>
+                            <option value="l">l</option>
+                            <option value="ml">ml</option>
+                            <option value="szt">szt</option>
+                            <option value="op">op</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Typ</label>
+                        <select id="typ">
+                            <option value="">Wybierz typ</option>
+                            <option value="warzywo">Warzywo</option>
+                            <option value="owoc">Owoc</option>
+                            <option value="mięso">Mięso</option>
+                            <option value="wędlina">Wędlina</option>
+                            <option value="nabiał">Nabiał</option>
+                            <option value="przyprawa">Przyprawa</option>
+                            <option value="zioło_świeże">Zioło świeże</option>
+                            <option value="inne">Inne</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Grupa</label>
+                        <input type="text" id="grupa">
+                    </div>
+                    <div class="form-group">
+                        <label>Dział</label>
+                        <select id="dzial">
+                            <option value="kuchnia">Kuchnia</option>
+                            <option value="bar">Bar</option>
+                            <option value="ogólne">Ogólne</option>
+                        </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Dieta</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="wegetarianski"> Wegetariański</label>
+                            <label><input type="checkbox" id="weganski"> Wegański</label>
+                        </div>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Alergeny (14 UE)</label>
+                        <div id="allergensCheckboxes" class="checkbox-group"></div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Anuluj</button>
+                    <button type="submit" class="btn btn-primary">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Import CSV -->
+    <div id="importModal" class="modal">
+        <div class="modal-content" style="max-width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>Import surowców z CSV</h2>
+                <span class="close" onclick="closeImportModal()">&times;</span>
+            </div>
+            
+            <div style="padding: 20px;">
+                <!-- Upload area -->
+                <div id="fileUploadArea" class="file-upload-area" onclick="document.getElementById('csvFileInput').click()">
+                    <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
+                    <p style="font-size: 1.2em; margin: 0 0 10px 0;">📁 Kliknij lub przeciągnij plik CSV</p>
+                    <p style="color: #666; font-size: 0.9em; margin: 0;">Format: id,nazwa,typ,grupa,dzial,jm_podstawowa,wegetarianski,weganski,alergeny</p>
+                </div>
+
+                <!-- Preview area -->
+                <div id="importPreviewContainer" style="display: none;">
+                    <div class="import-options">
+                        <h3>Opcje importu</h3>
+                        <label>
+                            <input type="radio" name="duplicateAction" value="skip" checked>
+                            ❌ Pomiń duplikaty (nie importuj jeśli nazwa już istnieje)
+                        </label>
+                        <label>
+                            <input type="radio" name="duplicateAction" value="overwrite">
+                            🔄 Nadpisz istniejące (zaktualizuj jeśli nazwa już istnieje)
+                        </label>
+                        <p style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                            <strong>Znaleziono:</strong> 
+                            <span id="totalRows">0</span> wierszy | 
+                            <span id="newRows" style="color: #28a745;">0 nowych</span> | 
+                            <span id="duplicateRows" style="color: #ffc107;">0 duplikatów</span> |
+                            <span id="errorRows" style="color: #dc3545;">0 błędów</span>
+                        </p>
+                    </div>
+
+                    <div id="importPreviewTable"></div>
+
+                    <!-- Progress bar -->
+                    <div class="progress-bar" id="importProgress">
+                        <div class="progress-bar-fill" id="importProgressFill">0%</div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeImportModal()">Anuluj</button>
+                        <button type="button" class="btn btn-primary" onclick="executeImport()" id="importButton">
+                            ✅ Importuj
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://chefsystem.vercel.app';
+        
+        let allIngredients = [];
+        let filteredIngredients = [];
+        let currentFilter = 'all';
+
+        // Alergeny
+        const ALLERGENS = {
+            1: { kod: 'GLU', nazwa: 'Gluten' },
+            2: { kod: 'SKO', nazwa: 'Skorupiaki' },
+            3: { kod: 'JAJ', nazwa: 'Jaja' },
+            4: { kod: 'RYB', nazwa: 'Ryby' },
+            5: { kod: 'ORZ', nazwa: 'Orzeszki' },
+            6: { kod: 'SOJ', nazwa: 'Soja' },
+            7: { kod: 'MLE', nazwa: 'Mleko' },
+            8: { kod: 'ORS', nazwa: 'Orzechy' },
+            9: { kod: 'SEL', nazwa: 'Seler' },
+            10: { kod: 'GOR', nazwa: 'Gorczyca' },
+            11: { kod: 'SEZ', nazwa: 'Sezam' },
+            12: { kod: 'SIA', nazwa: 'Dwutlenek siarki' },
+            13: { kod: 'LUB', nazwa: 'Łubin' },
+            14: { kod: 'MIE', nazwa: 'Mięczaki' }
+        };
+
+        // Ładowanie danych
+        window.addEventListener('DOMContentLoaded', () => {
+            loadIngredients();
+        });
+
+        async function loadIngredients() {
+            try {
+                const response = await fetch(`${API_URL}/api/ingredients`);
+                if (!response.ok) throw new Error('Błąd ładowania');
+                
+                allIngredients = await response.json();
+                filteredIngredients = [...allIngredients];
+                
+                populateTypeFilter();
+                renderGrid();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('ingredientsGrid').innerHTML = 
+                    '<div class="loading">❌ Błąd ładowania danych</div>';
+            }
+        }
+
+        // Wypełnienie filtru typów
+        function populateTypeFilter() {
+            const types = [...new Set(allIngredients.map(i => i.typ).filter(Boolean))];
+            const select = document.getElementById('typeFilter');
+            
+            types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+                select.appendChild(option);
+            });
+        }
+
+        // Filtry
+        function filterIngredients(filter) {
+            currentFilter = filter;
+            
+            // Aktywuj przycisk
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('typeFilter').value;
+            
+            filteredIngredients = allIngredients.filter(ing => {
+                // Search
+                const matchesSearch = ing.nazwa.toLowerCase().includes(searchTerm);
+                
+                // Type
+                const matchesType = !typeFilter || ing.typ === typeFilter;
+                
+                // Diet filter
+                let matchesDiet = true;
+                if (currentFilter === 'vegan') {
+                    matchesDiet = ing.weganski === true;
+                } else if (currentFilter === 'vegetarian') {
+                    matchesDiet = ing.wegetarianski === true;
+                }
+                
+                return matchesSearch && matchesType && matchesDiet;
+            });
+            
+            renderGrid();
+        }
+
+        // Renderowanie grid
+        function renderGrid() {
+            const grid = document.getElementById('ingredientsGrid');
+            
+            if (filteredIngredients.length === 0) {
+                grid.innerHTML = '<div class="loading">Brak wyników</div>';
+                return;
+            }
+            
+            grid.innerHTML = filteredIngredients.map(ing => {
+                // Alergeny
+                const allergens = Array.isArray(ing.alergeny) ? 
+                    ing.alergeny.map(id => {
+                        const allergen = ALLERGENS[id];
+                        return allergen ? `<span class="allergen-tag">${allergen.kod}</span>` : '';
+                    }).join('') : '';
+                
+                // Diet badges
+                const dietBadges = [];
+                if (ing.weganski) dietBadges.push('<span class="badge badge-vegan">🌱 Vegan</span>');
+                if (ing.wegetarianski) dietBadges.push('<span class="badge badge-vegetarian">🥬 Wege</span>');
+                
+                return `
+                    <div class="ingredient-card">
+                        <h3>${ing.nazwa}</h3>
+                        
+                        <div class="ingredient-meta">
+                            ${ing.typ ? `<span class="badge badge-type">${ing.typ}</span>` : ''}
+                            ${ing.jm_podstawowa ? `<span class="badge badge-jm">${ing.jm_podstawowa}</span>` : ''}
+                            ${dietBadges.join('')}
+                        </div>
+                        
+                        ${allergens ? `<div style="margin-top: 10px;">
+                            <small style="color: #666;">Alergeny:</small><br>
+                            ${allergens}
+                        </div>` : ''}
+                        
+                        <div class="action-buttons">
+                            <button class="action-btn btn-edit" onclick="editIngredient(${ing.id})">
+                                ✏️ Edytuj
+                            </button>
+                            <button class="action-btn btn-delete" onclick="deleteIngredient(${ing.id})">
+                                🗑️ Usuń
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // CRUD Functions
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Dodaj surowiec';
+            document.getElementById('ingredientForm').reset();
+            document.getElementById('editId').value = '';
+            document.getElementById('ingredientModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('ingredientModal').style.display = 'none';
+        }
+
+        async function editIngredient(id) {
+            const ingredient = allIngredients.find(i => i.id === id);
+            if (!ingredient) return;
+            
+            document.getElementById('modalTitle').textContent = 'Edytuj surowiec';
+            document.getElementById('editId').value = ingredient.id;
+            document.getElementById('nazwa').value = ingredient.nazwa || '';
+            document.getElementById('jm_podstawowa').value = ingredient.jm_podstawowa || '';
+            document.getElementById('typ').value = ingredient.typ || '';
+            document.getElementById('wegetarianski').checked = ingredient.wegetarianski || false;
+            document.getElementById('weganski').checked = ingredient.weganski || false;
+            document.getElementById('alergeny').value = Array.isArray(ingredient.alergeny) ? ingredient.alergeny.join(',') : '';
+            
+            document.getElementById('ingredientModal').style.display = 'block';
+        }
+
+        async function saveIngredient(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('editId').value;
+            const data = {
+                nazwa: document.getElementById('nazwa').value,
+                jm_podstawowa: document.getElementById('jm_podstawowa').value,
+                typ: document.getElementById('typ').value,
+                wegetarianski: document.getElementById('wegetarianski').checked,
+                weganski: document.getElementById('weganski').checked,
+                alergeny: document.getElementById('alergeny').value
+                    .split(',')
+                    .map(x => parseInt(x.trim()))
+                    .filter(x => !isNaN(x))
+            };
+            
+            try {
+                const url = id ? `${API_URL}/api/ingredients/${id}` : `${API_URL}/api/ingredients`;
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Błąd zapisu');
+                
+                alert(id ? 'Zapisano zmiany' : 'Dodano surowiec');
+                closeModal();
+                loadIngredients();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd zapisu: ' + error.message);
+            }
+        }
+
+        async function deleteIngredient(id) {
+            if (!confirm('Czy na pewno usunąć ten surowiec?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/ingredients/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Błąd usuwania');
+                
+                alert('Usunięto surowiec');
+                loadIngredients();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd usuwania: ' + error.message);
+            }
+        }
+
+        // Eksport do CSV
+    async function exportIngredients() {
+        try {
+            const response = await fetch(`${API_URL}/api/ingredients/export/csv`);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `surowce_export_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('Błąd eksportu: ' + err.message);
+        }
+    }
+
+        // ============ IMPORT CSV ============
+
+    function openImportModal() {
+        document.getElementById('importModal').style.display = 'block';
+        document.getElementById('importPreviewContainer').style.display = 'none';
+        document.getElementById('fileUploadArea').style.display = 'block';
+        document.getElementById('csvFileInput').value = '';
+        importData = null;
+        duplicatesInfo = null;
+    }
+
+    function closeImportModal() {
+        document.getElementById('importModal').style.display = 'none';
+    }
+
+    // Drag & drop
+    const uploadArea = document.getElementById('fileUploadArea');
+    if (uploadArea) {
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect({ target: { files } });
+            }
+        });
+    }
+
+    async function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const text = e.target.result;
+                await parseAndPreviewCSV(text);
+            } catch (err) {
+                alert('Błąd odczytu pliku: ' + err.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    async function parseAndPreviewCSV(csvText) {
+        // Usuń BOM jeśli istnieje
+        csvText = csvText.replace(/^\uFEFF/, '');
+        
+        const lines = csvText.split('\n').filter(line => line.trim());
+        if (lines.length < 2) {
+            alert('Plik CSV jest pusty lub nieprawidłowy');
+            return;
+        }
+        
+        // Parsuj nagłówek
+        const headers = parseCSVLine(lines[0]);
+        
+        // Parsuj wiersze danych
+        const rows = [];
+        for (let i = 1; i < lines.length; i++) {
+            const values = parseCSVLine(lines[i]);
+            if (values.length !== headers.length) continue;
+            
+            const row = {};
+            headers.forEach((header, idx) => {
+                row[header] = values[idx];
+            });
+            rows.push(row);
+        }
+        
+        if (rows.length === 0) {
+            alert('Brak danych do importu');
+            return;
+        }
+        
+        // Sprawdź duplikaty w bazie
+        importData = rows;
+        await checkDuplicates();
+        renderImportPreview();
+    }
+
+    function parseCSVLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            
+            if (char === '"') {
+                if (inQuotes && line[i + 1] === '"') {
+                    current += '"';
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current.trim());
+        
+        return result;
+    }
+
+    async function checkDuplicates() {
+        try {
+            const res = await fetch(`${API_URL}/api/ingredients/check-duplicates`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ names: importData.map(row => row.nazwa) })
+            });
+            duplicatesInfo = await res.json();
+        } catch (err) {
+            console.error('Błąd sprawdzania duplikatów:', err);
+            duplicatesInfo = { duplicates: [], existingIds: {} };
+        }
+    }
+
+    function renderImportPreview() {
+        const container = document.getElementById('importPreviewTable');
+        
+        let newCount = 0;
+        let duplicateCount = 0;
+        let errorCount = 0;
+        
+        const tableHTML = `
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>Nazwa</th>
+                        <th>JM</th>
+                        <th>Typ</th>
+                        <th>Grupa</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${importData.map((row, idx) => {
+                        const isDuplicate = duplicatesInfo.duplicates.includes(row.nazwa);
+                        const hasError = !row.nazwa || !row.jm_podstawowa;
+                        
+                        if (hasError) errorCount++;
+                        else if (isDuplicate) duplicateCount++;
+                        else newCount++;
+                        
+                        const rowClass = hasError ? 'error-row' : (isDuplicate ? 'duplicate-row' : '');
+                        const status = hasError ? '❌ Błąd' : (isDuplicate ? '⚠️ Duplikat' : '✅ Nowy');
+                        
+                        return `
+                            <tr class="${rowClass}">
+                                <td>${idx + 1}</td>
+                                <td>${row.nazwa || '<brak>'}</td>
+                                <td>${row.jm_podstawowa || '<brak>'}</td>
+                                <td>${row.typ || '-'}</td>
+                                <td>${row.grupa || '-'}</td>
+                                <td>${status}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
+        
+        container.innerHTML = tableHTML;
+        
+        document.getElementById('totalRows').textContent = importData.length;
+        document.getElementById('newRows').textContent = newCount;
+        document.getElementById('duplicateRows').textContent = duplicateCount;
+        document.getElementById('errorRows').textContent = errorCount;
+        
+        document.getElementById('fileUploadArea').style.display = 'none';
+        document.getElementById('importPreviewContainer').style.display = 'block';
+    }
+
+    async function executeImport() {
+        const duplicateAction = document.querySelector('input[name="duplicateAction"]:checked').value;
+        
+        if (!importData || importData.length === 0) {
+            alert('Brak danych do importu');
+            return;
+        }
+        
+        const button = document.getElementById('importButton');
+        button.disabled = true;
+        button.textContent = '⏳ Importowanie...';
+        
+        const progressBar = document.getElementById('importProgress');
+        const progressFill = document.getElementById('importProgressFill');
+        progressBar.style.display = 'block';
+        
+        try {
+            let imported = 0;
+            let skipped = 0;
+            let errors = 0;
+            
+            for (let i = 0; i < importData.length; i++) {
+                const row = importData[i];
+                const progress = Math.round(((i + 1) / importData.length) * 100);
+                progressFill.style.width = progress + '%';
+                progressFill.textContent = progress + '%';
+                
+                // Walidacja podstawowa
+                if (!row.nazwa || !row.jm_podstawowa) {
+                    errors++;
+                    continue;
+                }
+                
+                const isDuplicate = duplicatesInfo.duplicates.includes(row.nazwa);
+                
+                if (isDuplicate && duplicateAction === 'skip') {
+                    skipped++;
+                    continue;
+                }
+                
+                // Przygotuj dane
+                const data = {
+                    nazwa: row.nazwa,
+                    jm_podstawowa: row.jm_podstawowa,
+                    typ: row.typ || null,
+                    grupa: row.grupa || null,
+                    dzial: row.dzial || null,
+                    wegetarianski: row.wegetarianski === 'true' || row.wegetarianski === '1',
+                    weganski: row.weganski === 'true' || row.weganski === '1',
+                    alergeny: (() => {
+        try {
+            return row.alergeny ? JSON.parse(row.alergeny.trim()) : [];
+        } catch (e) {
+            console.warn('Błąd parsowania alergenów:', row.alergeny, e);
+            return [];
+        }
+    })()
+                };
+                
+                // Import/update
+                try {
+                    if (isDuplicate && duplicateAction === 'overwrite') {
+                        const existingId = duplicatesInfo.existingIds[row.nazwa];
+                        await fetch(`${API_URL}/api/ingredients/${existingId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                    } else {
+                        await fetch(`${API_URL}/api/ingredients`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                    }
+                    imported++;
+                } catch (err) {
+                    errors++;
+                    console.error('Błąd importu wiersza:', row, err);
+                }
+                
+                // Mała pauza żeby nie przeciążyć serwera
+                if (i % 10 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+            }
+            
+            alert(`Import zakończony!\n✅ Zaimportowano: ${imported}\n⚠️ Pominięto: ${skipped}\n❌ Błędów: ${errors}`);
+            closeImportModal();
+            loadIngredients();
+            
+        } catch (err) {
+            alert('Błąd importu: ' + err.message);
+        } finally {
+            button.disabled = false;
+            button.textContent = '✅ Importuj';
+            progressBar.style.display = 'none';
+        }
+    }
+
+        // Zamykanie modali kliknięciem poza
+        window.onclick = function(event) {
+            const ingredientModal = document.getElementById('ingredientModal');
+            const importModal = document.getElementById('importModal');
+            
+            if (event.target === ingredientModal) {
+                closeModal();
+            }
+            if (event.target === importModal) {
+                closeImportModal();
+            }
+        }
+    </script>
+</body>
+</html>

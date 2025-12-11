@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChefSystent - Podgląd Surowca</title>
+    <link rel="stylesheet" href="chefsystent-brand.css">
+    <link rel="icon" type="image/png" href="piktogram.png">
+    <style>
+        .view-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 0;
+            min-height: calc(100vh - 180px);
+        }
+
+        .ingredients-sidebar {
+            background: #f8f9fa;
+            border-right: 2px solid #e0e0e0;
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(100vh - 180px);
+        }
+
+        .sidebar-search {
+            margin-bottom: 15px;
+        }
+
+        .sidebar-search input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .sidebar-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar-item {
+            padding: 10px 12px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .sidebar-item:hover {
+            border-color: #D4AF37;
+            background: #fffef7;
+        }
+
+        .sidebar-item.active {
+            border-color: #0A1F44;
+            background: #e3f2fd;
+            font-weight: 600;
+        }
+
+        .sidebar-item-name {
+            font-weight: 600;
+            color: #0A1F44;
+            margin-bottom: 3px;
+        }
+
+        .sidebar-item-meta {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .ingredient-content {
+            padding: 30px;
+            overflow-y: auto;
+            max-height: calc(100vh - 180px);
+        }
+
+        .ingredient-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .nav-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .btn-back {
+            background: #0A1F44;
+        }
+
+        .btn-back:hover {
+            background: #1a3a6b;
+        }
+
+        .ingredient-header {
+            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .ingredient-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .ingredient-meta-header {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .ingredient-section {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .ingredient-section h3 {
+            color: #0A1F44;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #D4AF37;
+            padding-bottom: 10px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 16px;
+            color: #0A1F44;
+            font-weight: 700;
+        }
+
+        .ingredient-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        @media (max-width: 1024px) {
+            .view-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .ingredients-sidebar {
+                display: none;
+            }
+
+            .ingredient-content {
+                max-height: none;
+            }
+        }
+
+        .loading-view {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .error-view {
+            text-align: center;
+            padding: 60px 20px;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-logo">
+                <img src="LOGO_chefsystent.png" alt="Chefsystent Logo">
+            </div>
+            <p>System Zarządzania Kuchnią - Podgląd Surowca</p>
+            
+            <nav>
+                <a href="index.html">🏠 Start</a>
+                <a href="ingredients.html" class="active">Surowce</a>
+                <a href="recipes.html">Receptury</a>
+                <a href="dishes.html">Dania</a>
+                <a href="groups.html">Grupy</a>
+                <a href="events.html">Eventy</a>
+                <a href="menu-cards.html">Karty</a>
+                <a href="shopping.html">Zakupy</a>
+            </nav>
+        </header>
+
+        <div class="content">
+            <div class="view-layout">
+                <!-- Sidebar -->
+                <div class="ingredients-sidebar">
+                    <h3 style="margin-bottom: 15px; color: #0A1F44;">Wszystkie surowce</h3>
+                    
+                    <div class="sidebar-search">
+                        <input type="text" id="sidebarSearch" placeholder="🔍 Szukaj..." onkeyup="filterSidebar()">
+                    </div>
+
+                    <div class="sidebar-list" id="sidebarList">
+                        <div class="loading">Ładowanie...</div>
+                    </div>
+                </div>
+
+                <!-- Main content -->
+                <div class="ingredient-content">
+                    <!-- Loading -->
+                    <div id="loadingState" class="loading-view">
+                        <div class="spinner"></div>
+                        <p>Ładowanie surowca...</p>
+                    </div>
+
+                    <!-- Error -->
+                    <div id="errorState" class="error-view" style="display: none;">
+                        <h2>❌ Błąd</h2>
+                        <p id="errorMessage"></p>
+                        <button class="btn btn-primary" onclick="location.href='ingredients.html'">
+                            Powrót do listy
+                        </button>
+                    </div>
+
+                    <!-- Ingredient view -->
+                    <div id="ingredientView" style="display: none;">
+                        <!-- Navigation -->
+                        <div class="ingredient-nav">
+                            <button class="nav-btn btn-back" onclick="location.href='ingredients.html'">
+                                ← Powrót do listy
+                            </button>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="nav-btn" id="prevBtn" onclick="navigateIngredient('prev')">
+                                    ← Poprzedni
+                                </button>
+                                <button class="nav-btn" id="nextBtn" onclick="navigateIngredient('next')">
+                                    Następny →
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Header -->
+                        <div class="ingredient-header">
+                            <div class="ingredient-title" id="ingredientName"></div>
+                            <div class="ingredient-meta-header" id="ingredientMeta"></div>
+                        </div>
+
+                        <!-- Basic Info -->
+                        <div class="ingredient-section">
+                            <h3>📋 Informacje podstawowe</h3>
+                            <div class="info-grid" id="basicInfo"></div>
+                        </div>
+
+                        <!-- Allergens -->
+                        <div class="ingredient-section" id="allergensSection" style="display: none;">
+                            <h3>⚠️ Alergeny</h3>
+                            <div id="allergensList"></div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="ingredient-actions">
+                            <button class="action-btn btn-edit" onclick="editIngredient()">
+                                ✏️ Edytuj
+                            </button>
+                            <button class="action-btn btn-duplicate" onclick="duplicateIngredient()">
+                                📋 Duplikuj
+                            </button>
+                            <button class="action-btn btn-delete" onclick="deleteIngredient()">
+                                🗑️ Usuń
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://chefsystem.vercel.app';
+        
+        let currentIngredient = null;
+        let allIngredients = [];
+        let filteredSidebarIngredients = [];
+        let currentIngredientId = null;
+
+        const ALLERGENS = {
+            1: { kod: 'GLU', nazwa: 'Gluten' },
+            2: { kod: 'SKO', nazwa: 'Skorupiaki' },
+            3: { kod: 'JAJ', nazwa: 'Jaja' },
+            4: { kod: 'RYB', nazwa: 'Ryby' },
+            5: { kod: 'ORZ', nazwa: 'Orzeszki' },
+            6: { kod: 'SOJ', nazwa: 'Soja' },
+            7: { kod: 'MLE', nazwa: 'Mleko' },
+            8: { kod: 'ORS', nazwa: 'Orzechy' },
+            9: { kod: 'SEL', nazwa: 'Seler' },
+            10: { kod: 'GOR', nazwa: 'Gorczyca' },
+            11: { kod: 'SEZ', nazwa: 'Sezam' },
+            12: { kod: 'SIA', nazwa: 'Dwutlenek siarki' },
+            13: { kod: 'LUB', nazwa: 'Łubin' },
+            14: { kod: 'MIE', nazwa: 'Mięczaki' }
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        currentIngredientId = parseInt(urlParams.get('id'));
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!currentIngredientId) {
+                showError('Brak ID surowca');
+                return;
+            }
+
+            await loadAllIngredients();
+            await loadIngredient(currentIngredientId);
+        });
+
+        async function loadAllIngredients() {
+            try {
+                const response = await fetch(`${API_URL}/api/ingredients`);
+                if (!response.ok) throw new Error('Błąd ładowania listy');
+                
+                allIngredients = await response.json();
+                filteredSidebarIngredients = [...allIngredients];
+                renderSidebar();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById('sidebarList');
+            
+            if (filteredSidebarIngredients.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #666;">Brak wyników</div>';
+                return;
+            }
+
+            list.innerHTML = filteredSidebarIngredients.map(ing => {
+                const isActive = ing.id === currentIngredientId;
+                return `
+                    <div class="sidebar-item ${isActive ? 'active' : ''}" onclick="loadIngredient(${ing.id})">
+                        <div class="sidebar-item-name">${ing.nazwa}</div>
+                        <div class="sidebar-item-meta">
+                            ${ing.typ || 'Brak typu'} | ${ing.jm_podstawowa || '-'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterSidebar() {
+            const searchTerm = document.getElementById('sidebarSearch').value.toLowerCase();
+            filteredSidebarIngredients = allIngredients.filter(i => 
+                i.nazwa.toLowerCase().includes(searchTerm)
+            );
+            renderSidebar();
+        }
+
+        async function loadIngredient(ingredientId) {
+            currentIngredientId = ingredientId;
+            window.history.replaceState(null, '', `ingredients-view.html?id=${ingredientId}`);
+            
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('errorState').style.display = 'none';
+            document.getElementById('ingredientView').style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_URL}/api/ingredients/${ingredientId}`);
+                if (!response.ok) throw new Error('Surowiec nie znaleziony');
+                
+                currentIngredient = await response.json();
+                renderIngredient();
+                updateNavButtons();
+                renderSidebar();
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            }
+        }
+
+        function renderIngredient() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('ingredientView').style.display = 'block';
+
+            // Name
+            document.getElementById('ingredientName').textContent = currentIngredient.nazwa;
+
+            // Meta badges
+            const metaBadges = [];
+            if (currentIngredient.typ) metaBadges.push(`<span class="badge badge-type">${currentIngredient.typ}</span>`);
+            if (currentIngredient.jm_podstawowa) metaBadges.push(`<span class="badge badge-jm">${currentIngredient.jm_podstawowa}</span>`);
+            if (currentIngredient.weganski) metaBadges.push('<span class="badge badge-vegan">🌱 Vegan</span>');
+            if (currentIngredient.wegetarianski) metaBadges.push('<span class="badge badge-vegetarian">🥬 Wege</span>');
+            
+            document.getElementById('ingredientMeta').innerHTML = metaBadges.join('');
+
+            // Basic info
+            let basicInfo = '';
+            if (currentIngredient.grupa) {
+                basicInfo += `<div class="info-item"><div class="info-label">Grupa</div><div class="info-value">${currentIngredient.grupa}</div></div>`;
+            }
+            if (currentIngredient.dzial) {
+                basicInfo += `<div class="info-item"><div class="info-label">Dział</div><div class="info-value">${currentIngredient.dzial}</div></div>`;
+            }
+            if (currentIngredient.cena_aktualna) {
+                basicInfo += `<div class="info-item"><div class="info-label">Cena</div><div class="info-value">${currentIngredient.cena_aktualna} PLN</div></div>`;
+            }
+            if (currentIngredient.jm_podstawowa) {
+                basicInfo += `<div class="info-item"><div class="info-label">Jednostka</div><div class="info-value">${currentIngredient.jm_podstawowa}</div></div>`;
+            }
+            if (currentIngredient.created_at) {
+                basicInfo += `<div class="info-item"><div class="info-label">Utworzono</div><div class="info-value">${new Date(currentIngredient.created_at).toLocaleDateString('pl-PL')}</div></div>`;
+            }
+
+            document.getElementById('basicInfo').innerHTML = basicInfo || '<p style="color: #666;">Brak dodatkowych informacji</p>';
+
+            // Allergens
+            if (currentIngredient.alergeny && Array.isArray(currentIngredient.alergeny) && currentIngredient.alergeny.length > 0) {
+                document.getElementById('allergensSection').style.display = 'block';
+                document.getElementById('allergensList').innerHTML = currentIngredient.alergeny.map(id => {
+                    const allergen = ALLERGENS[id];
+                    return allergen ? `<span class="allergen-tag">${allergen.kod} - ${allergen.nazwa}</span>` : '';
+                }).join(' ');
+            } else {
+                document.getElementById('allergensSection').style.display = 'none';
+            }
+        }
+
+        function updateNavButtons() {
+            const currentIndex = allIngredients.findIndex(i => i.id === currentIngredientId);
+            
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.disabled = currentIndex <= 0;
+            nextBtn.disabled = currentIndex >= allIngredients.length - 1;
+        }
+
+        function navigateIngredient(direction) {
+            const currentIndex = allIngredients.findIndex(i => i.id === currentIngredientId);
+            let newIndex;
+            
+            if (direction === 'prev') {
+                newIndex = currentIndex - 1;
+            } else {
+                newIndex = currentIndex + 1;
+            }
+            
+            if (newIndex >= 0 && newIndex < allIngredients.length) {
+                loadIngredient(allIngredients[newIndex].id);
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('ingredientView').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        // === ACTIONS ===
+        function editIngredient() {
+            location.href = `ingredients.html?edit=${currentIngredientId}`;
+        }
+
+        async function duplicateIngredient() {
+            if (!confirm(`Duplikować surowiec "${currentIngredient.nazwa}"?`)) return;
+            
+            const newIngredient = {
+                nazwa: currentIngredient.nazwa + ' (kopia)',
+                typ: currentIngredient.typ,
+                grupa: currentIngredient.grupa,
+                dzial: currentIngredient.dzial,
+                jm_podstawowa: currentIngredient.jm_podstawowa,
+                cena_aktualna: currentIngredient.cena_aktualna,
+                alergeny: currentIngredient.alergeny,
+                wegetarianski: currentIngredient.wegetarianski,
+                weganski: currentIngredient.weganski
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/api/ingredients`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newIngredient)
+                });
+                
+                if (!response.ok) throw new Error('Błąd duplikowania');
+                
+                const created = await response.json();
+                alert('Zduplikowano surowiec');
+                location.href = `ingredients-view.html?id=${created.id}`;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd duplikowania: ' + error.message);
+            }
+        }
+
+        async function deleteIngredient() {
+            if (!confirm(`Czy na pewno usunąć "${currentIngredient.nazwa}"?`)) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/ingredients/${currentIngredientId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Błąd usuwania');
+                
+                alert('Usunięto surowiec');
+                location.href = 'ingredients.html';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Błąd usuwania: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

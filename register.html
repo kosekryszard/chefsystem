@@ -172,13 +172,14 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // Konfiguracja Supabase
-        const SUPABASE_URL = 'https://pvdtkrduggbwmyenjdsc.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2ZHRrcmR1Z2did215ZW5qZHNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjg5NTksImV4cCI6MjA3ODk0NDk1OX0.FfA2cYguwKKkRdQ2e2mAn8MyufI6Ccgz84M_MLc9bsY';
-        
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
+<script>
+    // Konfiguracja Supabase
+    const SUPABASE_URL = 'https://pvdtkrduggbwmyenjdsc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2ZHRrcmR1Z2did215ZW5qZHNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjg5NTksImV4cCI6MjA3ODk0NDk1OX0.FfA2cYguwKKkRdQ2e2mAn8MyufI6Ccgz84M_MLc9bsY';
+    
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
         // Obsługa rejestracji
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -208,7 +209,7 @@
             registerBtn.textContent = 'Rejestracja...';
             
             try {
-                const { data, error } = await supabase.auth.signUp({
+                const { data, error } = await supabaseClientauth.signUp({
                     email: email,
                     password: password,
                     options: {

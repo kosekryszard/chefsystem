@@ -145,13 +145,14 @@
         const SUPABASE_URL = 'https://pvdtkrduggbwmyenjdsc.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2ZHRrcmR1Z2did215ZW5qZHNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjg5NTksImV4cCI6MjA3ODk0NDk1OX0.FfA2cYguwKKkRdQ2e2mAn8MyufI6Ccgz84M_MLc9bsY';
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
         
         // Sprawdź czy już zalogowany
         checkAuth();
         
         async function checkAuth() {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 // Już zalogowany - przekieruj
                 window.location.href = 'profile.html';
@@ -174,7 +175,7 @@
             hideMessages();
             
             try {
-                const { data, error } = await supabase.auth.signInWithPassword({
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password
                 });

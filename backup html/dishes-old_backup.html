@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chefsystent - Dania</title>
+<link rel="stylesheet" href="chefsystent-brand.css">
+<link rel="icon" type="image/png" href="piktogram.png">
+    <style>
+    /* Dodatkowe style dla dań */
+    body {
+        background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+    }
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        overflow: hidden;
+    }
+    .content { padding: 30px; }
+    
+    .dish-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+    }
+    .dish-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: visible; /* ← DODAJ */
+}
+    .dish-card:hover {
+        border-color: #D4AF37;
+        box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+        transform: translateY(-3px);
+    }
+    .dish-card h3 {
+        color: #0A1F44;
+        margin-bottom: 10px;
+    }
+    .dish-meta {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+    .badge-type { background: #e3f2fd; color: #1976d2; }
+    .badge-price { background: #fff3e0; color: #e65100; }
+    .badge-vegan { background: #e8f5e9; color: #388e3c; }
+    
+    .components-list {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+    .component-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .component-item:last-child { border-bottom: none; }
+    
+    .component-builder {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+    .component-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+    }
+
+    .action-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.action-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-edit {
+    background: #ffc107;
+    color: #000;
+}
+
+.btn-delete {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-delete:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.status-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;  /* ← ZMIEŃ z left: 0 */
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 99999 !important;
+    min-width: 150px;
+    margin-top: 4px; /* ← DODAJ */
+}
+
+.status-menu div {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.status-menu div:hover {
+    background: #f0f0f0;
+}
+.floating-status-menu {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    min-width: 150px;
+    max-width: 200px;
+}
+
+.floating-status-menu div {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+.floating-status-menu div:hover {
+    background: #f0f0f0;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <header>
+    <div class="header-logo">
+        <img src="LOGO_chefsystent.png" alt="Chefsystent Logo">
+    </div>
+    <p>System Zarządzania Kuchnią - Dania</p>
+    
+    <nav>
+        <a href="index.html">🏠 Start</a>
+        <a href="ingredients.html">Surowce</a>
+        <a href="recipes.html">Receptury</a>
+        <a href="dishes.html">Dania</a>
+        <a href="groups.html">Grupy</a>
+        <a href="events.html">Eventy</a>
+        <a href="menu-cards.html">Karty</a>
+        <a href="shopping.html">Zakupy</a>
+    </nav>
+</header>
+<div class="filters-bar">
+    <button class="filter-btn active" data-filter="all" onclick="filterDishes('all')">
+        Wszystkie
+    </button>
+    <button class="filter-btn" data-filter="draft" onclick="filterDishes('draft')">
+        📝 Robocze
+    </button>
+    <button class="filter-btn" data-filter="active" onclick="filterDishes('active')">
+        ✅ Aktywne
+    </button>
+    <button class="filter-btn" data-filter="archived" onclick="filterDishes('archived')">
+        📦 Archiwalne
+    </button>
+</div>
+        <div class="content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Lista dań</h2>
+                <button class="btn btn-primary" onclick="openAddModal()">➕ Dodaj danie</button>
+            </div>
+
+<!-- Przyciski Eksport/Import -->
+<div class="export-import-buttons" style="margin-bottom: 20px;">
+    <button onclick="exportDishes()" class="btn-export">
+        📥 Eksportuj CSV
+    </button>
+    
+    <label for="importDishesFile" class="btn-import">
+        📤 Importuj CSV
+        <input type="file" id="importDishesFile" accept=".csv" style="display:none" onchange="importDishes(event)">
+    </label>
+</div>
+            
+            <div class="dish-grid" id="dishGrid">
+                <div class="loading">Ładowanie dań...</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal szczegółów -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="detailTitle"></h2>
+                <span class="close" onclick="closeDetailModal()">&times;</span>
+            </div>
+            <div id="detailContent"></div>
+        </div>
+    </div>
+    
+    <!-- Modal formularza -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="formTitle">Nowe danie</h2>
+                <span class="close" onclick="closeFormModal()">&times;</span>
+            </div>
+            
+            <form id="dishForm" onsubmit="saveDish(event)">
+                <input type="hidden" id="editId">
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Nazwa dania (wewnętrzna)</label>
+                    <input type="text" id="nazwa" required>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Nazwa w karcie (dla klienta)</label>
+                    <input type="text" id="nazwa_karta">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label>Typ</label>
+                        <select id="typ" required>
+                            <option value="danie główne">Danie główne</option>
+                            <option value="zupa">Zupa</option>
+                            <option value="przystawka">Przystawka</option>
+                            <option value="deser">Deser</option>
+                            <option value="napój">Napój</option>
+                            <option value="zestaw">Zestaw</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Cena sugerowana (zł)</label>
+                        <input type="number" step="0.01" id="cena_sugerowana">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Opis dla karty</label>
+                    <textarea id="opis_karta" rows="3"></textarea>
+                </div>
+                
+                <div style="margin-bottom: 15px; display: flex; gap: 20px;">
+                    <label style="display: flex; align-items: center;">
+                        <input type="checkbox" id="wegetarianski" style="width: auto; margin-right: 5px;">
+                        Wegetariański
+                    </label>
+                    <label style="display: flex; align-items: center;">
+                        <input type="checkbox" id="weganski" style="width: auto; margin-right: 5px;">
+                        Wegański
+                    </label>
+                </div>
+                
+                <h3 style="margin: 20px 0 10px;">Receptury w daniu</h3>
+                <div class="component-builder">
+                    <div id="componentsList"></div>
+                    <button type="button" class="btn btn-small btn-primary" onclick="addComponentRow()">+ Dodaj recepturę</button>
+                </div>
+                
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn" onclick="closeFormModal()">Anuluj</button>
+                    <button type="submit" class="btn btn-success">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+
+let allDishes = [];
+let currentFilter = 'all';
+
+function getStatusLabel(status) {
+    const labels = {
+        'draft': '📝 Robocze',
+        'active': '✅ Aktywne',
+        'archived': '📦 Archiwum'
+    };
+    return labels[status] || status;
+}
+
+function filterDishes(filter) {
+    currentFilter = filter;
+    
+    // Aktualizuj przyciski
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === filter);
+    });
+    
+    renderDishes();
+}
+
+const API_URL = 'https://chefsystem.vercel.app';
+// USUŃ: let allDishes = [];  ← TA LINIA
+let allRecipes = [];
+        
+async function loadData() {
+    try {
+        const [dishesRes, recipesRes] = await Promise.all([
+            fetch(`${API_URL}/api/dishes`),      // ← ZMIEŃ
+            fetch(`${API_URL}/api/recipes`)
+        ]);
+        
+        allDishes = await dishesRes.json();       // ← ZMIEŃ
+        allRecipes = await recipesRes.json();
+        
+        renderDishes();
+    } catch (err) {
+        console.error('loadData error:', err);
+        document.getElementById('dishGrid').innerHTML = 
+            '<div class="loading">Błąd ładowania danych</div>';
+    }
+}
+        
+        function renderDishes() {
+    const grid = document.getElementById('dishGrid');
+    
+    // Filtruj według statusu
+    let filtered = allDishes;
+    if (currentFilter !== 'all') {
+        filtered = allDishes.filter(d => d.status === currentFilter);
+    }
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div class="loading">Brak dań do wyświetlenia</div>';
+        return;
+    }
+    
+    grid.innerHTML = filtered.map(d => `
+    <div class="dish-card">
+        <h3>${d.nazwa}</h3>
+        <p style="color: #666; margin: 10px 0;">${d.opis_karta || 'Brak opisu'}</p>
+        <div class="dish-meta">
+            <span class="badge badge-type">${d.typ}</span>
+            ${d.cena_sugerowana ? `<span class="badge badge-price">${d.cena_sugerowana} zł</span>` : ''}
+            ${d.weganski ? '<span class="badge badge-vegan">Vegan</span>' : ''}
+            <span class="badge badge-status status-${d.status || 'active'}">${getStatusLabel(d.status || 'active')}</span>
+            ${d.in_use ? '<span class="badge badge-in-use">🔒 W użyciu</span>' : ''}
+        </div>
+        
+        <div class="action-buttons" onclick="event.stopPropagation()">
+            <div style="position: relative; display: inline-block;">
+                <button onclick="toggleStatusMenu(${d.id})" 
+                        class="action-btn btn-secondary"
+                        title="Zmień status">
+                    📦
+                </button>
+                <div id="statusMenu-${d.id}" class="status-menu" style="display: none;">
+                    <div onclick="changeStatus(${d.id}, 'draft')">📝 Robocze</div>
+                    <div onclick="changeStatus(${d.id}, 'active')">✅ Aktywne</div>
+                    <div onclick="changeStatus(${d.id}, 'archived')">📦 Archiwum</div>
+                </div>
+            </div>
+            
+            <button class="action-btn btn-secondary" 
+                    onclick="duplicateDish(${d.id})"
+                    title="Stwórz podobne danie">
+                📋
+            </button>
+            
+            <button class="action-btn btn-edit" 
+        onclick="editDish(${d.id})"
+        title="Edytuj danie">
+    ✏️
+</button>
+            
+            <button class="action-btn btn-delete" 
+                    onclick="deleteDish(${d.id})"
+                    title="Usuń danie"
+                    ${d.in_use ? 'disabled' : ''}>
+                🗑️
+            </button>
+        </div>
+    </div>
+`).join('');
+        }
+        
+        
+        function openAddModal() {
+            document.getElementById('formTitle').textContent = 'Nowe danie';
+            document.getElementById('dishForm').reset();
+            document.getElementById('editId').value = '';
+            document.getElementById('componentsList').innerHTML = '';
+            addComponentRow();
+            document.getElementById('formModal').style.display = 'block';
+        }
+        
+        function addComponentRow() {
+    const row = document.createElement('div');
+    row.className = 'component-row';
+    row.innerHTML = `
+        <select class="comp-recipe" onchange="updateUnitForRecipe(this)">
+            <option value="">Wybierz recepturę</option>
+            ${allRecipes.map(r => `<option value="${r.id}" data-unit="${r.wydajnosc_jm || 'porcja'}">${r.nazwa}</option>`).join('')}
+        </select>
+        <input type="number" step="0.001" placeholder="Ilość" class="comp-amount">
+        <input type="text" class="comp-unit" readonly style="background: #f0f0f0;" placeholder="JM">
+        <select class="comp-category">
+            <option value="glowne">Składnik główny</option>
+            <option value="dodatek_skrobiowy">Dodatek skrobiowy</option>
+            <option value="dodatek_witaminowy">Dodatek witaminowy</option>
+            <option value="dressing">Dressing</option>
+            <option value="sos">Sos</option>
+            <option value="crunch">Crunch</option>
+            <option value="garnish">Garnish</option>
+        </select>
+        <button type="button" class="btn btn-small btn-danger" onclick="this.parentElement.remove()">✕</button>
+    `;
+    document.getElementById('componentsList').appendChild(row);
+    return row;
+}
+
+// Nowa funkcja - automatyczne uzupełnianie jednostki
+function updateUnitForRecipe(selectElement) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const unit = selectedOption.getAttribute('data-unit');
+    const row = selectElement.closest('.component-row');
+    const unitInput = row.querySelector('.comp-unit');
+    unitInput.value = unit || 'porcja';
+}
+        
+async function saveDish(e) {
+    e.preventDefault();
+    
+    const components = [];
+    const rows = document.querySelectorAll('.component-row');
+ 
+    
+    rows.forEach(row => {
+    const recipeSelect = row.querySelector('.comp-recipe');
+    const amountInput = row.querySelector('.comp-amount');
+    const unitInput = row.querySelector('.comp-unit');
+    const categorySelect = row.querySelector('.comp-category');
+    
+    const recipeId = recipeSelect?.value;
+    const amount = amountInput?.value;
+    const unit = unitInput?.value;
+    const category = categorySelect?.value;
+   
+
+        if (recipeId && amount) {
+            components.push({
+                recipe_id: parseInt(recipeId),
+                ilosc: parseFloat(amount),
+                jm: unit,
+                kategoria: category
+
+            });
+        }
+    });
+    
+ 
+    
+    const data = {
+        nazwa: document.getElementById('nazwa').value,
+        nazwa_karta: document.getElementById('nazwa_karta').value || null,
+        typ: document.getElementById('typ').value,
+        cena_sugerowana: parseFloat(document.getElementById('cena_sugerowana').value) || null,
+        opis_karta: document.getElementById('opis_karta').value || null,
+        wegetarianski: document.getElementById('wegetarianski').checked,
+        weganski: document.getElementById('weganski').checked,
+        komponenty: components
+    };
+    
+
+    
+    const id = document.getElementById('editId').value;
+    const url = (id && id.trim() !== '') ? `${API_URL}/api/dishes/${id}` : `${API_URL}/api/dishes`;
+    const method = (id && id.trim() !== '') ? 'PUT' : 'POST';
+    
+            
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+         
+    const responseData = await res.json(); // ZMIEŃ - pobierz dane
+ 
+
+                if (res.ok) {
+             alert(id ? 'Danie zaktualizowane!' : 'Danie dodane!');
+            closeFormModal();
+              loadData(); // ← DODAJ
+} else {
+    const error = await res.json();  // ← DODAJ
+    alert('Błąd zapisu: ' + (error.error || 'Nieznany błąd'));  // ← DODAJ
+    console.error('Save error:', error);  // ← DODAJ
+}
+} catch (err) {
+                alert('Błąd: ' + err.message);
+            }
+        }
+        
+        async function editDish(id) {
+
+  
+    try {
+        const res = await fetch(`${API_URL}/api/dishes/${id}`);
+        const dish = await res.json();
+        
+     
+        
+        document.getElementById('formTitle').textContent = 'Edytuj danie';
+        document.getElementById('editId').value = id;
+        document.getElementById('nazwa').value = dish.nazwa;
+        document.getElementById('nazwa_karta').value = dish.nazwa_karta || '';
+        document.getElementById('typ').value = dish.typ;
+        document.getElementById('cena_sugerowana').value = dish.cena_sugerowana || '';
+        document.getElementById('opis_karta').value = dish.opis_karta || '';
+        document.getElementById('wegetarianski').checked = dish.wegetarianski;
+        document.getElementById('weganski').checked = dish.weganski;
+        
+        document.getElementById('componentsList').innerHTML = '';
+        if (dish.komponenty && dish.komponenty.length > 0) {
+
+    dish.komponenty.forEach(k => {
+ 
+        const row = addComponentRow();
+        row.querySelector('.comp-recipe').value = k.recipes.id;
+        row.querySelector('.comp-amount').value = k.ilosc;
+        row.querySelector('.comp-unit').value = k.jm;
+        row.querySelector('.comp-category').value = k.kategoria;
+ 
+    });
+        } else {
+            addComponentRow();
+        }
+        
+        closeDetailModal();
+        document.getElementById('formModal').style.display = 'block';
+    } catch (err) {
+        alert('Błąd ładowania dania do edycji');
+    }
+}
+
+async function deleteDish(id) {
+    if (!confirm('Czy na pewno usunąć to danie?')) return;
+    
+    try {
+        const res = await fetch(`${API_URL}/api/dishes/${id}`, { 
+            method: 'DELETE'
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            alert('Danie usunięte!');
+            loadData();
+        } else {
+            alert('Błąd: ' + data.error);
+        }
+    } catch (err) {
+
+        alert('Błąd: ' + err.message);
+    }
+}
+
+function closeDetailModal() {
+    document.getElementById('detailModal').style.display = 'none';
+}
+
+function closeFormModal() {
+    const hasData = document.getElementById('nazwa').value.trim() !== '' ||
+                    document.getElementById('nazwa_karta').value.trim() !== '' ||
+                    document.getElementById('opis_karta').value.trim() !== '' ||
+                    document.getElementById('componentsList').children.length > 1;
+    
+    if (hasData && !confirm('Dane nie zostały zapisane. Czy na pewno zamknąć?')) {
+        return;
+    }
+    document.getElementById('formModal').style.display = 'none';
+}
+
+// ========== EKSPORT ==========
+function exportDishes() {
+  window.location.href = '/api/dishes/export/csv';
+}
+
+// ========== IMPORT ==========
+async function importDishes(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!confirm(`Importować dania z pliku: ${file.name}?`)) {
+    event.target.value = '';
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  try {
+    const response = await fetch('/api/dishes/import/csv', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      let message = `✅ Import zakończony!\n\n`;
+      message += `Zaimportowano: ${result.success}\n`;
+      message += `Pominięto (duplikaty): ${result.skipped}\n`;
+      message += `Błędy: ${result.errors.length}`;
+      
+      if (result.errors.length > 0) {
+        message += `\n\nPierwsze błędy:\n`;
+        result.errors.slice(0, 3).forEach(err => {
+          message += `- Wiersz ${err.row}: ${err.error}\n`;
+        });
+      }
+      
+      alert(message);
+      loadData();
+    } else {
+      alert('❌ Błąd importu: ' + result.error);
+    }
+  } catch (error) {
+    alert('❌ Błąd połączenia: ' + error.message);
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function closeStatusMenus() {
+    document.querySelectorAll('.status-menu').forEach(m => m.style.display = 'none');
+    document.removeEventListener('click', closeStatusMenus);
+}
+
+function toggleStatusMenu(id) {
+    // Usuń poprzednie menu jeśli istnieje
+    const existingMenu = document.getElementById('floating-status-menu');
+    if (existingMenu) {
+        existingMenu.remove();
+    }
+    
+    // Znajdź przycisk który wywołał
+    const button = event.target.closest('button');
+    const rect = button.getBoundingClientRect();
+    
+    // Stwórz nowe menu na końcu body
+    const menu = document.createElement('div');
+    menu.id = 'floating-status-menu';
+    menu.className = 'floating-status-menu';
+    menu.style.position = 'fixed';
+    menu.style.left = rect.left + 'px';
+    menu.style.zIndex = '999999';
+    menu.innerHTML = `
+        <div onclick="changeStatus(${id}, 'draft')">📝 Robocze</div>
+        <div onclick="changeStatus(${id}, 'active')">✅ Aktywne</div>
+        <div onclick="changeStatus(${id}, 'archived')">📦 Archiwum</div>
+    `;
+    
+    // Ustaw pozycję - nad lub pod przyciskiem
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceBelow < 150) {
+        menu.style.bottom = (window.innerHeight - rect.top) + 'px';
+        menu.style.top = 'auto';
+    } else {
+        menu.style.top = rect.bottom + 'px';
+        menu.style.bottom = 'auto';
+    }
+    
+    document.body.appendChild(menu);
+    
+    setTimeout(() => {
+        document.addEventListener('click', () => {
+            menu.remove();
+        }, { once: true });
+    }, 0);
+}
+
+
+
+async function changeStatus(id, newStatus) {
+    try {
+        const res = await fetch(`${API_URL}/api/dishes/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        });
+        
+        if (res.ok) {
+            document.getElementById(`statusMenu-${id}`).style.display = 'none';
+            loadData();
+        }
+    } catch (err) {
+        alert('Błąd zmiany statusu');
+    }
+}
+
+async function duplicateDish(id) {
+    const dish = allDishes.find(d => d.id === id);
+    if (!dish) return;
+    
+    const newName = prompt('Nazwa nowego dania:', `${dish.nazwa} (kopia)`);
+    if (!newName) return;
+    
+    try {
+        // Pobierz szczegóły z komponentami
+        const res = await fetch(`${API_URL}/api/dishes/${id}`);
+        const fullDish = await res.json();
+        
+        // Utwórz kopię
+        const copy = {
+            nazwa: newName,
+            nazwa_karta: newName,
+            typ: fullDish.typ,
+            opis_karta: fullDish.opis_karta,
+            cena_sugerowana: fullDish.cena_sugerowana,
+            wegetarianski: fullDish.wegetarianski,
+            weganski: fullDish.weganski,
+            status: 'draft'
+        };
+        
+        const createRes = await fetch(`${API_URL}/api/dishes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(copy)
+        });
+        
+        const newDish = await createRes.json();
+        
+       // Skopiuj komponenty
+for (const comp of fullDish.komponenty || []) {
+    await fetch(`${API_URL}/api/dish-components`, {  // ← ZMIEŃ URL
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            dish_id: newDish.id,  // ← DODAJ
+            recipe_id: comp.recipes.id,
+            ilosc: comp.ilosc,
+            jm: comp.jm,
+            kategoria: comp.kategoria,
+            kolejnosc: comp.kolejnosc
+        })
+    });
+}
+        
+        alert('Danie skopiowane!');
+        loadData();
+    } catch (err) {
+        alert('Błąd kopiowania dania');
+    }
+}
+
+loadData();
+    </script>
+</body>
+</html>
