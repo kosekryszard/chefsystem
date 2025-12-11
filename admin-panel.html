@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admina - ChefSystent</title>
+    <link rel="stylesheet" href="chefsystent-brand.css">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 30px;
+        }
+        
+        .admin-header {
+            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn-logout {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .section h2 {
+            color: #0A1F44;
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #0A1F44;
+        }
+        
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .btn-action {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        
+        .btn-approve {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .btn-reject {
+            background: #f44336;
+            color: white;
+        }
+        
+        .badge-pending {
+            background: #ffc107;
+            color: #000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .module-link {
+            display: block;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #0A1F44;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .module-link:hover {
+            background: #D4AF37;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <div>
+                <h1>⚙️ Panel Administracyjny</h1>
+                <p id="adminName">Administrator</p>
+            </div>
+            <button class="btn-logout" onclick="logout()">Wyloguj</button>
+        </div>
+        
+        <!-- Zgłoszenia firm -->
+        <div class="section">
+            <h2>📋 Zgłoszenia firm (oczekujące)</h2>
+            <table id="requestsTable">
+                <thead>
+                    <tr>
+                        <th>Użytkownik</th>
+                        <th>Nazwa firmy</th>
+                        <th>NIP</th>
+                        <th>Wiadomość</th>
+                        <th>Data</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody id="requestsBody">
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:30px; color:#666;">
+                            Ładowanie...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Moduły -->
+        <div class="section">
+            <h2>📚 Moduły systemu</h2>
+            <div class="modules-grid">
+                <a href="ingredients.html" class="module-link">🥕 Surowce</a>
+                <a href="recipes.html" class="module-link">📖 Receptury</a>
+                <a href="dishes.html" class="module-link">🍽️ Dania</a>
+                <a href="groups.html" class="module-link">👥 Grupy</a>
+                <a href="events.html" class="module-link">🎉 Eventy</a>
+                <a href="menu-cards.html" class="module-link">📋 Karty menu</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Konfiguracja Supabase
+        const SUPABASE_URL = 'https://pvdtkrduggbwmyenjdsc.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2ZHRrcmR1Z2did215ZW5qZHNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjg5NTksImV4cCI6MjA3ODk0NDk1OX0.FfA2cYguwKKkRdQ2e2mAn8MyufI6Ccgz84M_MLc9bsY';
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let currentUser = null;
+        
+        // Inicjalizacja
+        init();
+        
+        async function init() {
+            // Sprawdź czy zalogowany
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            currentUser = session.user;
+            
+            // Sprawdź czy admin
+            const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('role, full_name')
+                .eq('id', currentUser.id)
+                .single();
+            
+            if (!profile || profile.role !== 'admin') {
+                alert('⛔ Brak dostępu. Tylko dla administratorów.');
+                window.location.href = 'profile.html';
+                return;
+            }
+            
+            document.getElementById('adminName').textContent = profile.full_name || 'Administrator';
+            
+            // Załaduj zgłoszenia
+            await loadRequests();
+        }
+        
+        async function loadRequests() {
+            try {
+                const { data: requests, error } = await supabase
+                    .from('company_requests')
+                    .select(`
+                        *,
+                        user_profiles!inner(email, full_name)
+                    `)
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                const tbody = document.getElementById('requestsBody');
+                
+                if (!requests || requests.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align:center; padding:30px; color:#666;">
+                                Brak oczekujących zgłoszeń
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tbody.innerHTML = requests.map(req => `
+                    <tr>
+                        <td>
+                            <strong>${req.user_profiles.full_name || 'Brak'}</strong><br>
+                            <small>${req.user_profiles.email}</small>
+                        </td>
+                        <td><strong>${req.company_name}</strong></td>
+                        <td>${req.nip || '-'}</td>
+                        <td>${req.message || '-'}</td>
+                        <td><small>${new Date(req.created_at).toLocaleDateString()}</small></td>
+                        <td>
+                            <button class="btn-action btn-approve" onclick="handleRequest(${req.id}, 'approved')">
+                                ✓ Zatwierdź
+                            </button>
+                            <button class="btn-action btn-reject" onclick="handleRequest(${req.id}, 'rejected')">
+                                ✗ Odrzuć
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Błąd ładowania zgłoszeń:', error);
+            }
+        }
+        
+        async function handleRequest(requestId, newStatus) {
+            const action = newStatus === 'approved' ? 'zatwierdzić' : 'odrzucić';
+            
+            if (!confirm(`Czy na pewno chcesz ${action} to zgłoszenie?`)) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('company_requests')
+                    .update({ status: newStatus, updated_at: new Date() })
+                    .eq('id', requestId);
+                
+                if (error) throw error;
+                
+                alert(`✅ Zgłoszenie ${newStatus === 'approved' ? 'zatwierdzone' : 'odrzucone'}`);
+                
+                // Odśwież listę
+                await loadRequests();
+                
+                // TODO: W Etapie 3 - tutaj utworzymy firmę i przypiszemy usera
+                
+            } catch (error) {
+                alert('❌ Błąd: ' + error.message);
+            }
+        }
+        
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

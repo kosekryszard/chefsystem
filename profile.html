@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel użytkownika - ChefSystent</title>
+    <link rel="stylesheet" href="chefsystent-brand.css">
+    <style>
+        .profile-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 30px;
+        }
+        
+        .profile-header {
+            background: linear-gradient(135deg, #0A1F44 0%, #1a3a6b 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .profile-info h1 {
+            margin: 0 0 10px 0;
+        }
+        
+        .profile-badges {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .badge {
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-basic {
+            background: #D4AF37;
+            color: #0A1F44;
+        }
+        
+        .badge-premium {
+            background: #ffd700;
+            color: #0A1F44;
+        }
+        
+        .badge-trusted {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .btn-logout {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-logout:hover {
+            background: white;
+            color: #0A1F44;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .dashboard-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(10, 31, 68, 0.15);
+        }
+        
+        .dashboard-card h3 {
+            color: #0A1F44;
+            margin-bottom: 10px;
+        }
+        
+        .dashboard-card .number {
+            font-size: 36px;
+            font-weight: 700;
+            color: #D4AF37;
+            margin: 15px 0;
+        }
+        
+        .modules-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .modules-section h2 {
+            color: #0A1F44;
+            margin-bottom: 20px;
+        }
+        
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .module-link {
+            display: block;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #0A1F44;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .module-link:hover {
+            background: #D4AF37;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .company-request-box {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .company-request-box h3 {
+            color: #0A1F44;
+            margin-bottom: 10px;
+        }
+        
+        .btn-request-company {
+            padding: 12px 24px;
+            background: #D4AF37;
+            color: #0A1F44;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-request-company:hover {
+            background: #B8941F;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <!-- Header z profilem -->
+        <div class="profile-header">
+            <div class="profile-info">
+                <h1 id="userName">Ładowanie...</h1>
+                <p id="userEmail"></p>
+                <div class="profile-badges">
+                    <span class="badge badge-basic" id="subscriptionBadge">BASIC</span>
+                    <span class="badge badge-trusted" id="trustedBadge" style="display:none">✓ Trusted Tester</span>
+                </div>
+            </div>
+            <button class="btn-logout" onclick="logout()">Wyloguj</button>
+        </div>
+        
+        <!-- Statystyki -->
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <h3>Moje receptury</h3>
+                <div class="number" id="recipeCount">0</div>
+            </div>
+            <div class="dashboard-card">
+                <h3>Moje dania</h3>
+                <div class="number" id="dishCount">0</div>
+            </div>
+            <div class="dashboard-card">
+                <h3>Punkty za testy</h3>
+                <div class="number" id="testPoints">0</div>
+            </div>
+        </div>
+        
+        <!-- Zgłoszenie firmy -->
+        <div class="company-request-box">
+            <h3>💼 Konto firmowe</h3>
+            <p>Chcesz korzystać z ChefSystent w swojej firmie? Zgłoś chęć utworzenia konta firmowego.</p>
+            <button class="btn-request-company" onclick="requestCompany()">Zgłoś firmę</button>
+        </div>
+        
+        <!-- Moduły -->
+        <div class="modules-section">
+            <h2>📚 Moduły systemu</h2>
+            <div class="modules-grid">
+                <a href="ingredients.html" class="module-link">🥕 Surowce</a>
+                <a href="recipes.html" class="module-link">📖 Receptury</a>
+                <a href="dishes.html" class="module-link">🍽️ Dania</a>
+                <a href="groups.html" class="module-link">👥 Grupy</a>
+                <a href="events.html" class="module-link">🎉 Eventy</a>
+                <a href="menu-cards.html" class="module-link">📋 Karty menu</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Konfiguracja Supabase
+        const SUPABASE_URL = 'https://pvdtkrduggbwmyenjdsc.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2ZHRrcmR1Z2did215ZW5qZHNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjg5NTksImV4cCI6MjA3ODk0NDk1OX0.FfA2cYguwKKkRdQ2e2mAn8MyufI6Ccgz84M_MLc9bsY';
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let currentUser = null;
+        
+        // Inicjalizacja
+        init();
+        
+        async function init() {
+            // Sprawdź czy zalogowany
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            currentUser = session.user;
+            
+            // Pobierz profil
+            await loadProfile();
+            
+            // Pobierz statystyki
+            await loadStats();
+        }
+        
+        async function loadProfile() {
+            try {
+                const { data: profile, error } = await supabase
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .single();
+                
+                if (error) throw error;
+                
+                // Wyświetl dane
+                document.getElementById('userName').textContent = profile.full_name || 'Użytkownik';
+                document.getElementById('userEmail').textContent = profile.email;
+                
+                // Badge subskrypcji
+                const subBadge = document.getElementById('subscriptionBadge');
+                subBadge.textContent = profile.subscription_level.toUpperCase();
+                if (profile.subscription_level === 'premium') {
+                    subBadge.className = 'badge badge-premium';
+                }
+                
+                // Trusted tester badge
+                if (profile.trusted_tester) {
+                    document.getElementById('trustedBadge').style.display = 'inline-block';
+                }
+                
+                // Punkty
+                document.getElementById('testPoints').textContent = profile.test_points || 0;
+                
+            } catch (error) {
+                console.error('Błąd ładowania profilu:', error);
+            }
+        }
+        
+        async function loadStats() {
+            try {
+                // Liczba receptur
+                const { count: recipeCount } = await supabase
+                    .from('recipes')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('created_by_user_id', currentUser.id);
+                
+                document.getElementById('recipeCount').textContent = recipeCount || 0;
+                
+                // Liczba dań
+                const { count: dishCount } = await supabase
+                    .from('dishes')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('created_by_user_id', currentUser.id);
+                
+                document.getElementById('dishCount').textContent = dishCount || 0;
+                
+            } catch (error) {
+                console.error('Błąd ładowania statystyk:', error);
+            }
+        }
+        
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.href = 'login.html';
+        }
+        
+        function requestCompany() {
+            const companyName = prompt('Podaj nazwę firmy:');
+            if (!companyName) return;
+            
+            const nip = prompt('Podaj NIP (opcjonalnie):');
+            const message = prompt('Dodatkowe informacje (opcjonalnie):');
+            
+            submitCompanyRequest(companyName, nip, message);
+        }
+        
+        async function submitCompanyRequest(companyName, nip, message) {
+            try {
+                const { error } = await supabase
+                    .from('company_requests')
+                    .insert({
+                        user_id: currentUser.id,
+                        company_name: companyName,
+                        nip: nip,
+                        message: message
+                    });
+                
+                if (error) throw error;
+                
+                alert('✅ Zgłoszenie wysłane! Administrator skontaktuje się z Tobą wkrótce.');
+                
+            } catch (error) {
+                alert('❌ Błąd: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
