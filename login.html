@@ -183,7 +183,7 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
                 if (error) throw error;
                 
                 // Sukces - pobierz profil
-                const { data: profile } = await supabase
+                const { data: profile } = await supabaseClient
                     .from('user_profiles')
                     .select('role, subscription_level')
                     .eq('id', data.user.id)

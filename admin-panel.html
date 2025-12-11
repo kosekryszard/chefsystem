@@ -191,7 +191,7 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
             currentUser = session.user;
             
             // Sprawdź czy admin
-            const { data: profile } = await supabase
+            const { data: profile } = await supabaseClient
                 .from('user_profiles')
                 .select('role, full_name')
                 .eq('id', currentUser.id)
@@ -211,7 +211,7 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
         
         async function loadRequests() {
             try {
-                const { data: requests, error } = await supabase
+                const { data: requests, error } = await supabaseClient
                     .from('company_requests')
                     .select(`
                         *,
@@ -267,7 +267,7 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
             if (!confirm(`Czy na pewno chcesz ${action} to zgłoszenie?`)) return;
             
             try {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('company_requests')
                     .update({ status: newStatus, updated_at: new Date() })
                     .eq('id', requestId);

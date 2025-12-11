@@ -310,9 +310,11 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
         }
         
         async function logout() {
-            await supabaseClient.auth.signOut();
-            window.location.href = 'login.html';
-        }
+    await supabaseClient.auth.signOut();
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.replace('login.html');
+}
         
         function requestCompany() {
             const companyName = prompt('Podaj nazwę firmy:');
